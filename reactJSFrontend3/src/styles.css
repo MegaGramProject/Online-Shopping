@@ -1,0 +1,37 @@
+@font-face {
+    font-family: Billabong;
+    src: url('assets/fonts/billabong_regular.otf');
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+    font-family: Arial;
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #232424;
+        color: white;
+    }
+    .popup {
+        background-color: #232424 !important;
+        color: white !important;
+    }
+
+    .iconToBeAdjustedForDarkMode {
+        filter: brightness(5) contrast(0);
+    }
+    
+    .textArea {
+        background-color: #232424 !important;
+        color: white !important;
+    }
+}
+
+.sidebarElement:hover {
+    background-color: #f0f0f0;
+    cursor: pointer;
+    width: 12em;
+    border-radius: 0.4em;
+}

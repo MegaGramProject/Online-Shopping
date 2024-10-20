@@ -1,35 +1,119 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from 'react';
+import LeftSidebar from './components/leftSidebar';
 
-function App() {
-  const [count, setCount] = useState(0)
+function App({params}) {
+    let [authenticatedUsername, setAuthenticatedUsername] = useState("");
 
-  return (
+    async function authenticateUser(username) {
+        /*
+        const response = await fetch('http://localhost:8003/cookies/authenticateUser/'+username, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include'
+        });
+        if(!response.ok) {
+            throw new Error('Network response not ok');
+        }
+        const isAuth = await response.json();
+        if(isAuth) {
+            localStorage.setItem('authenticatedUsername', username);
+            setAuthenticatedUsername(username);
+            return;
+        }
+        else {
+            const data = {'username':username};
+            const options = {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data),
+                credentials: 'include',
+            }
+            const response2 = await fetch('http://localhost:8003/cookies/updateAuthToken', options);
+            if(!response2.ok) {
+                throw new Error('Network response not ok');
+            }
+            const response2Data = await response2.text();
+            if(response2Data === "Cookie updated successfully") {
+                const response3 = await fetch('http://localhost:8003/cookies/authenticateUser/'+username, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include'
+                });
+                if(!response3.ok) {
+                    throw new Error('Network response not ok');
+                }
+                const isAuth = await response.json();
+                if(isAuth) {
+                    localStorage.setItem('authenticatedUsername', username);
+                    setAuthenticatedUsername(username);
+                    return;
+                }
+            }
+            else if(response2Data === "Invalid refresh token for username") {
+                const response4 = await fetch('http://localhost:8003/cookies/updateRefreshToken', options);
+                if(!response4.ok) {
+                    throw new Error('Network response not ok');
+                }
+                const response4Data = await response4.text();
+                if(response4Data === "Cookie updated successfully"){
+                    const response5 = await fetch('http://localhost:8003/cookies/authenticateUser/'+username, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        credentials: 'include'
+                    });
+                    if(!response5.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const isAuth = await response.json();
+                    if(isAuth) {
+                        localStorage.setItem('authenticatedUsername', username);
+                        setAuthenticatedUsername(username);
+                        return;
+                    }
+                }
+            }
+
+        }
+        window.location.href = "http://location:8000/login";
+        */
+        localStorage.setItem('authenticatedUsername', username);
+        setAuthenticatedUsername(username);
+    }
+
+    useEffect(() => {
+        async function startUserAuthentication() {
+            if (params) {
+                await authenticateUser(params.username);
+            } else {
+                const storedUsername = localStorage.getItem('authenticatedUsername');
+            if (storedUsername !== null) {
+                await authenticateUser(storedUsername);
+            } else {
+                window.location.href = "http://localhost:8000/login";
+            }
+            }
+        }
+
+    startUserAuthentication();
+    }, []);
+
+
+
+    return (
     <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+        <div style={{height: "100%", width: "100%", position: "absolute", top: "0%", left: "0%"}}>
+            <LeftSidebar authenticatedUsername={authenticatedUsername}></LeftSidebar>
+        </div>
     </>
-  )
-}
+        )
+    }
 
 export default App
