@@ -6,7 +6,6 @@ function SecondTopMostSection() {
 
     return (
     <>
-        <p>Second Top-Most Section</p>
     </>
     )
 }

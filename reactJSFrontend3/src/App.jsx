@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
 import LeftSidebar from './components/leftSidebar';
+import TopMostSection from './components/topMostSection';
+import SecondTopMostSection from './components/secondTopMostSection';
+
 
 function App({params}) {
-    let [authenticatedUsername, setAuthenticatedUsername] = useState("");
+    const [authenticatedUsername, setAuthenticatedUsername] = useState("");
+    const [displayLeftSidebar, setDisplayLeftSidebar] = useState(false);
 
     async function authenticateUser(username) {
         /*
@@ -109,9 +113,16 @@ function App({params}) {
 
     return (
     <>
-        <div style={{height: "100%", width: "100%", position: "absolute", top: "0%", left: "0%"}}>
+        {displayLeftSidebar && <div style={{height: "100%", width: "14%", position: "absolute", top: "0%", left: "0%"}}>
             <LeftSidebar authenticatedUsername={authenticatedUsername}></LeftSidebar>
+        </div>}
+
+        <div style={{height: "100%", width: displayLeftSidebar ?"86%" : "100%", position: "absolute", top: "0%", left: displayLeftSidebar ? "14%" : "0%", display: "flex",
+        flexDirection: "column"}}>
+            <TopMostSection></TopMostSection>
+            <SecondTopMostSection></SecondTopMostSection>
         </div>
+
     </>
         )
     }

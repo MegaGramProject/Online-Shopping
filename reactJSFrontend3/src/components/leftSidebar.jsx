@@ -62,7 +62,7 @@ function LeftSidebar({authenticatedUsername}) {
 
     return (
     <>
-        <div id="leftSidebar" style={{width:'14%', height:'100%', borderStyle:'solid', borderColor:'lightgray',  borderWidth: '0px 0.01em 0px 0em', position: 'relative', overflow:'scroll'}}>
+        <div id="leftSidebar" style={{width:'100%', height:'100%', borderStyle:'solid', borderColor:'lightgray',  borderWidth: '0px 0.01em 0px 0em', position: 'relative', overflow:'scroll'}}>
             <h1 className="headerMegagram" style={{fontFamily:'Billabong', fontSize:'1.9em', marginLeft:'1em', marginTop:'1em', fontWeight: '100'}}><span style={{cursor:"pointer"}}>Megagram</span></h1>
             <div onClick={takeUserHome} className="sidebarElement" style={{display:'flex', justifyContent:'start', alignItems:'center', marginLeft:'1.2em'}}>
                 <img className="iconToBeAdjustedForDarkMode" src={homeIcon} style={{height:'1.9em', width:'1.9em', pointerEvents:'none', objectFit:'contain'}}/>

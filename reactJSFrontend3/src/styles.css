@@ -35,3 +35,8 @@ body {
     width: 12em;
     border-radius: 0.4em;
 }
+
+select:focus {
+    outline: none;
+    border: 2px solid orange;
+}
