@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import LeftSidebar from './components/leftSidebar';
 import TopMostSection from './components/topMostSection';
 import SecondTopMostSection from './components/secondTopMostSection';
+import blackScreen from './assets/blackScreen.png'
 
 
 function App({params}) {
     const [authenticatedUsername, setAuthenticatedUsername] = useState("");
     const [displayLeftSidebar, setDisplayLeftSidebar] = useState(false);
+    const [displayDarkScreen, setDisplayDarkScreen] = useState(false);
 
     async function authenticateUser(username) {
         /*
@@ -98,18 +100,32 @@ function App({params}) {
                 await authenticateUser(params.username);
             } else {
                 const storedUsername = localStorage.getItem('authenticatedUsername');
-            if (storedUsername !== null) {
-                await authenticateUser(storedUsername);
-            } else {
-                window.location.href = "http://localhost:8000/login";
-            }
+                if (storedUsername !== null) {
+                    await authenticateUser(storedUsername);
+                } else {
+                    window.location.href = "http://localhost:8000/login";
+                }
             }
         }
 
     startUserAuthentication();
     }, []);
 
+    function toggleLeftSidebar() {
+        setDisplayLeftSidebar(!displayLeftSidebar);
+    }
 
+    function showDarkScreen() {
+        setDisplayDarkScreen(true);
+    }
+
+    function hideDarkScreen() {
+        setDisplayDarkScreen(false);
+    }
+
+    function toggleDarkScreen() {
+        setDisplayDarkScreen(!displayDarkScreen);
+    }
 
     return (
     <>
@@ -117,10 +133,14 @@ function App({params}) {
             <LeftSidebar authenticatedUsername={authenticatedUsername}></LeftSidebar>
         </div>}
 
-        <div style={{height: "100%", width: displayLeftSidebar ?"86%" : "100%", position: "absolute", top: "0%", left: displayLeftSidebar ? "14%" : "0%", display: "flex",
+        <div style={{height: "100%", width: displayLeftSidebar ? "86%" : "100%", position: "absolute", top: "0%", left: displayLeftSidebar ? "14%" : "0%", display: "flex",
         flexDirection: "column"}}>
-            <TopMostSection></TopMostSection>
-            <SecondTopMostSection></SecondTopMostSection>
+            <TopMostSection authenticatedUsername={authenticatedUsername}></TopMostSection>
+            <SecondTopMostSection isLeftSidebarDisplayed={displayLeftSidebar} notifyParentToToggleLeftSidebar={toggleLeftSidebar} toggleDarkScreen={toggleDarkScreen}></SecondTopMostSection>
+            
+            {displayDarkScreen &&
+                <img src={blackScreen} style={{height: '100%', width: '100%', pointerEvents: 'none', opacity: '0.7'}}></img>
+            }
         </div>
 
     </>

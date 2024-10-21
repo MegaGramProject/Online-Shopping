@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import createIcon from '../assets/createIcon.png';
 import exploreIcon from '../assets/exploreIcon.png';
 import homeIcon from '../assets/homeIcon.png';
@@ -9,8 +9,8 @@ import notifsIcon from '../assets/notificationsIcon.png';
 import reelsIcon from '../assets/reelsIcon.png';
 import searchIcon from '../assets/searchIcon.png';
 import shopIcon from '../assets/shopIcon.png';
-import LeftSidebarPopup from './leftSidebarPopup';
 import '../styles.css';
+import LeftSidebarPopup from './leftSidebarPopup';
 
 function LeftSidebar({authenticatedUsername}) {
 
