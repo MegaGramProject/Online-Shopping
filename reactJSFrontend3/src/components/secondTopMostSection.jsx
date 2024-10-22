@@ -34,15 +34,15 @@ function SecondTopMostSection({isLeftSidebarDisplayed, notifyParentToToggleLeftS
     }
 
     function takeUserToGetPremiumPage() {
-        window.location.href = "http://localhost:8024/shopGetPremium";
+        window.location.href = "http://localhost:8024/shopingGetPremium";
     }
 
     function takeUserToMegagramShopGiftCardsPage() {
-        window.location.href = "http://localhost:8024/megaShopGiftCards";
+        window.location.href = "http://localhost:8024/shoppingGiftCards";
     }
 
     function takeUserToGiftCardBalancePage() {
-        window.location.href = "http://localhost:8024/megaShopGiftCardBalance";
+        window.location.href = "http://localhost:8024/shoppingGiftCardBalance";
     }
 
 

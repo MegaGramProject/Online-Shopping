@@ -32,7 +32,7 @@ function SingleSearchResult({id, result, category}) {
     <>
         {!isDeleted &&
         <div className="hoverableElement" onClick={takeUserToPageForResult} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.2em 0.4em',
-        fontSize: '0.91em'}}>
+        fontSize: '0.91em', zIndex: '10'}}>
             <p><b>{result}</b> {category!=="" &&
                 <span style={{color: 'gray'}}>in <span style={{fontFamily: 'Roboto', fontSize: '1.2em'}}>{category}</span></span>
             }
