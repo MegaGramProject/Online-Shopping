@@ -4,6 +4,9 @@ import gamingStoreAdPoster from '../assets/gamingStoreAdPoster.jpg';
 import kitchenAdPoster from '../assets/kitchenAdPoster.jpg';
 import leftArrow from '../assets/leftArrow.png';
 import toysAdPoster from '../assets/toysAdPoster.jpg';
+import ProductPromotionSquare from './productPromotionSquare';
+
+
 
 function AdvertisementPostersSection() {
     const [listOfPosterImages, setListOfPosterImages] = useState([
@@ -16,7 +19,7 @@ function AdvertisementPostersSection() {
         "http://localhost:8024/shopElectronics/gaming",
         "http://localhost:8024/shopBooks",
         "http://localhost:8024/shopHome&Kitchen/kitchen?maxPrice=50",
-        "http://localhost:8024/shopToysForKids/toys?maxWeeks=1"
+        "http://localhost:8024/shopToysForKids?maxWeeks=1"
     ]);
     const [currPosterIdx, setCurrPosterIdx] = useState(0);
 
@@ -63,7 +66,7 @@ function AdvertisementPostersSection() {
 
     return (
         <>
-            <div style={{width: '88%', height: '32em', position: 'relative'}}>
+            <div style={{width: '70%', height: '32em', position: 'relative'}}>
                 <img onClick={takeUserToWebsite} src={listOfPosterImages[currPosterIdx]} style={{position: 'absolute', top: '0%', left: '0%', height: '100%', width: '100%', cursor: 'pointer'}}></img>
                 
                 <img onClick={goToPreviousPoster} src={leftArrow} style={{height: '3em', width: '3em', objectFit: 'contain', position: 'absolute',
@@ -72,11 +75,16 @@ function AdvertisementPostersSection() {
                 <img onClick={goToNextPoster} src={leftArrow} style={{height: '3em', width: '3em', objectFit: 'contain', position: 'absolute',
                 top: '16%', left: '93%', transform: 'scaleX(-1)', cursor: 'pointer'}}></img>
                 
-                <div style={{position: 'absolute', top: '43%', left: '2.5%', backgroundColor: 'pink', display: 'flex', alignItems: 'center',
-                justifyContent: 'space-evenly', gap: '1em', width: '95%', height: '65%', color: 'white'}}>
-                        <p>ad</p>
-                        <p>ad</p>
-                        <p>ad</p>
+                <div style={{position: 'absolute', top: '43%', left: '-2%', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', gap: '1em', width: '105%', height: '65%'}}>
+
+                        <ProductPromotionSquare productCategory="Gaming accessories"></ProductPromotionSquare>
+
+                        <ProductPromotionSquare productCategory="Shop for your home essentials"></ProductPromotionSquare>
+
+                        <ProductPromotionSquare productCategory="Shop deals in Fashion"></ProductPromotionSquare>
+
+                        <ProductPromotionSquare productCategory="New home arrivals under $50"></ProductPromotionSquare>
                 </div>
             </div>
         </>

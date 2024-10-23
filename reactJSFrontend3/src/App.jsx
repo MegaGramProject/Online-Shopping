@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import LeftSidebar from './components/leftSidebar';
-import TopMostSection from './components/topMostSection';
-import SecondTopMostSection from './components/secondTopMostSection';
-import ChooseYourLocationPopup from './components/choseYourLocationPopup';
 import blackScreen from './assets/blackScreen.png';
 import AddressesPopup from './components/addressesPopup';
 import AdvertisementPostersSection from './components/advertisementPostersSection';
+import ChooseYourLocationPopup from './components/choseYourLocationPopup';
+import LeftSidebar from './components/leftSidebar';
+import SecondRowOfProductPromotionSquares from './components/secondRowOfProductPromotionSquares';
+import SecondTopMostSection from './components/secondTopMostSection';
+import TopMostSection from './components/topMostSection';
 
 
 function App({params}) {
@@ -187,13 +188,15 @@ function App({params}) {
             showChooseYourLocationPopup={showChooseYourLocationPopup} deliveryArea={deliveryArea}></TopMostSection>
             <SecondTopMostSection isLeftSidebarDisplayed={displayLeftSidebar} notifyParentToToggleLeftSidebar={toggleLeftSidebar} toggleDarkScreen={toggleDarkScreen}></SecondTopMostSection>
 
-            <div style={{width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+            <div style={{height: '150%', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative'}}>
                 <AdvertisementPostersSection></AdvertisementPostersSection>
+                <SecondRowOfProductPromotionSquares></SecondRowOfProductPromotionSquares>
+                {displayDarkScreen &&
+                    <img src={blackScreen} style={{position: 'absolute', top: '0%', left: '0%',
+                    height: '100%', width: '100%', pointerEvents: 'none', opacity: '0.7'}}></img>
+                }
             </div>
 
-            {displayDarkScreen &&
-            <img src={blackScreen} style={{height: '100%', width: '100%', pointerEvents: 'none', opacity: '0.7'}}></img>
-            }
         </div>
 
 
