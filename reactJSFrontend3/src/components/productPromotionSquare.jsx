@@ -22,6 +22,22 @@ import dining from '../assets/dining.jpg';
 import homeStuff from '../assets/homeStuff.jpg';
 import kitchenware from '../assets/kitchenware.jpg';
 import food from '../assets/food.jpg';
+import rideOn from '../assets/rideOn.jpg';
+import buildingToy from '../assets/buildingToy.jpg';
+import doll from '../assets/doll.jpg';
+import inflatablePool from '../assets/inflatablePool.jpg';
+import backpack from '../assets/backpack.jpg';
+import travelBag from '../assets/travelBag.jpg';
+import travelAccessories from '../assets/travelAccessories.jpg';
+import handBag from '../assets/handBag.jpg';
+import mensWatch from '../assets/mensWatch.jpg';
+import womensWatch from '../assets/womensWatch.jpg';
+import girlsWatch from '../assets/girlsWatch.jpg';
+import boysWatch from '../assets/boysWatch.jpg';
+import cycling from '../assets/cycling.jpg';
+import running from '../assets/running.jpg';
+import exercisingAndFitness from '../assets/exercise&Fitness.jpg';
+import golf from '../assets/golf.jpg';
 
 
 function ProductPromotionSquare({productCategory})  {
@@ -42,7 +58,7 @@ function ProductPromotionSquare({productCategory})  {
             names: ['Jeans under $50', 'Tops under $25', 'Dresses under $30', 'Shoes under $50'],
             images: [jeans, tops, dresses, shoes],
             imageLinks: ["http://localhost:8024/shopFashion/jeans?maxPrice=50", "http://localhost:8024/shopFashion/tops?maxPrice=25", "http://localhost:8024/shopFashion/dresses?maxPrice=30", "http://localhost:8024/shopFashion/shoes?maxPrice=50"],
-            mainLink: ["See all deals", "http://localhost:8024/shopFashionDeals"]
+            mainLink: ["See all deals", "http://localhost:8024/shopFashion?discount=true"]
         },
         'New home arrivals under $50': {
             names: ['Kitchen & Dining', 'Home Improvement', 'Décor', 'Bedding & bath'],
@@ -61,6 +77,30 @@ function ProductPromotionSquare({productCategory})  {
             images: [dining, homeStuff, kitchenware, food],
             imageLinks: ["http://localhost:8024/shopHome&Kitchen/dining", "http://localhost:8024/shopHome&Kitchen/home", "http://localhost:8024/shopHome&Kitchen/kitchenware", "http://localhost:8024/shopFood"],
             mainLink: ['See more', "http://localhost:8024/shopAllItems/healthAndBeauty"]
+        },
+        'Toys for the Youngsters': {
+            names: ['Ride on\'s', 'Building & construction', 'Dolls & Doll houses', 'Swimming pools'],
+            images: [rideOn, buildingToy, doll, inflatablePool],
+            imageLinks: ["http://localhost:8024/shopToysForKids/ride%20ons", "http://localhost:8024/shopToysForKids/buildable%20toys", "http://localhost:8024/shopToysForKids/dolls%20&%20doll%20houses", "http://localhost:8024/shopToysForKids/swimming%20pools"],
+            mainLink: ['See all', "http://localhost:8024/shopToysForKids"]
+        },
+        'Most-loved travel essentials': {
+            names: ['Backpacks', 'Suitcases', 'Accessories', 'Handbags'],
+            images: [backpack, travelBag, travelAccessories, handBag],
+            imageLinks: ["http://localhost:8024/shopAllItems/backpacks", "http://localhost:8024/shopAllItems/travel%20bags", "http://localhost:8024/shopAllItems/travel%20accessories", "http://localhost:8024/shopAllItems/handbags"],
+            mainLink: ['Discover more', "http://localhost:8024/shopAllItems/travel%20essentials"]
+        },
+        'Most-loved watches': {
+            names: ['Women', 'Men', 'Girls', 'Boys'],
+            images: [womensWatch, mensWatch, girlsWatch, boysWatch],
+            imageLinks: ["http://localhost:8024/shopAllItems/womens%20watch", "http://localhost:8024/shopAllItems/mens%20watch", "http://localhost:8024/shopAllItems/girls%20watch", "http://localhost:8024/shopAllItems/boys%20watch"],
+            mainLink: ['Discover more', 'http://localhost:8024/shopAllItems/watches']
+        },
+        'Explore more in Sports': {
+            names: ['Cycling', 'Running', 'Exercising & Fitness', 'Golf'],
+            images: [cycling, running, exercisingAndFitness, golf],
+            imageLinks: ["http://localhost:8024/shopSports&Outdoors/cycling", "http://localhost:8024/shopSports&Outdoors/running", "http://localhost:8024/shopSports&Outdoors/exercising%20&%20fitness", "http://localhost:8024/shopSports&Outdoors/golf"],
+            mainLink: ["Explore more", "http://localhost:8024/shopSports&Outdoors"]
         }
     };
 

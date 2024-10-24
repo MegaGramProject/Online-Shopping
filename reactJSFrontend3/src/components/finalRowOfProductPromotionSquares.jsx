@@ -1,10 +1,10 @@
 import ProductPromotionSquare from './productPromotionSquare';
 import  ProductPromotionSquare2 from './productPromotionSquare2';
 
-function ThirdRowOfProductPromotionSquares() {
+function FinalRowOfProductPromotionSquares() {
     return (
         <>
-            <div style={{width: '70%', height: '32em', position: 'relative', marginTop: '0em'}}>
+            <div style={{width: '70%', height: '32em', position: 'relative', marginTop: '-7em'}}>
     
                     <div style={{position: 'absolute', top: '10%', left: '-2%', display: 'flex', alignItems: 'center',
                     justifyContent: 'center', gap: '1em', width: '105%', height: '65%'}}>
@@ -20,4 +20,4 @@ function ThirdRowOfProductPromotionSquares() {
         </>
     )
 }
-export default ThirdRowOfProductPromotionSquares;
+export default FinalRowOfProductPromotionSquares;

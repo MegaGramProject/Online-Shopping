@@ -3,10 +3,15 @@ import blackScreen from './assets/blackScreen.png';
 import AddressesPopup from './components/addressesPopup';
 import AdvertisementPostersSection from './components/advertisementPostersSection';
 import ChooseYourLocationPopup from './components/choseYourLocationPopup';
+import FinalRowOfProductPromotionSquares from './components/finalRowOfProductPromotionSquares';
 import LeftSidebar from './components/leftSidebar';
+import ProductPromotionRectangle from './components/productPromotionRectangle';
 import SecondRowOfProductPromotionSquares from './components/secondRowOfProductPromotionSquares';
 import SecondTopMostSection from './components/secondTopMostSection';
+import ThirdRowOfProductPromotionSquares from './components/thirdRowOfProductPromotionSquares';
 import TopMostSection from './components/topMostSection';
+import SimilarCustomerProductsSection from './components/similarCustomerProductsSection';
+
 
 
 function App({params}) {
@@ -16,6 +21,7 @@ function App({params}) {
     const [displayDarkScreen2, setDisplayDarkScreen2] = useState(false);
     const [displayChooseYourLocationPopup, setDisplayChooseYourLocationPopup] = useState(false);
     const [deliveryArea, setDeliveryArea] = useState("Verona, 53593");
+    const [deliveryAreaCountry, setDeliveryAreaCountry] = useState("the USA");
     const [displayAddressesPopup, setDisplayAddressesPopup] = useState(false);
     const [listOfAddresses, setListOfAddresses] = useState([
         [0, "231 Clay Court Zeeland, MI 53593", true],
@@ -149,7 +155,8 @@ function App({params}) {
             setDeliveryArea(newLocationInfo[0]);
         }
         else if(newLocationInfo[1]!==null) {
-            setDeliveryArea(newLocationInfo[1])
+            setDeliveryArea(newLocationInfo[1]);
+            setDeliveryAreaCountry(newLocationInfo[1]);
         }
         setDisplayChooseYourLocationPopup(false);
         setDisplayDarkScreen2(false);
@@ -188,9 +195,28 @@ function App({params}) {
             showChooseYourLocationPopup={showChooseYourLocationPopup} deliveryArea={deliveryArea}></TopMostSection>
             <SecondTopMostSection isLeftSidebarDisplayed={displayLeftSidebar} notifyParentToToggleLeftSidebar={toggleLeftSidebar} toggleDarkScreen={toggleDarkScreen}></SecondTopMostSection>
 
-            <div style={{height: '150%', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative'}}>
+            <div style={{height: '550%', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative'}}>
                 <AdvertisementPostersSection></AdvertisementPostersSection>
                 <SecondRowOfProductPromotionSquares></SecondRowOfProductPromotionSquares>
+                <ProductPromotionRectangle title="International Bestsellers"></ProductPromotionRectangle>
+                <div style={{height: '7em'}}>
+                    {/*Empty div on purpose*/}
+                </div>
+                <ProductPromotionRectangle title={`Bestsellers in ${deliveryAreaCountry}`}></ProductPromotionRectangle>
+                <ThirdRowOfProductPromotionSquares></ThirdRowOfProductPromotionSquares>
+                <FinalRowOfProductPromotionSquares></FinalRowOfProductPromotionSquares>
+                <ProductPromotionRectangle title="Bestsellers in Sports & Outdoors"></ProductPromotionRectangle>
+                <div style={{height: '7em'}}>
+                    {/*Empty div on purpose*/}
+                </div>
+                <ProductPromotionRectangle title="Bestsellers in Books"></ProductPromotionRectangle>
+                <div style={{height: '7em'}}>
+                    {/*Empty div on purpose*/}
+                </div>
+                <ProductPromotionRectangle title="Bestsellers in Food"></ProductPromotionRectangle>
+
+                <SimilarCustomerProductsSection></SimilarCustomerProductsSection>
+
                 {displayDarkScreen &&
                     <img src={blackScreen} style={{position: 'absolute', top: '0%', left: '0%',
                     height: '100%', width: '100%', pointerEvents: 'none', opacity: '0.7'}}></img>
