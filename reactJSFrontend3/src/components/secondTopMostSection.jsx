@@ -34,7 +34,7 @@ function SecondTopMostSection({isLeftSidebarDisplayed, notifyParentToToggleLeftS
     }
 
     function takeUserToGetPremiumPage() {
-        window.location.href = "http://localhost:8024/shopingGetPremium";
+        window.location.href = "http://localhost:8024/shoppingGetPremium";
     }
 
     function takeUserToMegagramShopGiftCardsPage() {
@@ -48,7 +48,7 @@ function SecondTopMostSection({isLeftSidebarDisplayed, notifyParentToToggleLeftS
 
     return (
     <>
-        <div style={{display: 'flex', alignItems: 'center', justifyContent:'space-between', width: '98.35%', backgroundColor: '#2f3a4a', padding: '0.5em 1em', fontSize: '0.9em'}}>
+        <div style={{display: 'flex', alignItems: 'center', justifyContent:'space-between', width: '100%', backgroundColor: '#2f3a4a', padding: '0.5em 0.5em', fontSize: '0.9em'}}>
 
             <div onClick={notifyParentToToggleLeftSidebar} onMouseEnter={toggleIsHoveringOnAllDiv} onMouseLeave={toggleIsHoveringOnAllDiv} style={{display: 'flex', alignItems: 'center',
             borderStyle: isHoveringOnAllDiv ? 'solid' : 'none', borderColor: 'white', cursor: 'pointer', padding: '0.2em 0.4em', gap: '0.4em'}}>

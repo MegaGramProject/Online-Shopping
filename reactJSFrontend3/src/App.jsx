@@ -4,13 +4,14 @@ import AddressesPopup from './components/addressesPopup';
 import AdvertisementPostersSection from './components/advertisementPostersSection';
 import ChooseYourLocationPopup from './components/choseYourLocationPopup';
 import FinalRowOfProductPromotionSquares from './components/finalRowOfProductPromotionSquares';
+import Footer from './components/footer';
 import LeftSidebar from './components/leftSidebar';
 import ProductPromotionRectangle from './components/productPromotionRectangle';
 import SecondRowOfProductPromotionSquares from './components/secondRowOfProductPromotionSquares';
 import SecondTopMostSection from './components/secondTopMostSection';
+import SimilarCustomerProductsSection from './components/similarCustomerProductsSection';
 import ThirdRowOfProductPromotionSquares from './components/thirdRowOfProductPromotionSquares';
 import TopMostSection from './components/topMostSection';
-import SimilarCustomerProductsSection from './components/similarCustomerProductsSection';
 
 
 
@@ -21,11 +22,11 @@ function App({params}) {
     const [displayDarkScreen2, setDisplayDarkScreen2] = useState(false);
     const [displayChooseYourLocationPopup, setDisplayChooseYourLocationPopup] = useState(false);
     const [deliveryArea, setDeliveryArea] = useState("Verona, 53593");
-    const [deliveryAreaCountry, setDeliveryAreaCountry] = useState("the USA");
+    const [deliveryAreaCountry, setDeliveryAreaCountry] = useState("the United States");
     const [displayAddressesPopup, setDisplayAddressesPopup] = useState(false);
     const [listOfAddresses, setListOfAddresses] = useState([
-        [0, "231 Clay Court Zeeland, MI 53593", true],
-        [1, "232 Clay Court Zeeland, MI 63101", false],
+        [0, "231 Clay Court\nApt 306\nZeeland, MI 53593\nUSA", true, "Zeeland, 53593", "the United States"],
+        [1, "231 Clay Court\nZeeland, MI 53593\nUSA", false, "Zeeland, 53593", "the United States"]
     ]);
 
     async function authenticateUser(username) {
@@ -79,31 +80,6 @@ function App({params}) {
                     return;
                 }
             }
-            else if(response2Data === "Invalid refresh token for username") {
-                const response4 = await fetch('http://localhost:8003/cookies/updateRefreshToken', options);
-                if(!response4.ok) {
-                    throw new Error('Network response not ok');
-                }
-                const response4Data = await response4.text();
-                if(response4Data === "Cookie updated successfully"){
-                    const response5 = await fetch('http://localhost:8003/cookies/authenticateUser/'+username, {
-                        method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        credentials: 'include'
-                    });
-                    if(!response5.ok) {
-                        throw new Error('Network response not ok');
-                    }
-                    const isAuth = await response.json();
-                    if(isAuth) {
-                        localStorage.setItem('authenticatedUsername', username);
-                        setAuthenticatedUsername(username);
-                        return;
-                    }
-                }
-            }
 
         }
         window.location.href = "http://location:8000/login";
@@ -153,6 +129,7 @@ function App({params}) {
     function closeChooseYourLocationPopup(newLocationInfo) {
         if(newLocationInfo[0]!==null) {
             setDeliveryArea(newLocationInfo[0]);
+            setDeliveryAreaCountry(newLocationInfo[1]);
         }
         else if(newLocationInfo[1]!==null) {
             setDeliveryArea(newLocationInfo[1]);
@@ -168,19 +145,28 @@ function App({params}) {
     }
 
     function closeAddressesPopup(newAddressInfo) {
-        if(newAddressInfo==null) {
+        if(newAddressInfo[0]==null) {
             setDisplayAddressesPopup(false);
             setDisplayChooseYourLocationPopup(true);
         }
         else {
             setDisplayAddressesPopup(false);
             setDisplayDarkScreen2(false);
-            setDeliveryArea(newAddressInfo)
+            setDeliveryArea(newAddressInfo[0]);
+            setDeliveryAreaCountry(newAddressInfo[1]);
         }
     }
 
     function updateListOfAddresses(newListOfAddresses) {
         setListOfAddresses(newListOfAddresses);
+    }
+
+    function updateDeliveryAreaCountryFromFooter(newCountry) {
+        if(newCountry===deliveryAreaCountry) {
+            return;
+        }
+        setDeliveryAreaCountry(newCountry);
+        setDeliveryArea(newCountry);
     }
 
     return (
@@ -196,26 +182,28 @@ function App({params}) {
             <SecondTopMostSection isLeftSidebarDisplayed={displayLeftSidebar} notifyParentToToggleLeftSidebar={toggleLeftSidebar} toggleDarkScreen={toggleDarkScreen}></SecondTopMostSection>
 
             <div style={{height: '550%', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative'}}>
-                <AdvertisementPostersSection></AdvertisementPostersSection>
-                <SecondRowOfProductPromotionSquares></SecondRowOfProductPromotionSquares>
-                <ProductPromotionRectangle title="International Bestsellers"></ProductPromotionRectangle>
+                <AdvertisementPostersSection deliveryAreaCountry={deliveryAreaCountry}></AdvertisementPostersSection>
+                <SecondRowOfProductPromotionSquares deliveryAreaCountry={deliveryAreaCountry}></SecondRowOfProductPromotionSquares>
+                <ProductPromotionRectangle title="International Bestsellers Available for Your Location"></ProductPromotionRectangle>
                 <div style={{height: '7em'}}>
                     {/*Empty div on purpose*/}
                 </div>
-                <ProductPromotionRectangle title={`Bestsellers in ${deliveryAreaCountry}`}></ProductPromotionRectangle>
+                <ProductPromotionRectangle title={`Bestsellers in ${deliveryAreaCountry} Available for Your Location`}></ProductPromotionRectangle>
                 <ThirdRowOfProductPromotionSquares></ThirdRowOfProductPromotionSquares>
                 <FinalRowOfProductPromotionSquares></FinalRowOfProductPromotionSquares>
-                <ProductPromotionRectangle title="Bestsellers in Sports & Outdoors"></ProductPromotionRectangle>
+                <ProductPromotionRectangle title={`Bestsellers in Sports & Outdoors in ${deliveryAreaCountry} Available for Your Location`}></ProductPromotionRectangle>
                 <div style={{height: '7em'}}>
                     {/*Empty div on purpose*/}
                 </div>
-                <ProductPromotionRectangle title="Bestsellers in Books"></ProductPromotionRectangle>
+                <ProductPromotionRectangle title={`Bestsellers in Books in ${deliveryAreaCountry} Available for Your Location`}></ProductPromotionRectangle>
                 <div style={{height: '7em'}}>
                     {/*Empty div on purpose*/}
                 </div>
-                <ProductPromotionRectangle title="Bestsellers in Food"></ProductPromotionRectangle>
+                <ProductPromotionRectangle title={`Bestsellers in Food in ${deliveryAreaCountry} Available for Your Location`}></ProductPromotionRectangle>
 
-                <SimilarCustomerProductsSection></SimilarCustomerProductsSection>
+                <SimilarCustomerProductsSection deliveryAreaCountry={deliveryAreaCountry}></SimilarCustomerProductsSection>
+
+                <Footer notifyParentToUpdateDeliveryAreaCountry={updateDeliveryAreaCountryFromFooter} deliveryAreaCountry={deliveryAreaCountry}></Footer>
 
                 {displayDarkScreen &&
                     <img src={blackScreen} style={{position: 'absolute', top: '0%', left: '0%',
@@ -235,7 +223,7 @@ function App({params}) {
         }
 
         {displayDarkScreen2 &&
-            <img src={blackScreen} style={{position: 'absolute', top: '0%', left: '0%', height: '100%', width: '100%', pointerEvents: 'none', opacity: '0.7'}}></img>
+            <img src={blackScreen} style={{position: 'absolute', top: '0%', left: '0%', height: '560%', width: '100%', pointerEvents: 'none', opacity: '0.7'}}></img>
         }
 
 

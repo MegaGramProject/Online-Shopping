@@ -25,7 +25,7 @@ function ChooseYourLocationPopup({closePopup, showAddressesPopup}) {
                 const data = await response.json();
                 const placeName = data.places[0]['place name'];
                 setDisplayInvalidZipCodeMessage(false);
-                closePopup([`${placeName}, ${zipcodeTextareaValue}`, null]);
+                closePopup([`${placeName}, ${zipcodeTextareaValue}`, 'the United States']);
             }
         }
         else {
@@ -52,7 +52,7 @@ function ChooseYourLocationPopup({closePopup, showAddressesPopup}) {
             navigator.geolocation.getCurrentPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
-                closePopup([`${latitude.toFixed(2)}°N, ${longitude.toFixed(2)}°E`, null]); //this is a temporary solution; later, convert to zip-code using api
+                closePopup([`${latitude.toFixed(2)}°N, ${longitude.toFixed(2)}°E`, "the United States"]); //this is a temporary solution!
             },
             (error) => {
                 console.error(`Error: ${error.message}`);

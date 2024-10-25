@@ -110,10 +110,10 @@ function TopMostSection({authenticatedUsername, showDarkScreen, hideDarkScreen, 
 
     return (
     <>
-        <div style={{display: "flex", alignItems: "center", width: "98.2%", backgroundColor: "#020b1f", paddingTop: "0.2em", paddingLeft: "2em", paddingBottom: "0.2em",
+        <div id="topmostSection" style={{display: "flex", alignItems: "center", width: "100%", backgroundColor: "#020b1f", paddingTop: "0.2em", padding: '0.5em 0.5em',
         position: 'relative'}}>
             
-            <div style={{display: "flex", flexDirection: "column", alignItems: "start", paddingTop: '0.5em'}}>
+            <div style={{display: "flex", flexDirection: "column", alignItems: "start", paddingTop: '0.5em', marginLeft:'1em'}}>
                 <b style={{fontFamily: "Billabong", color: "white", fontSize: "1.8em"}}>Megagram</b>
                 <img src={smileyArrow} style={{height: "2.7em", width: "9.2em", pointerEvents: "none", marginLeft: "-1.5em", marginTop: "-0.4em"}}></img>
             </div>
@@ -142,11 +142,11 @@ function TopMostSection({authenticatedUsername, showDarkScreen, hideDarkScreen, 
                     <option value="Sports & Outdoors">Sports & Outdoors</option>
                 </select>
                 <div ref={textareaDivRef}  style={{display: 'flex', flexDirection: 'column', width: '95%'}}>
-                    <textarea onChange={handleTextareaChange} placeholder="Search Megagram Shop" style={{fontFamily: "Arial", paddingTop: "1em", paddingLeft: "1em", fontSize: "1em",
+                    <textarea value={textareaValue} onChange={handleTextareaChange} placeholder="Search Megagram Shop" style={{fontFamily: "Arial", paddingTop: "1em", paddingLeft: "1em", fontSize: "1em",
                     resize: 'none'}}></textarea>
                     {displaySearchResults && <SearchResults authenticatedUsername={authenticatedUsername} search={textareaValue}></SearchResults>}
                 </div>
-                <img onClick={submitSearch} src={orangeSearchButton} style={{height: "3.6em", width: "3.2em", cursor: 'pointer'}}></img>
+                <img onClick={submitSearch} src={orangeSearchButton} style={{height: "3.6em", width: "3.5em", cursor: 'pointer'}}></img>
             </div>
 
             <div onMouseEnter={toggleIsHoveringOnListsDiv} onMouseLeave={toggleIsHoveringOnListsDiv} style={{display: 'flex', alignItems: 'start', cursor: 'pointer', borderStyle: isHoveringOnListsDiv ? 'solid' : 'none',

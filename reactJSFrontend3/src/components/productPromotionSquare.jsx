@@ -38,9 +38,12 @@ import cycling from '../assets/cycling.jpg';
 import running from '../assets/running.jpg';
 import exercisingAndFitness from '../assets/exercise&Fitness.jpg';
 import golf from '../assets/golf.jpg';
+import { useState, useEffect } from 'react';
 
 
-function ProductPromotionSquare({productCategory})  {
+function ProductPromotionSquare({productCategory, deliveryAreaCountry})  {
+    const [textToUseForTitle, setTextToUseForTitle] = useState("");
+
     const productInfo = {
         'Gaming accessories': {
             names: ['Headsets', 'Keyboards', 'Computer Mice', 'Chairs'],
@@ -55,7 +58,7 @@ function ProductPromotionSquare({productCategory})  {
             mainLink: ["Discover more in Home", "http://localhost:8024/shopHome&Kitchen"]
         },
         'Shop deals in Fashion': {
-            names: ['Jeans under $50', 'Tops under $25', 'Dresses under $30', 'Shoes under $50'],
+            names: ['Jeans', 'Tops', 'Dresses', 'Shoes'],
             images: [jeans, tops, dresses, shoes],
             imageLinks: ["http://localhost:8024/shopFashion/jeans?maxPrice=50", "http://localhost:8024/shopFashion/tops?maxPrice=25", "http://localhost:8024/shopFashion/dresses?maxPrice=30", "http://localhost:8024/shopFashion/shoes?maxPrice=50"],
             mainLink: ["See all deals", "http://localhost:8024/shopFashion?discount=true"]
@@ -104,11 +107,57 @@ function ProductPromotionSquare({productCategory})  {
         }
     };
 
+    const countryCurrencyMap = {
+        "the United States": "$", // USD - US Dollar
+        "Australia": "A$",     // AUD - Australian Dollar
+        "Canada": "C$",        // CAD - Canadian Dollar
+        "China": "¥",          // CNY - Chinese Yuan
+        "Germany": "€",        // EUR - Euro
+        "India": "₹",          // INR - Indian Rupee
+        "Japan": "¥",          // JPY - Japanese Yen
+        "Mexico": "MX$",         // MXN - Mexican Peso
+        "United Kingdom": "£"  // GBP - British Pound
+    };
+
+    const currencyToDollarMap = {
+        "$": 1,            // USD - United States
+        "A$": 1.5063,        // AUD - Australian Dollar
+        "C$": 1.3855,        // CAD - Canadian Dollar
+        "¥": 151.88,       // JPY - Japanese Yen (for Japan)
+        "₹": 84.079,        // INR - Indian Rupee (for India)
+        "€": 0.9240,         // EUR - Euro (for Germany)
+        "¥ (CNY)": 7.1198,   // CNY - Chinese Yuan (for China)
+        "MX$": 19.86,      // MXN - Mexican Peso (for Mexico)
+        "£": 0.7709          // GBP - British Pound (for United Kingdom)
+    };
+
+    useEffect(() => {
+        if(productCategory!=='New home arrivals under $50') {
+            setTextToUseForTitle(productCategory);
+        }
+    }, [productCategory]);
+
+    useEffect(() => {
+        if(productCategory.startsWith('New home arrivals under '))  {
+            updateTitleTextToUse();
+        }
+    }, [deliveryAreaCountry]);
+
+    function updateTitleTextToUse() {
+        let currCurrency = "$";
+        let newCurrency = countryCurrencyMap[deliveryAreaCountry];
+        
+        let price = 50;
+        price = price/currencyToDollarMap[currCurrency]; //convert from currCurrency to USD
+        price = price*currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
+        setTextToUseForTitle(`New home arrivals under ${newCurrency}${price.toFixed(2)}`);
+    }
+
     return (
         <>
         <div style={{width: '25em', height: '100%', backgroundColor: 'white', padding: '1em 1em', display: 'flex',
         flexDirection: 'column'}}>
-            <b>{productCategory}</b>
+            <b>{textToUseForTitle}</b>
             <br></br>
             <div style={{display: 'flex', alignItems: 'center', gap: '1.5em'}}>
                 <div style={{display: 'flex', flexDirection: 'column'}}>

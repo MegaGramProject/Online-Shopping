@@ -1,7 +1,7 @@
 import ProductPromotionSquare from './productPromotionSquare';
 import  ProductPromotionSquare2 from './productPromotionSquare2';
 
-function SecondRowOfProductPromotionSquares() {
+function SecondRowOfProductPromotionSquares({deliveryAreaCountry}) {
     return (
         <>
             <div style={{width: '70%', height: '32em', position: 'relative', marginTop: '4em'}}>
@@ -12,9 +12,9 @@ function SecondRowOfProductPromotionSquares() {
 
                         <ProductPromotionSquare productCategory="Refresh your space"></ProductPromotionSquare>
 
-                        <ProductPromotionSquare2 title="Get your game on"></ProductPromotionSquare2>
+                        <ProductPromotionSquare2 title="Get your game on" deliveryAreaCountry={deliveryAreaCountry}></ProductPromotionSquare2>
 
-                        <ProductPromotionSquare2 title="Toys under $25"></ProductPromotionSquare2>
+                        <ProductPromotionSquare2 title="Toys under $25" deliveryAreaCountry={deliveryAreaCountry}></ProductPromotionSquare2>
                     </div>
             </div>
         </>

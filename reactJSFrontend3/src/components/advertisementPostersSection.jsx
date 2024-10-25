@@ -8,7 +8,7 @@ import ProductPromotionSquare from './productPromotionSquare';
 
 
 
-function AdvertisementPostersSection() {
+function AdvertisementPostersSection({deliveryAreaCountry}) {
     const [listOfPosterImages, setListOfPosterImages] = useState([
         gamingStoreAdPoster,
         booksAdPoster,
@@ -78,13 +78,13 @@ function AdvertisementPostersSection() {
                 <div style={{position: 'absolute', top: '43%', left: '-2%', display: 'flex', alignItems: 'center',
                 justifyContent: 'center', gap: '1em', width: '105%', height: '65%'}}>
 
-                        <ProductPromotionSquare productCategory="Gaming accessories"></ProductPromotionSquare>
+                        <ProductPromotionSquare productCategory="Gaming accessories" deliveryAreaCountry={deliveryAreaCountry}></ProductPromotionSquare>
 
-                        <ProductPromotionSquare productCategory="Shop for your home essentials"></ProductPromotionSquare>
+                        <ProductPromotionSquare productCategory="Shop for your home essentials" deliveryAreaCountry={deliveryAreaCountry}></ProductPromotionSquare>
 
-                        <ProductPromotionSquare productCategory="Shop deals in Fashion"></ProductPromotionSquare>
+                        <ProductPromotionSquare productCategory="Shop deals in Fashion" deliveryAreaCountry={deliveryAreaCountry}></ProductPromotionSquare>
 
-                        <ProductPromotionSquare productCategory="New home arrivals under $50"></ProductPromotionSquare>
+                        <ProductPromotionSquare productCategory="New home arrivals under $50" deliveryAreaCountry={deliveryAreaCountry}></ProductPromotionSquare>
                 </div>
             </div>
         </>

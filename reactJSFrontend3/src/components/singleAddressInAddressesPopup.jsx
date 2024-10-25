@@ -20,8 +20,8 @@ notifyParentToDeleteAddress}) {
 
     return (
         <>
-            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5em 1em'}}>
-                    <p style={{maxWidth: '45%'}}>{address}</p>
+            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5em 1em', marginBottom: '-1em'}}>
+                    <p style={{ maxWidth: '85%', whiteSpace: 'pre-wrap' }}>{address}</p>
 
                     <div style={{display: 'flex', alignItems: 'center', gap: '0.5em'}}>
                         <img onClick={deleteAddress} src={trashCan} style={{height: '0.7em', width: '0.7em', cursor: 'pointer'}}></img>
@@ -32,7 +32,7 @@ notifyParentToDeleteAddress}) {
                             <button onClick={selectAddress} style={{color: 'white', backgroundColor: 'black', cursor: 'pointer', borderRadius: '1em', border: 'none', padding: '0.35em 0.8em'}}>Select</button>
                         }
                     </div>
-                </div>
+            </div>
         </>
     )
 }

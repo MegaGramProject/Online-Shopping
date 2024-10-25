@@ -50,3 +50,10 @@ select:focus {
 a:hover {
     color: green !important;
 }
+
+.linkInFooter {
+    color: white;
+}
+.linkInFooter:visited {
+    color: white !important;
+}

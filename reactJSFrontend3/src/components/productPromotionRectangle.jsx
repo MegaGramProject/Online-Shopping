@@ -58,7 +58,7 @@ function ProductPromotionRectangle({title}) {
         <>
             <div style={{display: 'flex', flexDirection: 'column', backgroundColor: 'white', width: '85em', height: '17.5em',
             padding: '0.1em 0.8em', marginTop: '-5em', position: 'relative'}}>
-                <h3>{title}</h3>
+                <h4>{title}</h4>
 
                 {isUserHoveringOnThis &&
                     <div onClick={goLeft} onMouseEnter={setIsUserHoveringOnThisToTrue} onMouseLeave={setIsUserHoveringOnThisToFalse} style={{position: 'absolute', top: '40%', left: '0%', backgroundColor: 'white', height: '4em', width: '2em', display: 'flex',
