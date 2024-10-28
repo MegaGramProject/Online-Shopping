@@ -7,7 +7,8 @@ import orangeSearchButton from '../assets/orangeSearchButton.png';
 import '../styles.css';
 import SearchResults from './searchResults';
 
-function TopMostSection({authenticatedUsername, showDarkScreen, hideDarkScreen, showChooseYourLocationPopup, deliveryArea}) {
+function TopMostSection({authenticatedUsername, showDarkScreen, hideDarkScreen,
+    showChooseYourLocationPopup, deliveryArea, hasPremium}) {
     const [isHoveringOnDeliverToDiv, setIsHoveringOnDeliverToDiv] = useState(false);
     const [isHoveringOnListsDiv, setIsHoveringOnListsDiv] = useState(false);
     const [isHoveringOnReturnsAndOrdersDiv, setIsHoveringOnReturnsAndOrdersDiv] = useState(false);
@@ -113,9 +114,17 @@ function TopMostSection({authenticatedUsername, showDarkScreen, hideDarkScreen, 
         <div id="topmostSection" style={{display: "flex", alignItems: "center", width: "100%", backgroundColor: "#020b1f", paddingTop: "0.2em", padding: '0.5em 0.5em',
         position: 'relative'}}>
             
-            <div style={{display: "flex", flexDirection: "column", alignItems: "start", paddingTop: '0.5em', marginLeft:'1em'}}>
+            <div style={{display: "flex", flexDirection: "column", alignItems: "start", paddingTop: '0.5em', marginLeft:'1em', marginRight: '2em'}}>
                 <b style={{fontFamily: "Billabong", color: "white", fontSize: "1.8em"}}>Megagram</b>
-                <img src={smileyArrow} style={{height: "2.7em", width: "9.2em", pointerEvents: "none", marginLeft: "-1.5em", marginTop: "-0.4em"}}></img>
+                {hasPremium &&
+                    <div style={{display: 'flex', alignItems: 'center', marginLeft: '-1em', marginTop: "-0.4em"}}>
+                        <img src={smileyArrow} style={{height: "2.7em", width: "5.8em", pointerEvents: "none"}}></img>
+                        <b style={{color: 'silver', fontSize: '0.8em', marginLeft: '-0.7em'}}>premium</b>
+                    </div>
+                }
+                {!hasPremium &&
+                    <img src={smileyArrow} style={{height: "2.7em", width: "9.2em", pointerEvents: "none", marginLeft: "-1.5em", marginTop: "-0.4em"}}></img>
+                }
             </div>
 
             <div onClick={showChooseYourLocationPopup} onMouseEnter={toggleIsHoveringOnDeliverToDiv} onMouseLeave={toggleIsHoveringOnDeliverToDiv} style={{display: "flex", flexDirection: "column", alignItems: "start", borderStyle: isHoveringOnDeliverToDiv ? "solid" : "none", borderColor: "white", padding: "0.1em 0.4em", cursor: "pointer",

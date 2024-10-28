@@ -40,7 +40,7 @@ function Footer({notifyParentToUpdateDeliveryAreaCountry, deliveryAreaCountry}) 
                 <a className="linkInFooter" href="http://localhost:8024/shoppingAccount" style={{fontSize: '0.85em', cursor: 'pointer', textDecoration:'none'}}>Your Shopping Account</a>
                 <a className="linkInFooter" href="http://localhost:8024/shoppingOrders" style={{fontSize: '0.85em', cursor: 'pointer', textDecoration:'none'}}>Your Orders</a>
                 <a className="linkInFooter" href="http://localhost:8024/shoppingGiftCards" style={{fontSize: '0.85em', cursor: 'pointer', textDecoration:'none'}}>Gift Cards</a>
-                <a className="linkInFooter" href="http://localhost:8024/shoppingGetPremium" style={{fontSize: '0.85em', cursor: 'pointer', textDecoration:'none'}}>Premium</a>
+                <a className="linkInFooter" href="http://localhost:8024/shoppingPremium" style={{fontSize: '0.85em', cursor: 'pointer', textDecoration:'none'}}>Premium</a>
                 <a className="linkInFooter" href="http://localhost:8024/shoppingReturnsAndReplacements" style={{fontSize: '0.85em', cursor: 'pointer', textDecoration:'none'}}>Returns & Replacements</a>
             </div>
         </div>

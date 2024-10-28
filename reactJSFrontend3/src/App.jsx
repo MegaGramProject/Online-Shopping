@@ -14,15 +14,16 @@ import ThirdRowOfProductPromotionSquares from './components/thirdRowOfProductPro
 import TopMostSection from './components/topMostSection';
 
 
-
+//this is for the main page of the shop. i.e http://localhost:8024/onlineShopping/{username}
 function App({params}) {
     const [authenticatedUsername, setAuthenticatedUsername] = useState("");
+    const [hasPremium, setHasPremium] = useState(false);
     const [displayLeftSidebar, setDisplayLeftSidebar] = useState(false);
     const [displayDarkScreen, setDisplayDarkScreen] = useState(false);
     const [displayDarkScreen2, setDisplayDarkScreen2] = useState(false);
     const [displayChooseYourLocationPopup, setDisplayChooseYourLocationPopup] = useState(false);
-    const [deliveryArea, setDeliveryArea] = useState("Verona, 53593");
-    const [deliveryAreaCountry, setDeliveryAreaCountry] = useState("the United States");
+    const [deliveryArea, setDeliveryArea] = useState("");
+    const [deliveryAreaCountry, setDeliveryAreaCountry] = useState("");
     const [displayAddressesPopup, setDisplayAddressesPopup] = useState(false);
     const [listOfAddresses, setListOfAddresses] = useState([
         [0, "231 Clay Court\nApt 306\nZeeland, MI 53593\nUSA", true, "Zeeland, 53593", "the United States"],
@@ -92,10 +93,12 @@ function App({params}) {
         async function startUserAuthentication() {
             if (params) {
                 await authenticateUser(params.username);
+                fetchRelevantDataAtStart(params.username);
             } else {
                 const storedUsername = localStorage.getItem('authenticatedUsername');
                 if (storedUsername !== null) {
                     await authenticateUser(storedUsername);
+                    fetchRelevantDataAtStart(storedUsername);
                 } else {
                     window.location.href = "http://localhost:8000/login";
                 }
@@ -104,6 +107,22 @@ function App({params}) {
 
     startUserAuthentication();
     }, []);
+
+    async function fetchRelevantDataAtStart(authUsername) {
+        const response = await fetch(`http://localhost:8022/getBasicUserInfo/${authUsername}`);
+        if(!response.ok) {
+            throw new Error('Network response not ok');
+        }
+        const basicUserInfo = await response.json();
+        if(basicUserInfo.townOrCity==="") {
+            setDeliveryArea(basicUserInfo.deliveryAreaCountry);
+        }
+        else {
+            setDeliveryArea(`${basicUserInfo.townOrCity}, ${basicUserInfo.zipCode}`);
+        }
+        setDeliveryAreaCountry(basicUserInfo.deliveryAreaCountry);
+        setHasPremium(basicUserInfo.hasPremium == 1 ? true : false);
+    }
 
     function toggleLeftSidebar() {
         setDisplayLeftSidebar(!displayLeftSidebar);
@@ -178,8 +197,9 @@ function App({params}) {
         <div style={{height: "100%", width: displayLeftSidebar ? "86%" : "100%", position: "absolute", top: "0%", left: displayLeftSidebar ? "14%" : "0%", display: "flex",
         flexDirection: "column"}}>
             <TopMostSection authenticatedUsername={authenticatedUsername} showDarkScreen={showDarkScreen} hideDarkScreen={hideDarkScreen}
-            showChooseYourLocationPopup={showChooseYourLocationPopup} deliveryArea={deliveryArea}></TopMostSection>
-            <SecondTopMostSection isLeftSidebarDisplayed={displayLeftSidebar} notifyParentToToggleLeftSidebar={toggleLeftSidebar} toggleDarkScreen={toggleDarkScreen}></SecondTopMostSection>
+            showChooseYourLocationPopup={showChooseYourLocationPopup} deliveryArea={deliveryArea} hasPremium={hasPremium}></TopMostSection>
+            <SecondTopMostSection isLeftSidebarDisplayed={displayLeftSidebar} notifyParentToToggleLeftSidebar={toggleLeftSidebar}
+            toggleDarkScreen={toggleDarkScreen} hasPremium={hasPremium}></SecondTopMostSection>
 
             <div style={{height: '550%', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative'}}>
                 <AdvertisementPostersSection deliveryAreaCountry={deliveryAreaCountry}></AdvertisementPostersSection>

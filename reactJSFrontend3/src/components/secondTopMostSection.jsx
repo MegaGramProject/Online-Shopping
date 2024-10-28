@@ -9,7 +9,8 @@ import '../styles.css';
 import SingleOptionInSecondTopMostSection from './singleOptionInSecondTopMostSection';
 
 
-function SecondTopMostSection({isLeftSidebarDisplayed, notifyParentToToggleLeftSidebar, toggleDarkScreen}) {
+function SecondTopMostSection({isLeftSidebarDisplayed, notifyParentToToggleLeftSidebar, toggleDarkScreen,
+    hasPremium}) {
 
     const [isHoveringOnAllDiv, setIsHoveringOnAllDiv] = useState(false);
     const [isHoveringOnPremiumPopup, setIsHoveringOnPremiumPopup] = useState(false);
@@ -22,6 +23,9 @@ function SecondTopMostSection({isLeftSidebarDisplayed, notifyParentToToggleLeftS
     }
 
     function togglePremiumPopup() {
+        if(hasPremium) {
+            return;
+        }
         setIsHoveringOnPremiumPopup(!isHoveringOnPremiumPopup);
         setDisplayPremiumPopup(!displayPremiumPopup);
         toggleDarkScreen();
@@ -34,7 +38,7 @@ function SecondTopMostSection({isLeftSidebarDisplayed, notifyParentToToggleLeftS
     }
 
     function takeUserToGetPremiumPage() {
-        window.location.href = "http://localhost:8024/shoppingGetPremium";
+        window.location.href = "http://localhost:8024/shoppingPremium";
     }
 
     function takeUserToMegagramShopGiftCardsPage() {
@@ -44,7 +48,6 @@ function SecondTopMostSection({isLeftSidebarDisplayed, notifyParentToToggleLeftS
     function takeUserToGiftCardBalancePage() {
         window.location.href = "http://localhost:8024/shoppingGiftCardBalance";
     }
-
 
     return (
     <>
@@ -59,11 +62,13 @@ function SecondTopMostSection({isLeftSidebarDisplayed, notifyParentToToggleLeftS
 
             <SingleOptionInSecondTopMostSection optionName="Best Sellers" optionURL="http://localhost:8024/shopBestSellers"></SingleOptionInSecondTopMostSection>
 
-            <div onMouseEnter={togglePremiumPopup} onMouseLeave={togglePremiumPopup} style={{position: 'relative'}}>
+            <div onClick={takeUserToGetPremiumPage} onMouseEnter={togglePremiumPopup} onMouseLeave={togglePremiumPopup} style={{position: 'relative'}}>
                 <div style={{borderStyle: isHoveringOnPremiumPopup ? 'solid' : 'none', borderColor: 'white', cursor: 'pointer', display: 'flex',
                 alignItems: 'start', gap: '0.4em', padding: '0.2em 0.4em'}}>
                         <b style={{color: 'white'}}>Premium</b>
-                        <img src={downwardTriangle} style={{height: "1em", width: "1em", pointerEvents: "none"}}></img>
+                        {!hasPremium &&
+                            <img src={downwardTriangle} style={{height: "1em", width: "1em", pointerEvents: "none"}}></img>
+                        }
                 </div>
             
                 {displayPremiumPopup &&
