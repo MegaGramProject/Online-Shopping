@@ -1,0 +1,45 @@
+type ShoppingCart {
+    username: String!
+    productId: String!
+    optionsChosen: String!
+}
+
+type ProductDeliveryTime {
+    productId: String!
+    factoryAddress: String!
+    timeFormulaForDelivery: String!
+    timeFormulaForPremiumDelivery: String!
+}
+
+type WebsiteRatingAndReview {
+    customer_username: String!
+    rating: Int!
+    review: String!
+    date_time: String!
+    is_edited: Boolean!
+}
+
+type Query {
+    getAllShoppingCarts: [ShoppingCart!]!
+    getAllShoppingCartItemsOfUser(username: String!): [ShoppingCart!]!
+
+    getAllProductDeliveryTimes: [ProductDeliveryTime!]!
+    getAllProductDeliveryTimesOfProduct(productId: String!): [ProductDeliveryTime!]!
+
+    getAllWebsiteRatingsAndReviews: [WebsiteRatingAndReview!]!
+    getWebsiteRatingAndReviewOfUser(customer_username: String!): WebsiteRatingAndReview
+}
+
+type Mutation {
+    addShoppingCartItem(username: String!, productId: String!, optionsChosen: String!): ShoppingCart!
+    editShoppingCartItem(username: String!, productId: String!, newOptionsChosen: String!): ShoppingCart
+    deleteShoppingCartItem(username: String!, productId: String!): Boolean!
+
+    addProductDeliveryTime(productId: String!, factoryAddress: String!, timeFormulaForDelivery: String!, timeFormulaForPremiumDelivery: String!): ProductDeliveryTime!
+    editProductDeliveryTime(productId: String!, factoryAddress: String!, newTimeFormulaForDelivery: String, newTimeFormulaForPremiumDelivery: String): ProductDeliveryTime
+    deleteProductDeliveryTime(productId: String!, factoryAddress: String!): Boolean!
+
+    addWebsiteRatingAndReview(customer_username: String!, rating: Int!, review: String!, date_time: String!): WebsiteRatingAndReview!
+    editWebsiteRatingAndReview(customer_username: String!, rating: Int, review: String, date_time: String!): WebsiteRatingAndReview
+    deleteWebsiteRatingAndReview(customer_username: String!): Boolean!
+}
