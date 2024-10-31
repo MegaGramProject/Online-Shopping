@@ -85,7 +85,7 @@ def addProductRatingAndReview(request):
         return Response(newProductRatingAndReview.data, status=status.HTTP_201_CREATED)
     return Response(newProductRatingAndReview.errors, status=status.HTTP_400_BAD_REQUEST)
 
-api_view(['PATCH'])
+@api_view(['PATCH'])
 def editProductRatingAndReview(request):
     try:
         productRatingAndReviewToEdit = ProductRatingAndReview.objects.get(
