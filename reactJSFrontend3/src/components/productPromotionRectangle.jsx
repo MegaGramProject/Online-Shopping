@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import dining from '../assets/dining.jpg';
 import homeStuff from '../assets/homeStuff.jpg';
 import kitchenware from '../assets/kitchenware.jpg';
@@ -7,12 +7,32 @@ import potsAndPans from '../assets/potsAndPans.jpg';
 import toaster from '../assets/toaster.jpg';
 import toys from '../assets/toys.jpg';
 
-function ProductPromotionRectangle({title}) {
+function ProductPromotionRectangle({title, authenticatedUsername}) {
     const [isUserHoveringOnThis, setIsUserHoveringOnThis] = useState(false);
     const [canGoLeft, setCanGoLeft] = useState(false);
     const [canGoRight, setCanGoRight] = useState(true);
     const scrollableDivRef = useRef(null);
+    const [promotedProducts, setPromotedProducts] = useState([]);
     
+    useEffect(() => {
+        fetchTheProductsToPromote(title);
+    }, [authenticatedUsername]);
+
+    async function fetchTheProductsToPromote(title) {
+        if(authenticatedUsername.length==0) {
+            return;
+        }
+        if(title==="International Bestsellers Available for Your Location") {
+            //first use the authUser's deliveryzipcode and deliveryAreaCountry so that only available products are shown
+            //make a request to find the productIds of all the products that are available to user(either via delivery or pickup within 2hrs)-> idsOfProductsAvailableToUser
+            //then make a request to get the most sold products whose ids are in idsOfProductsAvailableToUser
+            //then make a request to get the avg-ratings and numRatings of all of these products.
+            //convert that list of {productId, avgRating, numRatings: } to {productId: bayesianAvgRating}
+            //then for each of the most sold products, get the product between numSold and bayesian-avg-rating.
+            //get the 6 products who are at the top of this ordeal
+            //these products will be the ones displayed by using setPromotedProducts()
+        }
+    }
 
     function setIsUserHoveringOnThisToTrue() {
         setIsUserHoveringOnThis(true);

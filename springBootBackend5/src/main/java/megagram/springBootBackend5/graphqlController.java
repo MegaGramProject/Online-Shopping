@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RestController;
 
 import megagram.springBootBackend5.mysqlModels.ProductDeliveryTime;
@@ -23,7 +22,6 @@ import megagram.springBootBackend5.psqlRepositories.WebsiteRatingAndReviewReposi
 
 
 @RestController
-@CrossOrigin({"http://localhost:8024"})
 public class graphqlController {
 
     public graphqlController() {

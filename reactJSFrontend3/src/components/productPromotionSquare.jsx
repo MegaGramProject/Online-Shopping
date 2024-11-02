@@ -1,44 +1,44 @@
-import blueHeadset from '../assets/blueHeadset.jpg';
-import keyboard from '../assets/keyboard.jpg';
-import computerMouse from '../assets/computerMouse.jpg';
-import gamingChair from '../assets/gamingChair.jpg';
-import cleaningTools from '../assets/cleaningTools.jpg';
-import homeStorage from '../assets/homeStorage.jpg';
-import homeDecor from '../assets/homeDecor.jpg';
-import bedding from '../assets/bedding.jpg';
-import jeans from '../assets/jeans.jpg';
-import tops from '../assets/tops.jpg';
-import dresses from '../assets/dresses.jpg';
-import shoes from '../assets/shoes.jpg';
-import kitchenVessel from '../assets/kitchenVessel.jpg';
-import redPaintCans from '../assets/redPaintCans.jpg';
-import homeDecor2 from '../assets/homeDecor2.jpg';
-import bluePatternedPillow from '../assets/bluePatternedPillow.jpg';
-import cooker from '../assets/cooker.jpg';
-import coffeeMaker from '../assets/coffeeMaker.jpg';
-import potsAndPans from '../assets/potsAndPans.jpg';
-import toaster from '../assets/toaster.jpg';
-import dining from '../assets/dining.jpg';
-import homeStuff from '../assets/homeStuff.jpg';
-import kitchenware from '../assets/kitchenware.jpg';
-import food from '../assets/food.jpg';
-import rideOn from '../assets/rideOn.jpg';
-import buildingToy from '../assets/buildingToy.jpg';
-import doll from '../assets/doll.jpg';
-import inflatablePool from '../assets/inflatablePool.jpg';
+import { useEffect, useState } from 'react';
 import backpack from '../assets/backpack.jpg';
-import travelBag from '../assets/travelBag.jpg';
-import travelAccessories from '../assets/travelAccessories.jpg';
-import handBag from '../assets/handBag.jpg';
-import mensWatch from '../assets/mensWatch.jpg';
-import womensWatch from '../assets/womensWatch.jpg';
-import girlsWatch from '../assets/girlsWatch.jpg';
+import bedding from '../assets/bedding.jpg';
+import blueHeadset from '../assets/blueHeadset.jpg';
+import bluePatternedPillow from '../assets/bluePatternedPillow.jpg';
 import boysWatch from '../assets/boysWatch.jpg';
+import buildingToy from '../assets/buildingToy.jpg';
+import cleaningTools from '../assets/cleaningTools.jpg';
+import coffeeMaker from '../assets/coffeeMaker.jpg';
+import computerMouse from '../assets/computerMouse.jpg';
+import cooker from '../assets/cooker.jpg';
 import cycling from '../assets/cycling.jpg';
-import running from '../assets/running.jpg';
+import dining from '../assets/dining.jpg';
+import doll from '../assets/doll.jpg';
+import dresses from '../assets/dresses.jpg';
 import exercisingAndFitness from '../assets/exercise&Fitness.jpg';
+import food from '../assets/food.jpg';
+import gamingChair from '../assets/gamingChair.jpg';
+import girlsWatch from '../assets/girlsWatch.jpg';
 import golf from '../assets/golf.jpg';
-import { useState, useEffect } from 'react';
+import handBag from '../assets/handBag.jpg';
+import homeDecor from '../assets/homeDecor.jpg';
+import homeDecor2 from '../assets/homeDecor2.jpg';
+import homeStorage from '../assets/homeStorage.jpg';
+import homeStuff from '../assets/homeStuff.jpg';
+import inflatablePool from '../assets/inflatablePool.jpg';
+import jeans from '../assets/jeans.jpg';
+import keyboard from '../assets/keyboard.jpg';
+import kitchenVessel from '../assets/kitchenVessel.jpg';
+import kitchenware from '../assets/kitchenware.jpg';
+import mensWatch from '../assets/mensWatch.jpg';
+import potsAndPans from '../assets/potsAndPans.jpg';
+import redPaintCans from '../assets/redPaintCans.jpg';
+import rideOn from '../assets/rideOn.jpg';
+import running from '../assets/running.jpg';
+import shoes from '../assets/shoes.jpg';
+import toaster from '../assets/toaster.jpg';
+import tops from '../assets/tops.jpg';
+import travelAccessories from '../assets/travelAccessories.jpg';
+import travelBag from '../assets/travelBag.jpg';
+import womensWatch from '../assets/womensWatch.jpg';
 
 
 function ProductPromotionSquare({productCategory, deliveryAreaCountry})  {
@@ -144,11 +144,11 @@ function ProductPromotionSquare({productCategory, deliveryAreaCountry})  {
     }, [deliveryAreaCountry]);
 
     function updateTitleTextToUse() {
-        let currCurrency = "$";
+        if(deliveryAreaCountry.length==0) {
+            setTextToUseForTitle(`New home arrivals under $50`);
+        }
         let newCurrency = countryCurrencyMap[deliveryAreaCountry];
-        
         let price = 50;
-        price = price/currencyToDollarMap[currCurrency]; //convert from currCurrency to USD
         price = price*currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
         setTextToUseForTitle(`New home arrivals under ${newCurrency}${price.toFixed(2)}`);
     }

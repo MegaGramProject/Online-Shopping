@@ -2,9 +2,8 @@ import { useState } from 'react';
 import thinGrayXIcon from '../assets/thinGrayXIcon.png';
 import '../styles.css';
 
-function SingleSearchResult({id, result, category}) {
-    const [count, setCount] = useState(0);
-    const [isDeleted, setDeleted] = useState(false);
+function SingleSearchResult({id, result, category, notifyParentToDeleteSearchResult,
+    isDeletable, showCategory}) {
     const categoryToPagePathSegmentMappings = {
         '': 'shopAllItems',
         'Arts & Crafts': 'shopArts&Crafts',
@@ -21,7 +20,7 @@ function SingleSearchResult({id, result, category}) {
 
     function deleteSearchResult(event) {
         event.stopPropagation();
-        setDeleted(true);
+        notifyParentToDeleteSearchResult(id);
     }
 
     function takeUserToPageForResult() {
@@ -30,15 +29,16 @@ function SingleSearchResult({id, result, category}) {
 
     return (
     <>
-        {!isDeleted &&
         <div className="hoverableElement" onClick={takeUserToPageForResult} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.2em 0.4em',
         fontSize: '0.91em', zIndex: '10', backgroundColor: 'white'}}>
-            <p><b>{result}</b> {category!=="" &&
+            <p><b>{result}</b> {showCategory && category!=="" &&
                 <span style={{color: 'gray'}}>in <span style={{fontFamily: 'Roboto', fontSize: '1.2em'}}>{category}</span></span>
             }
             </p>
-            <img onClick={deleteSearchResult} src={thinGrayXIcon} style={{cursor: 'pointer', height: '1.5em', width: '1.5em'}}></img>
-        </div>}
+            {isDeletable &&
+                <img onClick={deleteSearchResult} src={thinGrayXIcon} style={{cursor: 'pointer', height: '1.5em', width: '1.5em'}}></img>
+            }
+        </div>
     </>
     )
 }

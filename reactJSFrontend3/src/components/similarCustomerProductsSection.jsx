@@ -76,6 +76,9 @@ function SimilarCustomerProductsSection({deliveryAreaCountry}) {
     }
 
     function updateCurrencies() {
+        if(deliveryAreaCountry.length==0) {
+            return;
+        }
         let currCurrency = "";
         if(div1Prices.length>0) {
             currCurrency = div1Prices[0][0][0];

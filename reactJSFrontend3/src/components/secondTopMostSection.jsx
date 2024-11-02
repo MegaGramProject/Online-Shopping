@@ -72,7 +72,7 @@ function SecondTopMostSection({isLeftSidebarDisplayed, notifyParentToToggleLeftS
                 </div>
             
                 {displayPremiumPopup &&
-                    <div style={{position: 'absolute', top: '102%', backgroundColor: 'white', width: '350%', height: '1600%', zIndex: '10',
+                    <div style={{position: 'absolute', top: '102%', width: '350%', height: '1600%', zIndex: '10',
                     backgroundColor: '#2db9e3', borderStyle: 'solid', borderColor: 'white', borderWidth: '1.2em', display: 'flex', flexDirection: 'column',
                     alignItems: 'center', padding: '0.5em 1em', fontFamily: 'lato'}}>
                         <b style={{color: 'white', fontSize: '2.5em'}}>premium</b>

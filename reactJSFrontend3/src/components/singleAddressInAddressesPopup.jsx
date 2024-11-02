@@ -1,5 +1,4 @@
 import trashCan from '../assets/trashCan.webp';
-import { useState } from 'react';
 
 function SingleAddressInAddressesPopup({id, address, isSelected, notifyParentToSelectAddress, notifyParentToUnselectAddress,
 notifyParentToDeleteAddress}) {
@@ -13,7 +12,6 @@ notifyParentToDeleteAddress}) {
     }
 
     function deleteAddress(event) {
-        event.stopPropagation();
         notifyParentToDeleteAddress(id);
     }
 

@@ -4,7 +4,7 @@ import thinGrayXIcon from '../assets/thinGrayXIcon.png';
 import SingleAddressInAddressesPopup from './singleAddressInAddressesPopup';
 
 
-function AddressesPopup({closePopup, listOfAddresses, updateListOfAddresses}) {
+function AddressesPopup({authenticatedUsername, closePopup}) {
     const [houseOrBuildingNumberTextareaValue, setHouseOrBuildingNumberTextareaValue] = useState("");
     const [streetNameTextareaValue, setStreetNameTextareaValue] = useState("");
     const [apartmentOrSuiteTextareaValue, setApartmentOrSuiteTextareaValue] = useState("");
@@ -15,42 +15,121 @@ function AddressesPopup({closePopup, listOfAddresses, updateListOfAddresses}) {
     const [listOfAddressElems, setListOfAddressElems] = useState([]);
     const [isNewAddressAddable, setIsNewAddressAddable] = useState(false);
     const [isAddressFormatInvalid, setIsAddressFormatInvalid] = useState(false);
+    const [listOfAddresses, setListOfAddresses] = useState([]);
 
-
+    useEffect(() => {
+        fetchAddressesOfUser();
+    }, [authenticatedUsername]);
 
     useEffect(() => {
         const newListOfAddressesElems = [];
         for(let i=0; i<listOfAddresses.length; i++) {
             const currAddressInfo = listOfAddresses[i];
+
+            let currAddress = "";
+            if(currAddressInfo.house_or_building_number!==null) {
+                currAddress+=currAddressInfo.house_or_building_number + " " + currAddressInfo.street_name+"\n";
+            }
+            else {
+                currAddress+=currAddressInfo.street_name+"\n";
+            }
+            if(currAddressInfo.apartment_or_suite!==null) {
+                currAddress+=currAddressInfo.apartment_or_suite+"\n";
+            }
+            currAddress+=currAddressInfo.town_or_city;
+            if(currAddressInfo.state_or_province!==null) {
+                currAddress+=" " + currAddressInfo.state_or_province + ", " + currAddressInfo.zipcode+"\n";
+            }
+            else {
+                currAddress+=", " + currAddressInfo.zipcode+"\n";
+            }
+
+            currAddress+=currAddressInfo.country;
+
             newListOfAddressesElems.push(
-                <SingleAddressInAddressesPopup key={i} id={currAddressInfo[0]}
-                address={currAddressInfo[1]} isSelected={currAddressInfo[2]} notifyParentToSelectAddress={selectAddress} notifyParentToDeleteAddress={deleteAddress}
+                <SingleAddressInAddressesPopup key={i} id={currAddressInfo.id}
+                address={currAddress} isSelected={currAddressInfo.is_selected} notifyParentToSelectAddress={selectAddress} notifyParentToDeleteAddress={deleteCustomerAddress}
                 notifyParentToUnselectAddress={unselectAddress}></SingleAddressInAddressesPopup>
             );
         }
         setListOfAddressElems(newListOfAddressesElems);
     }, [listOfAddresses]);
+
+    async function fetchAddressesOfUser() {
+        const response = await fetch(`http://localhost:8026/getAddressesOfUser/${authenticatedUsername}`);
+        if(!response.ok){
+            throw new Error('Network response not ok');
+        }
+        let customerAddresses = await response.json();
+        setListOfAddresses(customerAddresses);
+    }
     
 
-    function addNewAddress() {
+    async function addNewAddress() {
         let addressText = "";
-        if(apartmentOrSuiteTextareaValue.length>0){
-            addressText = `${houseOrBuildingNumberTextareaValue} ${streetNameTextareaValue}\n${apartmentOrSuiteTextareaValue}\n${townOrCityTextareaValue}, ${stateOrProvinceTextareaValue} ${zipCodeTextareaValue},\n${countryTextareaValue==='the United States' ? 'USA' : countryTextareaValue}`;
+        if(houseOrBuildingNumberTextareaValue!=="") {
+            addressText+=houseOrBuildingNumberTextareaValue + " " + streetNameTextareaValue+"\n";
         }
         else {
-            addressText = `${houseOrBuildingNumberTextareaValue} ${streetNameTextareaValue}\n${townOrCityTextareaValue}, ${stateOrProvinceTextareaValue} ${zipCodeTextareaValue},\n${countryTextareaValue==='the United States' ? 'USA' : countryTextareaValue}`;
+            addressText+=streetNameTextareaValue+"\n";
         }
+        if(apartmentOrSuiteTextareaValue!=="") {
+            addressText+=apartmentOrSuiteTextareaValue+"\n";
+        }
+        addressText+=townOrCityTextareaValue;
+        if(stateOrProvinceTextareaValue!==null) {
+            addressText+=" " + stateOrProvinceTextareaValue + ", " + zipCodeTextareaValue + "\n";
+        }
+        else {
+            addressText+=", " + zipCodeTextareaValue+"\n";
+        }
+        addressText+=countryTextareaValue;
+
+
         /*
         if(!addressIsValid(addressText)) {
             //use API to check if address maps to a real place
             setIsAddressFormatInvalid(true);
             return;
         }
-         */
+        */
+
+        const response = await fetch('http://localhost:8026/addNewCustomerAddress', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                username: authenticatedUsername,
+                house_or_building_number: houseOrBuildingNumberTextareaValue.length > 0 ? houseOrBuildingNumberTextareaValue : null,
+                street_name: streetNameTextareaValue,
+                apartment_or_suite: apartmentOrSuiteTextareaValue.length > 0 ? apartmentOrSuiteTextareaValue : null,
+                town_or_city: townOrCityTextareaValue,
+                state_or_province: stateOrProvinceTextareaValue.length > 0 ? stateOrProvinceTextareaValue : null,
+                zipcode: zipCodeTextareaValue,
+                country: countryTextareaValue,
+                is_selected: false
+            })
+        });
+        if(!response.ok) {
+            throw new Error('Network response not ok');
+        }
+        const idOfNewlyInsertedAddress = await response.json();
+
         setIsAddressFormatInvalid(false);
         const newListOfAddresses = [...listOfAddresses];
-        newListOfAddresses.push([listOfAddresses.length, addressText, false, `${townOrCityTextareaValue}, ${zipCodeTextareaValue}`, countryTextareaValue]);
-        updateListOfAddresses(newListOfAddresses);
+
+        newListOfAddresses.push({
+            id: idOfNewlyInsertedAddress,
+            username: authenticatedUsername,
+            house_or_building_number: houseOrBuildingNumberTextareaValue.length > 0 ? houseOrBuildingNumberTextareaValue : null,
+            street_name: streetNameTextareaValue,
+            apartment_or_suite: apartmentOrSuiteTextareaValue.length > 0 ? apartmentOrSuiteTextareaValue : null,
+            town_or_city: townOrCityTextareaValue,
+            state_or_province: stateOrProvinceTextareaValue.length > 0 ? stateOrProvinceTextareaValue : null,
+            zipcode: zipCodeTextareaValue,
+            country: countryTextareaValue,
+            is_selected: false
+        });
+        setListOfAddresses(newListOfAddresses);
         setHouseOrBuildingNumberTextareaValue("");
         setStreetNameTextareaValue("");
         setApartmentOrSuiteTextareaValue("");
@@ -65,56 +144,69 @@ function AddressesPopup({closePopup, listOfAddresses, updateListOfAddresses}) {
         let newListOfAddresses = [...listOfAddresses];
         let newlySelectedAddressArea = "";
         let newlySelectedAddressCountry = "";
-        newListOfAddresses.map(addressInfo=>{
-            if(addressInfo[2]===true) {
-                addressInfo[2] = false;
+        for(let i=0; i<newListOfAddresses.length; i++) {
+            const currAddressInfo = newListOfAddresses[i];
+            if(currAddressInfo.is_selected===true) {
+                const response = await fetch(`http://localhost:8026/toggleSelectCustomerAddress/${currAddressInfo.id}`, {
+                    method: 'PATCH'
+                });
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+                newListOfAddresses[i].is_selected = false;
             }
-            else if(addressInfo[0]===idOfAddressToSelect) {
-                newlySelectedAddressArea=`${addressInfo[3]}`;
-                newlySelectedAddressCountry=`${addressInfo[4]}`;
-                addressInfo[2] = true;
+            else if(currAddressInfo.id==idOfAddressToSelect) {
+                const response = await fetch(`http://localhost:8026/toggleSelectCustomerAddress/${currAddressInfo.id}`, {
+                    method: 'PATCH'
+                });
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+                newlySelectedAddressArea=currAddressInfo.town_or_city + ", " + currAddressInfo.zipcode;
+                newlySelectedAddressCountry=currAddressInfo.country;
+                newListOfAddresses[i].is_selected = true;
             }
-            return addressInfo;
-        });
-        
-        updateListOfAddresses(newListOfAddresses);
+        }
+        setListOfAddresses(newListOfAddresses);
         closePopup([newlySelectedAddressArea, newlySelectedAddressCountry]);
     }
 
-    function unselectAddress(idOfAddressToUnselect) {
+    async function unselectAddress(idOfAddressToUnselect) {
         let newListOfAddresses = [...listOfAddresses];
         for(let i=0; i<newListOfAddresses.length; i++) {
-            if(newListOfAddresses[i][0]===idOfAddressToUnselect) {
-                newListOfAddresses[i][2] = false;
-                updateListOfAddresses(newListOfAddresses);
+            if(newListOfAddresses[i].id===idOfAddressToUnselect) {
+                const response = await fetch(`http://localhost:8026/toggleSelectCustomerAddress/${idOfAddressToUnselect}`, {
+                    method: 'PATCH'
+                });
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+                newListOfAddresses[i].is_selected = false;
+                setListOfAddresses(newListOfAddresses);
                 return;
             }
         }
     }
 
-    function deleteAddress(idOfAddressToDelete) {
-        let newListOfAddresses = [...listOfAddresses];
-        newListOfAddresses = newListOfAddresses.filter(x=>x[0]!==idOfAddressToDelete);
-        updateListOfAddresses(newListOfAddresses);
+    async function deleteCustomerAddress(idOfAddressToDelete) {
+        const response = await fetch(`http://localhost:8026/deleteCustomerAddress/${idOfAddressToDelete}`,{
+            method: 'DELETE'
+        });
+        if(!response.ok) {
+            throw new Error('Network response not ok');
+        }
+        let newListOfAddresses = listOfAddresses.filter(x=>x.id!==idOfAddressToDelete);
+        setListOfAddresses(newListOfAddresses);
     }
 
     function onChangeTextarea1(event) {
         setHouseOrBuildingNumberTextareaValue(event.target.value);
-        if(event.target.value.length>0 && streetNameTextareaValue.length>0 &&
-        townOrCityTextareaValue.length>0 && stateOrProvinceTextareaValue.length>0 &&
-        zipCodeTextareaValue.length>0 && countryTextareaValue.length>0) {
-            setIsNewAddressAddable(true);
-        }
-        else {
-            setIsNewAddressAddable(false);
-        }
     }
 
     function onChangeTextarea2(event) {
         setStreetNameTextareaValue(event.target.value);
-        if(houseOrBuildingNumberTextareaValue.length>0 && event.target.value.length>0 &&
-        townOrCityTextareaValue.length>0 && stateOrProvinceTextareaValue.length>0 &&
-        zipCodeTextareaValue.length>0 && countryTextareaValue.length>0) {
+        if(event.target.value.length>0 &&
+        townOrCityTextareaValue.length>0 && zipCodeTextareaValue.length>0 && countryTextareaValue.length>0) {
             setIsNewAddressAddable(true);
         }
         else {
@@ -128,11 +220,10 @@ function AddressesPopup({closePopup, listOfAddresses, updateListOfAddresses}) {
 
     function onChangeTextarea4(event) {
         setTownOrCityTextareaValue(event.target.value);
-        if(houseOrBuildingNumberTextareaValue.length>0 && streetNameTextareaValue.length>0 &&
-        event.target.value.length>0 && stateOrProvinceTextareaValue.length>0 &&
-        zipCodeTextareaValue.length>0 && countryTextareaValue.length>0) {
-            setIsNewAddressAddable(true);
-        }
+        if(event.target.value.length>0 &&
+            streetNameTextareaValue.length>0 && zipCodeTextareaValue.length>0 && countryTextareaValue.length>0) {
+                setIsNewAddressAddable(true);
+            }
         else {
             setIsNewAddressAddable(false);
         }
@@ -140,35 +231,24 @@ function AddressesPopup({closePopup, listOfAddresses, updateListOfAddresses}) {
 
     function onChangeTextarea5(event) {
         setStateOrProvinceTextareaValue(event.target.value);
-        if(houseOrBuildingNumberTextareaValue.length>0 && streetNameTextareaValue.length>0 &&
-        townOrCityTextareaValue.length>0 && event.target.value.length>0 &&
-        zipCodeTextareaValue.length>0 && countryTextareaValue.length>0) {
-            setIsNewAddressAddable(true);
-        }
-        else {
-            setIsNewAddressAddable(false);
-        }
     }
 
     function onChangeTextarea6(event) {
         setZipCodeTextareaValue(event.target.value);
-        if(houseOrBuildingNumberTextareaValue.length>0 && streetNameTextareaValue.length>0 &&
-        townOrCityTextareaValue.length>0 && stateOrProvinceTextareaValue.length>0 &&
-        event.target.value.length>0 && countryTextareaValue.length>0) {
-            setIsNewAddressAddable(true);
+        if(event.target.value.length>0 &&
+            townOrCityTextareaValue.length>0 && streetNameTextareaValue.length>0 && countryTextareaValue.length>0) {
+                setIsNewAddressAddable(true);
         }
         else {
             setIsNewAddressAddable(false);
         }
-    }
+        }
 
     function handleCountrySelectionChange(event) {
-        console.log(event.target.value);
         setCountryTextareaValue(event.target.value);
-        if(houseOrBuildingNumberTextareaValue.length>0 && streetNameTextareaValue.length>0 &&
-        townOrCityTextareaValue.length>0 && stateOrProvinceTextareaValue.length>0 &&
-        zipCodeTextareaValue.length>0 && event.target.value.length>0) {
-            setIsNewAddressAddable(true);
+        if(event.target.value.length>0 &&
+            townOrCityTextareaValue.length>0 && zipCodeTextareaValue.length>0 && streetNameTextareaValue.length>0) {
+                setIsNewAddressAddable(true);
         }
         else {
             setIsNewAddressAddable(false);

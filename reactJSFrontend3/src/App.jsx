@@ -25,10 +25,8 @@ function App({params}) {
     const [deliveryArea, setDeliveryArea] = useState("");
     const [deliveryAreaCountry, setDeliveryAreaCountry] = useState("");
     const [displayAddressesPopup, setDisplayAddressesPopup] = useState(false);
-    const [listOfAddresses, setListOfAddresses] = useState([
-        [0, "231 Clay Court\nApt 306\nZeeland, MI 53593\nUSA", true, "Zeeland, 53593", "the United States"],
-        [1, "231 Clay Court\nZeeland, MI 53593\nUSA", false, "Zeeland, 53593", "the United States"]
-    ]);
+    const [numItemsInCart, setNumItemsInCart] = useState(0);
+    const [deliveryZipcode, setDeliveryZipcode] = useState(null);
 
     async function authenticateUser(username) {
         /*
@@ -109,19 +107,50 @@ function App({params}) {
     }, []);
 
     async function fetchRelevantDataAtStart(authUsername) {
+        /*
         const response = await fetch(`http://localhost:8022/getBasicUserInfo/${authUsername}`);
         if(!response.ok) {
             throw new Error('Network response not ok');
         }
         const basicUserInfo = await response.json();
-        if(basicUserInfo.townOrCity==="") {
+        if(basicUserInfo.zipCode==null) {
             setDeliveryArea(basicUserInfo.deliveryAreaCountry);
         }
         else {
             setDeliveryArea(`${basicUserInfo.townOrCity}, ${basicUserInfo.zipCode}`);
+            setDeliveryZipcode(basicUserInfo.zipCode);
         }
         setDeliveryAreaCountry(basicUserInfo.deliveryAreaCountry);
         setHasPremium(basicUserInfo.hasPremium == 1 ? true : false);
+        */
+        setDeliveryArea('Verona, 53593');
+        setDeliveryZipcode('53593');
+        setDeliveryAreaCountry('the United States');
+        setHasPremium(true);
+
+        /*
+        const response2  = await fetch('http://localhost:8029/graphql',{
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                query: `query {
+                getAllShoppingCartItemsOfUser(username:"${authUsername}") {
+                    username
+                    productId
+                    optionsChosen
+                }
+            }
+            `
+            })
+        });
+        if(!response2.ok) {
+            throw new Error('Network response not ok');
+        }
+        let shoppingCartItemsOfUser = await response2.json();
+        shoppingCartItemsOfUser = shoppingCartItemsOfUser.data.getAllShoppingCartItemsOfUser;
+        setNumItemsInCart(shoppingCartItemsOfUser.length);
+        */
+        setNumItemsInCart(25);
     }
 
     function toggleLeftSidebar() {
@@ -145,14 +174,47 @@ function App({params}) {
         setDisplayDarkScreen2(true);
     }
 
-    function closeChooseYourLocationPopup(newLocationInfo) {
+    async function closeChooseYourLocationPopup(newLocationInfo) {
         if(newLocationInfo[0]!==null) {
-            setDeliveryArea(newLocationInfo[0]);
-            setDeliveryAreaCountry(newLocationInfo[1]);
+            if(newLocationInfo[0]!==deliveryArea || newLocationInfo[1]!==deliveryAreaCountry) {
+                const response = await fetch(`http://localhost:8022/editBasicUserInfo/${authenticatedUsername}`, {
+                    method: 'PATCH',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        hasPremium: hasPremium,
+                        deliveryAreaCountry: newLocationInfo[1],
+                        townOrCity: newLocationInfo[0].split(",")[0],
+                        zipCode: newLocationInfo[0].split(",")[1].substring(1)
+                    })
+                });
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+                setDeliveryArea(newLocationInfo[0]);
+                setDeliveryZipcode(newLocationInfo[0].split(",")[1].substring(1));
+                setDeliveryAreaCountry(newLocationInfo[1]);
+            }
         }
         else if(newLocationInfo[1]!==null) {
-            setDeliveryArea(newLocationInfo[1]);
-            setDeliveryAreaCountry(newLocationInfo[1]);
+            //changing country
+            if(newLocationInfo[1]!==deliveryArea || newLocationInfo[1]!==deliveryAreaCountry) {
+                const response = await fetch(`http://localhost:8022/editBasicUserInfo/${authenticatedUsername}`, {
+                    method: 'PATCH',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        hasPremium: hasPremium,
+                        deliveryAreaCountry: newLocationInfo[1],
+                        townOrCity: null,
+                        zipCode: null
+                    })
+                });
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+                setDeliveryArea(newLocationInfo[1]);
+                setDeliveryZipcode(null);
+                setDeliveryAreaCountry(newLocationInfo[1]);
+            }
         }
         setDisplayChooseYourLocationPopup(false);
         setDisplayDarkScreen2(false);
@@ -163,7 +225,7 @@ function App({params}) {
         setDisplayAddressesPopup(true);
     }
 
-    function closeAddressesPopup(newAddressInfo) {
+    async function closeAddressesPopup(newAddressInfo) {
         if(newAddressInfo[0]==null) {
             setDisplayAddressesPopup(false);
             setDisplayChooseYourLocationPopup(true);
@@ -171,21 +233,47 @@ function App({params}) {
         else {
             setDisplayAddressesPopup(false);
             setDisplayDarkScreen2(false);
-            setDeliveryArea(newAddressInfo[0]);
-            setDeliveryAreaCountry(newAddressInfo[1]);
+            if(newAddressInfo[0]!==deliveryArea || newAddressInfo[1]!==deliveryAreaCountry) {
+                const response = await fetch(`http://localhost:8022/editBasicUserInfo/${authenticatedUsername}`, {
+                    method: 'PATCH',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        hasPremium: hasPremium,
+                        deliveryAreaCountry: newAddressInfo[1],
+                        townOrCity: newAddressInfo[0].split(",")[0],
+                        zipCode: newAddressInfo[0].split(",")[1].substring(1)
+                    })
+                });
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+                setDeliveryArea(newAddressInfo[0]);
+                setDeliveryZipcode(newAddressInfo[0].split(",")[1].substring(1));
+                setDeliveryAreaCountry(newAddressInfo[1]);
+            }
         }
     }
 
-    function updateListOfAddresses(newListOfAddresses) {
-        setListOfAddresses(newListOfAddresses);
-    }
-
-    function updateDeliveryAreaCountryFromFooter(newCountry) {
+    async function updateDeliveryAreaCountryFromFooter(newCountry) {
         if(newCountry===deliveryAreaCountry) {
             return;
         }
-        setDeliveryAreaCountry(newCountry);
+        const response = await fetch(`http://localhost:8022/editBasicUserInfo/${authenticatedUsername}`, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                hasPremium: hasPremium,
+                deliveryAreaCountry: newCountry,
+                townOrCity: null,
+                zipCode: null
+            })
+        });
+        if(!response.ok) {
+            throw new Error('Network response not ok');
+        }
         setDeliveryArea(newCountry);
+        setDeliveryZipcode(null);
+        setDeliveryAreaCountry(newCountry);
     }
 
     return (
@@ -197,29 +285,35 @@ function App({params}) {
         <div style={{height: "100%", width: displayLeftSidebar ? "86%" : "100%", position: "absolute", top: "0%", left: displayLeftSidebar ? "14%" : "0%", display: "flex",
         flexDirection: "column"}}>
             <TopMostSection authenticatedUsername={authenticatedUsername} showDarkScreen={showDarkScreen} hideDarkScreen={hideDarkScreen}
-            showChooseYourLocationPopup={showChooseYourLocationPopup} deliveryArea={deliveryArea} hasPremium={hasPremium}></TopMostSection>
+            showChooseYourLocationPopup={showChooseYourLocationPopup} deliveryArea={deliveryArea} hasPremium={hasPremium}
+            numItemsInCart={numItemsInCart}></TopMostSection>
             <SecondTopMostSection isLeftSidebarDisplayed={displayLeftSidebar} notifyParentToToggleLeftSidebar={toggleLeftSidebar}
             toggleDarkScreen={toggleDarkScreen} hasPremium={hasPremium}></SecondTopMostSection>
 
             <div style={{height: '550%', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative'}}>
                 <AdvertisementPostersSection deliveryAreaCountry={deliveryAreaCountry}></AdvertisementPostersSection>
                 <SecondRowOfProductPromotionSquares deliveryAreaCountry={deliveryAreaCountry}></SecondRowOfProductPromotionSquares>
-                <ProductPromotionRectangle title="International Bestsellers Available for Your Location"></ProductPromotionRectangle>
+                <ProductPromotionRectangle title="International Bestsellers Available for Your Location"
+                authenticatedUsername={authenticatedUsername}></ProductPromotionRectangle>
                 <div style={{height: '7em'}}>
                     {/*Empty div on purpose*/}
                 </div>
-                <ProductPromotionRectangle title={`Bestsellers in ${deliveryAreaCountry} Available for Your Location`}></ProductPromotionRectangle>
+                <ProductPromotionRectangle title={`Bestsellers in ${deliveryAreaCountry} Available for Your Location`}
+                authenticatedUsername={authenticatedUsername}></ProductPromotionRectangle>
                 <ThirdRowOfProductPromotionSquares></ThirdRowOfProductPromotionSquares>
                 <FinalRowOfProductPromotionSquares></FinalRowOfProductPromotionSquares>
-                <ProductPromotionRectangle title={`Bestsellers in Sports & Outdoors in ${deliveryAreaCountry} Available for Your Location`}></ProductPromotionRectangle>
+                <ProductPromotionRectangle title={`Bestsellers in Sports & Outdoors in ${deliveryAreaCountry} Available for Your Location`}
+                authenticatedUsername={authenticatedUsername}></ProductPromotionRectangle>
                 <div style={{height: '7em'}}>
                     {/*Empty div on purpose*/}
                 </div>
-                <ProductPromotionRectangle title={`Bestsellers in Books in ${deliveryAreaCountry} Available for Your Location`}></ProductPromotionRectangle>
+                <ProductPromotionRectangle title={`Bestsellers in Books in ${deliveryAreaCountry} Available for Your Location`}
+                authenticatedUsername={authenticatedUsername}></ProductPromotionRectangle>
                 <div style={{height: '7em'}}>
                     {/*Empty div on purpose*/}
                 </div>
-                <ProductPromotionRectangle title={`Bestsellers in Food in ${deliveryAreaCountry} Available for Your Location`}></ProductPromotionRectangle>
+                <ProductPromotionRectangle title={`Bestsellers in Food in ${deliveryAreaCountry} Available for Your Location`}
+                authenticatedUsername={authenticatedUsername}></ProductPromotionRectangle>
 
                 <SimilarCustomerProductsSection deliveryAreaCountry={deliveryAreaCountry}></SimilarCustomerProductsSection>
 
@@ -239,7 +333,7 @@ function App({params}) {
         }
 
         {displayAddressesPopup &&
-            <AddressesPopup closePopup={closeAddressesPopup} listOfAddresses={listOfAddresses} updateListOfAddresses={updateListOfAddresses}></AddressesPopup>
+            <AddressesPopup closePopup={closeAddressesPopup} authenticatedUsername={authenticatedUsername}></AddressesPopup>
         }
 
         {displayDarkScreen2 &&

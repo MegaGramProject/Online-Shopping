@@ -31,9 +31,10 @@ public class BackendController : ControllerBase
     public async Task<IActionResult> getAddressesOfUser(string username)
     {
         var addressesOfUser = await _megaDBContext
-        .customerAddresses
-        .Where(x=>x.username==username)
-        .ToListAsync();
+            .customerAddresses
+            .Where(x => x.username == username)
+            .OrderByDescending(x => x.is_selected) // The selected address will come first
+            .ToListAsync();
 
         return Ok(addressesOfUser);
     }
@@ -48,7 +49,21 @@ public class BackendController : ControllerBase
         _megaDBContext.customerAddresses.Add(newCustomerAddress);
         await _megaDBContext.SaveChangesAsync();
 
-        return Ok(newCustomerAddress);
+        return Ok(newCustomerAddress.id);
+    }
+
+    [HttpPatch("toggleSelectCustomerAddress/{id}")]
+    public async Task<ActionResult> toggleSelectCustomerAddress(int id) {
+        var customerAddressToToggleSelect = await _megaDBContext.customerAddresses
+        .FirstOrDefaultAsync(cl => cl.id == id);
+
+        if(customerAddressToToggleSelect==null) {
+            return NotFound(false);
+        }
+        customerAddressToToggleSelect.is_selected = !customerAddressToToggleSelect.is_selected;
+        _megaDBContext.customerAddresses.Update(customerAddressToToggleSelect);
+        await _megaDBContext.SaveChangesAsync();
+        return Ok(true);
     }
 
     [HttpPatch("editCustomerAddress")]

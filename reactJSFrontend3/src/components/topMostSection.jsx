@@ -8,7 +8,7 @@ import '../styles.css';
 import SearchResults from './searchResults';
 
 function TopMostSection({authenticatedUsername, showDarkScreen, hideDarkScreen,
-    showChooseYourLocationPopup, deliveryArea, hasPremium}) {
+    showChooseYourLocationPopup, deliveryArea, hasPremium, numItemsInCart}) {
     const [isHoveringOnDeliverToDiv, setIsHoveringOnDeliverToDiv] = useState(false);
     const [isHoveringOnListsDiv, setIsHoveringOnListsDiv] = useState(false);
     const [isHoveringOnReturnsAndOrdersDiv, setIsHoveringOnReturnsAndOrdersDiv] = useState(false);
@@ -68,9 +68,11 @@ function TopMostSection({authenticatedUsername, showDarkScreen, hideDarkScreen,
 
     function handleClick(event) {
         if (textareaDivRef.current && displaySearchResults && !textareaDivRef.current.contains(event.target)) {
+            hideDarkScreen();
             setDisplaySearchResults(false);
         }
         else if(textareaDivRef.current && !displaySearchResults && textareaDivRef.current.contains(event.target)) {
+            showDarkScreen();
             setDisplaySearchResults(true);
         }
     };
@@ -87,7 +89,19 @@ function TopMostSection({authenticatedUsername, showDarkScreen, hideDarkScreen,
         window.location.href = "http://localhost:8024/shoppingReturnsAndOrders";
     }
 
-    function submitSearch() {
+    async function submitSearch() {
+        const response = await fetch(`http://localhost:8025/addShopSearch/${authenticatedUsername}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                search: textareaValue,
+                searchCategory: selectedCategoryForSearch,
+                dateTime: (new Date()).toISOString()
+            })
+        });
+        if(!response.ok) {
+            throw new Error('Network response not ok');
+        }
         window.location.href = `http://localhost:8024/${categoryToPagePathSegmentMappings[selectedCategoryForSearch]}/${textareaValue}`;
     }
 
@@ -153,7 +167,8 @@ function TopMostSection({authenticatedUsername, showDarkScreen, hideDarkScreen,
                 <div ref={textareaDivRef}  style={{display: 'flex', flexDirection: 'column', width: '95%'}}>
                     <textarea value={textareaValue} onChange={handleTextareaChange} placeholder="Search Megagram Shop" style={{fontFamily: "Arial", paddingTop: "1em", paddingLeft: "1em", fontSize: "1em",
                     resize: 'none'}}></textarea>
-                    {displaySearchResults && <SearchResults authenticatedUsername={authenticatedUsername} search={textareaValue}></SearchResults>}
+                    {displaySearchResults && <SearchResults authenticatedUsername={authenticatedUsername} search={textareaValue}
+                    searchCategory={selectedCategoryForSearch}></SearchResults>}
                 </div>
                 <img onClick={submitSearch} src={orangeSearchButton} style={{height: "3.6em", width: "3.5em", cursor: 'pointer'}}></img>
             </div>
@@ -197,7 +212,12 @@ function TopMostSection({authenticatedUsername, showDarkScreen, hideDarkScreen,
             <div onClick={takeUserToShoppingCartPage} onMouseEnter={toggleIsHoveringOnCartDiv} onMouseLeave={toggleIsHoveringOnCartDiv} style={{display: 'flex', alignItems: 'end', cursor: 'pointer', position: 'absolute', top: '20%', left: '90.5%', borderStyle: isHoveringOnCartDiv ? 'solid' : 'none', borderColor: 'white', padding: "0.1em 0.4em", gap: '0.6em'}}>
                 <img src={cartIcon} style={{height: "3em", width: "3em", pointerEvents: "none"}}></img>
                 <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2em'}}>
-                    <b style={{color: 'orange'}}>(100+)</b>
+                    {numItemsInCart<100 &&
+                        <b style={{color: 'orange'}}>({numItemsInCart})</b>
+                    }
+                    {numItemsInCart>=100 &&
+                        <b style={{color: 'orange'}}>(100+)</b>
+                    }
                     <b style={{color: 'white'}}>Cart</b>
                 </div>
             </div>
