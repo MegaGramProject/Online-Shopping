@@ -27,6 +27,7 @@ function App({params}) {
     const [displayAddressesPopup, setDisplayAddressesPopup] = useState(false);
     const [numItemsInCart, setNumItemsInCart] = useState(0);
     const [deliveryZipcode, setDeliveryZipcode] = useState(null);
+    const [idsOfProductsAvailableToUser, setIdsOfProductsAvailableToUser] = useState(null);
 
     async function authenticateUser(username) {
         /*
@@ -151,6 +152,44 @@ function App({params}) {
         setNumItemsInCart(shoppingCartItemsOfUser.length);
         */
         setNumItemsInCart(25);
+
+        const response3 = await fetch('http://localhost:8027/api/getProductsThatDeliverToLocation', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                zipcode: '53593',
+                country: 'the United States'
+            })
+        });
+        if(!response3.ok) {
+            throw new Error('Network response not ok');
+        }
+        let newIdsOfProductsAvailableToUser = await response3.json();
+        newIdsOfProductsAvailableToUser = newIdsOfProductsAvailableToUser.map(x=>x.productId);
+        
+        const response4 = await fetch('http://localhost:8026/getNumProductsLeftForListOfProducts', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(newIdsOfProductsAvailableToUser)
+        });
+        if(!response4.ok) {
+            throw new Error('Network response not ok');
+        }
+        const numProductsLeftForListOfProducts = await response4.json();
+
+        const response5 = await fetch('http://localhost:8030/getProductIdsOfThoseInStock', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                numProductsLeftForListOfProducts: numProductsLeftForListOfProducts
+            })
+        });
+        if(!response5.ok) {
+            throw new Error('Network response not ok');
+        }
+
+        newIdsOfProductsAvailableToUser = await response5.json();
+        setIdsOfProductsAvailableToUser(newIdsOfProductsAvailableToUser);
     }
 
     function toggleLeftSidebar() {
@@ -294,26 +333,26 @@ function App({params}) {
                 <AdvertisementPostersSection deliveryAreaCountry={deliveryAreaCountry}></AdvertisementPostersSection>
                 <SecondRowOfProductPromotionSquares deliveryAreaCountry={deliveryAreaCountry}></SecondRowOfProductPromotionSquares>
                 <ProductPromotionRectangle title="International Bestsellers Available for Your Location"
-                authenticatedUsername={authenticatedUsername}></ProductPromotionRectangle>
+                idsOfProductsAvailableToUser={idsOfProductsAvailableToUser} deliveryCountry={deliveryAreaCountry}></ProductPromotionRectangle>
                 <div style={{height: '7em'}}>
                     {/*Empty div on purpose*/}
                 </div>
                 <ProductPromotionRectangle title={`Bestsellers in ${deliveryAreaCountry} Available for Your Location`}
-                authenticatedUsername={authenticatedUsername}></ProductPromotionRectangle>
+                idsOfProductsAvailableToUser={idsOfProductsAvailableToUser} deliveryCountry={deliveryAreaCountry}></ProductPromotionRectangle>
                 <ThirdRowOfProductPromotionSquares></ThirdRowOfProductPromotionSquares>
                 <FinalRowOfProductPromotionSquares></FinalRowOfProductPromotionSquares>
-                <ProductPromotionRectangle title={`Bestsellers in Sports & Outdoors in ${deliveryAreaCountry} Available for Your Location`}
-                authenticatedUsername={authenticatedUsername}></ProductPromotionRectangle>
+                <ProductPromotionRectangle title={`International Bestsellers in Sports & Outdoors Available for Your Location`}
+                idsOfProductsAvailableToUser={idsOfProductsAvailableToUser} deliveryCountry={deliveryAreaCountry}></ProductPromotionRectangle>
                 <div style={{height: '7em'}}>
                     {/*Empty div on purpose*/}
                 </div>
-                <ProductPromotionRectangle title={`Bestsellers in Books in ${deliveryAreaCountry} Available for Your Location`}
-                authenticatedUsername={authenticatedUsername}></ProductPromotionRectangle>
+                <ProductPromotionRectangle title={`International Bestsellers in Books Available for Your Location`}
+                idsOfProductsAvailableToUser={idsOfProductsAvailableToUser} deliveryCountry={deliveryAreaCountry}></ProductPromotionRectangle>
                 <div style={{height: '7em'}}>
                     {/*Empty div on purpose*/}
                 </div>
-                <ProductPromotionRectangle title={`Bestsellers in Food in ${deliveryAreaCountry} Available for Your Location`}
-                authenticatedUsername={authenticatedUsername}></ProductPromotionRectangle>
+                <ProductPromotionRectangle title={`International Bestsellers in Food Available for Your Location`}
+                idsOfProductsAvailableToUser={idsOfProductsAvailableToUser} deliveryCountry={deliveryAreaCountry}></ProductPromotionRectangle>
 
                 <SimilarCustomerProductsSection deliveryAreaCountry={deliveryAreaCountry}></SimilarCustomerProductsSection>
 

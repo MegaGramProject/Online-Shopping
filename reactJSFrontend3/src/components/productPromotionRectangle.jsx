@@ -1,13 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import dining from '../assets/dining.jpg';
-import homeStuff from '../assets/homeStuff.jpg';
-import kitchenware from '../assets/kitchenware.jpg';
 import leftArrow from '../assets/leftArrow.png';
-import potsAndPans from '../assets/potsAndPans.jpg';
-import toaster from '../assets/toaster.jpg';
-import toys from '../assets/toys.jpg';
 
-function ProductPromotionRectangle({title, authenticatedUsername}) {
+function ProductPromotionRectangle({title, idsOfProductsAvailableToUser, deliveryCountry}) {
     const [isUserHoveringOnThis, setIsUserHoveringOnThis] = useState(false);
     const [canGoLeft, setCanGoLeft] = useState(false);
     const [canGoRight, setCanGoRight] = useState(true);
@@ -16,22 +10,191 @@ function ProductPromotionRectangle({title, authenticatedUsername}) {
     
     useEffect(() => {
         fetchTheProductsToPromote(title);
-    }, [authenticatedUsername]);
+    }, [idsOfProductsAvailableToUser, deliveryCountry]);
+
 
     async function fetchTheProductsToPromote(title) {
-        if(authenticatedUsername.length==0) {
+        if(idsOfProductsAvailableToUser==null || deliveryCountry.length==0) {
             return;
         }
-        if(title==="International Bestsellers Available for Your Location") {
-            //first use the authUser's deliveryzipcode and deliveryAreaCountry so that only available products are shown
-            //make a request to find the productIds of all the products that are available to user(either via delivery or pickup within 2hrs)-> idsOfProductsAvailableToUser
-            //then make a request to get the most sold products whose ids are in idsOfProductsAvailableToUser
-            //then make a request to get the avg-ratings and numRatings of all of these products.
-            //convert that list of {productId, avgRating, numRatings: } to {productId: bayesianAvgRating}
-            //then for each of the most sold products, get the product between numSold and bayesian-avg-rating.
-            //get the 6 products who are at the top of this ordeal
-            //these products will be the ones displayed by using setPromotedProducts()
+
+        let numProductSales = [];
+        let listOfAvgRatingsAndNumRatingsOfProducts = [];
+
+        if(title==='International Bestsellers in Sports & Outdoors Available for Your Location') {
+            const response2c = await fetch('http://localhost:8022/getIdsOfProductsOfCategoryFromProductIds', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    category: 'Sports & Outdoors',
+                    productIds: idsOfProductsAvailableToUser
+                })
+            });
+            if(!response2c.ok) {
+                throw new Error('Network response not ok');
+            }
+            idsOfProductsAvailableToUser = await response2c.json();
         }
+        else if(title==='International Bestsellers in Books Available for Your Location') {
+            const response2c = await fetch('http://localhost:8022/getIdsOfProductsOfCategoryFromProductIds', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    category: 'Books',
+                    productIds: idsOfProductsAvailableToUser
+                })
+            });
+            if(!response2c.ok) {
+                throw new Error('Network response not ok');
+            }
+            idsOfProductsAvailableToUser = await response2c.json();
+            
+        }
+        else if(title==='International Bestsellers in Food Available for Your Location') {
+            const response2c = await fetch('http://localhost:8022/getIdsOfProductsOfCategoryFromProductIds', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    category: 'Food',
+                    productIds: idsOfProductsAvailableToUser
+                })
+            });
+            if(!response2c.ok) {
+                throw new Error('Network response not ok');
+            }
+            idsOfProductsAvailableToUser = await response2c.json();
+        }
+
+        if(title.startsWith('International')) {
+            const response3 = await fetch('http://localhost:8028/numSalesOfProductsInList', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    country: 'all',
+                    productIds: idsOfProductsAvailableToUser
+                })
+            });
+            if(!response3.ok) {
+                throw new Error('Network response not ok');
+            }
+            numProductSales = await response3.json(); //list of mappings between productId and numSold
+
+            const response4 = await fetch('http://localhost:8028/avgAndNumRatingsOfProductsInList', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    country: 'all',
+                    productIds: idsOfProductsAvailableToUser
+                })
+            });
+            if(!response4.ok) {
+                throw new Error('Network response not ok');
+            }
+            listOfAvgRatingsAndNumRatingsOfProducts = await response4.json();
+            
+        }
+
+        else if(title===`Bestsellers in ${deliveryCountry} Available for Your Location`) {
+            const response3 = await fetch('http://localhost:8028/numSalesOfProductsInList', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    country: deliveryCountry,
+                    productIds: idsOfProductsAvailableToUser
+                })
+            });
+            if(!response3.ok) {
+                throw new Error('Network response not ok');
+            }
+            numProductSales = await response3.json(); //list of mappings between productId and numSold ordered by numSold DESC
+
+            const response4 = await fetch('http://localhost:8028/avgAndNumRatingsOfProductsInList', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    country: deliveryCountry,
+                    productIds: idsOfProductsAvailableToUser
+                })
+            });
+            if(!response4.ok) {
+                throw new Error('Network response not ok');
+            }
+            listOfAvgRatingsAndNumRatingsOfProducts = await response4.json();
+        }
+        let bayesianAvgRatings = getBayesianAverageRatings(listOfAvgRatingsAndNumRatingsOfProducts);
+
+        /*bayesianAvgRatings is a dict where each key is productId and value is bayesian avg rating of product.
+        one of the keys, however, one of the keys is the avgBayesianAvgRatingOfAllProducts, which will be used for those
+        products who have no ratings
+        */
+        let productsToPromote = [];
+        for(let productNumSalesInfo of numProductSales) {
+            if(productNumSalesInfo.productId in bayesianAvgRatings) {
+                productsToPromote.push({
+                    productId: productNumSalesInfo.productId,
+                    bestsellerScore: productNumSalesInfo.numSold * bayesianAvgRatings[productNumSalesInfo.productId]
+                });
+            }
+            else {
+                productsToPromote.push({
+                    productId: productNumSalesInfo.productId,
+                    bestsellerScore: productNumSalesInfo.numSold * bayesianAvgRatings['avgBayesianAvgRatingOfAllProducts']
+                });
+            }
+        }
+        productsToPromote = productsToPromote.sort((a,b) => b.bestsellerScore-a.bestsellerScore);
+        productsToPromote = productsToPromote.slice(0, 6);
+        let idsOfProductsToPromote = productsToPromote.map(x=>x.productId);
+
+        const response5 = await fetch('http://localhost:8031/getMainProductImagesOfProducts', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(idsOfProductsToPromote)
+        });
+        if(!response5.ok) {
+            throw new Error('Network response not ok');
+        }
+        const mainImagesOfProducts = await response5.json(); //dict where each key is productId and each value is the fetched base-64-string of the main photo of product
+        productsToPromote = productsToPromote.map(x=>{
+            return {
+                imageSrc: `data:image/jpeg;base64,${mainImagesOfProducts[x.productId]}`,
+                link: `http://localhost:8024/shoppingProductPage/${x.productId}`
+            };
+        });
+        
+        setPromotedProducts(productsToPromote);
+    }
+
+    function getBayesianAverageRatings(listOfAvgRatingsAndNumRatingsOfProducts) {
+        const output = {}; // dict where each key is productId and value is Bayesian avg rating of product
+        let totalWeightedRating = 0;
+        let totalNumberOfRatingsAcrossAllProducts = 0;
+
+        for (let productRatingInfo of listOfAvgRatingsAndNumRatingsOfProducts) {
+            totalWeightedRating += productRatingInfo.avgRating * productRatingInfo.numRatings;
+            totalNumberOfRatingsAcrossAllProducts += productRatingInfo.numRatings;
+        }
+
+        let globalAvgRatingAcrossProducts = totalWeightedRating / totalNumberOfRatingsAcrossAllProducts;
+        let avgNumberOfRatingsAcrossAllProducts = totalNumberOfRatingsAcrossAllProducts / listOfAvgRatingsAndNumRatingsOfProducts.length;
+
+        for (let productRatingInfo of listOfAvgRatingsAndNumRatingsOfProducts) {
+            output[productRatingInfo.product_id] =
+                (productRatingInfo.avgRating * productRatingInfo.numRatings +
+                globalAvgRatingAcrossProducts * avgNumberOfRatingsAcrossAllProducts) /
+                (productRatingInfo.numRatings + avgNumberOfRatingsAcrossAllProducts);
+        }
+
+
+        let totalBayesianAvgRatingAcrossAllProducts = 0;
+        for (let productId of Object.keys(output)) {
+            totalBayesianAvgRatingAcrossAllProducts += output[productId];
+        }
+
+        output['avgBayesianAvgRatingAcrossAllProducts'] = totalBayesianAvgRatingAcrossAllProducts / listOfAvgRatingsAndNumRatingsOfProducts.length;
+
+        return output;
+
     }
 
     function setIsUserHoveringOnThisToTrue() {
@@ -94,25 +257,13 @@ function ProductPromotionRectangle({title, authenticatedUsername}) {
                     </div>
                 }
 
-                <div ref={scrollableDivRef} onScroll={onScrollingScrollableDiv} onMouseEnter={setIsUserHoveringOnThisToTrue} onMouseLeave={setIsUserHoveringOnThisToFalse} style={{display: 'flex', alignItems: 'center', height: '65%', width: '100%', backgroundColor: 'steelblue', overflowX: 'scroll'}}>
-                    <img src={toys} style={{height: '100%', width: '16.67%', cursor: 'pointer'}}></img>
-                    <img src={potsAndPans} style={{height: '100%', width: '16.67%', cursor: 'pointer'}}></img>
-                    <img src={toaster} style={{height: '100%', width: '16.67%', cursor: 'pointer'}}></img>
-                    <img src={dining} style={{height: '100%', width: '16.67%', cursor: 'pointer'}}></img>
-                    <img src={homeStuff} style={{height: '100%', width: '16.67%', cursor: 'pointer'}}></img>
-                    <img src={kitchenware} style={{height: '100%', width: '16.67%', cursor: 'pointer'}}></img>
-                    <img src={toys} style={{height: '100%', width: '16.67%', cursor: 'pointer'}}></img>
-                    <img src={potsAndPans} style={{height: '100%', width: '16.67%', cursor: 'pointer'}}></img>
-                    <img src={toaster} style={{height: '100%', width: '16.67%', cursor: 'pointer'}}></img>
-                    <img src={dining} style={{height: '100%', width: '16.67%', cursor: 'pointer'}}></img>
-                    <img src={homeStuff} style={{height: '100%', width: '16.67%', cursor: 'pointer'}}></img>
-                    <img src={kitchenware} style={{height: '100%', width: '16.67%', cursor: 'pointer'}}></img>
-                    <img src={toys} style={{height: '100%', width: '16.67%', cursor: 'pointer'}}></img>
-                    <img src={potsAndPans} style={{height: '100%', width: '16.67%', cursor: 'pointer'}}></img>
-                    <img src={toaster} style={{height: '100%', width: '16.67%', cursor: 'pointer'}}></img>
-                    <img src={dining} style={{height: '100%', width: '16.67%', cursor: 'pointer'}}></img>
-                    <img src={homeStuff} style={{height: '100%', width: '16.67%', cursor: 'pointer'}}></img>
-                    <img src={kitchenware} style={{height: '100%', width: '16.67%', cursor: 'pointer'}}></img>
+                <div ref={scrollableDivRef} onScroll={onScrollingScrollableDiv} onMouseEnter={setIsUserHoveringOnThisToTrue} onMouseLeave={setIsUserHoveringOnThisToFalse} style={{display: 'flex', alignItems: 'center', height: '65%', width: '100%', overflowX: 'scroll'}}>
+                    {promotedProducts.map((promotedProductInfo, index) => {
+                        return (
+                            <img key={index} onClick={() => window.location.href = promotedProductInfo.link} src={promotedProductInfo.imageSrc} style={{height: '100%', width: '16.67%', cursor: 'pointer'}}></img>
+                        );
+                        })
+                    }
                 </div>
             </div>
             

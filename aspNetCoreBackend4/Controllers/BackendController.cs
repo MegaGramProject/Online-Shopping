@@ -151,6 +151,16 @@ public class BackendController : ControllerBase
         return Ok(newDocumentId);
     }
 
+    [HttpPost("getNumProductsLeftForListOfProducts")]
+    public async Task<IActionResult> getNumProductsLeftForListOfProducts([FromBody] string[] productIds)
+    {
+        if (productIds.Count() == 0) {
+            return BadRequest(productIds);
+        }
+        var idsOfInStockProducts =  await _mongoDBService.getNumProductsLeftForListOfProducts(productIds);
+        return Ok(idsOfInStockProducts);
+    }
+
     [HttpPatch("editNumProductsLeft")]
     public async Task<IActionResult> editNumProductsLeft([FromBody] EditNumProductsLeft npl)
     {

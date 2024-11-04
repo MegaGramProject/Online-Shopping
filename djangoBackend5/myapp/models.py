@@ -5,6 +5,7 @@ class PastOrder(models.Model):
     customerUsername = models.CharField(max_length=30)
     dateTimeOfPurchase = models.DateTimeField()
     optionsChosen = models.JSONField()
+    countryOfPurchase = models.CharField(max_length=100)
 
     class Meta:
         app_label = 'use-default'

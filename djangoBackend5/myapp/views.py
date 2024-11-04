@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import PastOrder, ProductRatingAndReview
+from django.db.models import Count, Avg
 from .serializers import PastOrderSerializer, ProductRatingAndReviewSerializer
 
 @api_view(['GET'])
@@ -57,6 +58,32 @@ def deletePastOrder(request):
     
     pastOrderToDelete.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['POST'])
+def numSalesOfProductsInList(request):
+    try:
+        country = request.data.get('country')
+        productIds = request.data.get('productIds')
+
+        if country != 'all':
+            numSalesOfProducts = (
+                PastOrder.objects
+                .filter(countryOfPurchase=country, productId__in=productIds)
+                .values('productId')  # Group by productId
+                .annotate(numSold=Count('productId'))  # Count occurrences of each productId
+            )
+        else:
+            numSalesOfProducts = (
+                PastOrder.objects
+                .filter(productId__in=productIds)
+                .values('productId')
+                .annotate(numSold=Count('productId'))
+            )
+
+    except Exception as e:
+        return Response([], status=400)
+
+    return Response(numSalesOfProducts, status=200)
 
 @api_view(['GET'])
 def getAllProductRatingsAndReviews(request):
@@ -116,3 +143,30 @@ def deleteProductRatingAndReview(request):
     
     productRatingAndReviewToDelete.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['POST'])
+def avgAndNumRatingsOfProductsInList(request):
+    try:
+        country = request.data.get('country')
+        productIds = request.data.get('productIds')
+
+        if country != 'all':
+            avgAndNumRatingsOfProducts = (
+                ProductRatingAndReview.objects
+                .filter(country_of_customer=country, product_id__in=productIds)
+                .values('product_id')  # Group by productId
+                .annotate(avgRating=Avg('rating'), numRatings=Count('product_id'))
+            )
+        else:
+            avgAndNumRatingsOfProducts = (
+                ProductRatingAndReview.objects
+                .filter(product_id__in=productIds)
+                .values('product_id')
+                .annotate(avgRating=Avg('rating'), numRatings=Count('product_id'))
+            )
+
+    except Exception as e:
+        return Response([], status=400)
+
+    return Response(avgAndNumRatingsOfProducts, status=200)

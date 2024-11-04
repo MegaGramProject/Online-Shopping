@@ -7,6 +7,7 @@ use App\Http\Controllers\BackendController;
 Route::get('/getAllProductDeliveryZones', [BackendController::class, 'getAllProductDeliveryZones']);
 Route::get('/getDeliveryZonesOfProduct/{productId}', [BackendController::class, 'getDeliveryZonesOfProduct']);
 Route::post('/addProductDeliveryZone/{productId}', [BackendController::class, 'addProductDeliveryZone']);
+Route::post('/getProductsThatDeliverToLocation', [BackendController::class, 'getProductsThatDeliverToLocation']);
 Route::patch('/editProductDeliveryZone/{productId}', [BackendController::class, 'editProductDeliveryZone']);
 Route::delete('/deleteProductDeliveryZone/{productId}', [BackendController::class, 'deleteProductDeliveryZone']);
 

@@ -2,6 +2,7 @@ using MongoDB.Driver;
 using aspNetCoreBackend4.Models;
 using aspNetCoreBackend4.Models.RequestBodies;
 using MongoDB.Bson;
+using System.Text.Json;
 
 
 namespace aspNetCoreBackend4.Data
@@ -55,6 +56,14 @@ namespace aspNetCoreBackend4.Data
             return result.DeletedCount > 0;
         }
 
+        public async Task<List<numProductsLeft>> getNumProductsLeftForListOfProducts(string[] productIds)
+        {
+            var numProductsLeftForListOfProducts = await _numProductsLeft
+                .Find(elem => productIds.Contains(elem.productId))
+                .ToListAsync();
+
+            return numProductsLeftForListOfProducts;
+        }
 
     }
 

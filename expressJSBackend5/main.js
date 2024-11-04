@@ -21,6 +21,7 @@ origin: function (origin, callback) {
 optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
+app.use(express.json());
 
 
 const url = 'mongodb://localhost:27017';
@@ -265,6 +266,30 @@ app.get("/", (_req, res) => {
     res.end(ruruHTML({ endpoint: `http://localhost:${port}/graphql` }))
 })
 
+app.post("/getProductIdsOfThoseInStock", (req, res) => {
+    const output = [];
+    let numProductsLeftForListOfProducts = req.body.numProductsLeftForListOfProducts;
+    for(let elem of numProductsLeftForListOfProducts) {
+        if(productIsInStock(JSON.parse(elem.numForEachOption)[1])) {
+            output.push(elem.productId);
+        }
+    }
+    res.send(output);
+})
+
+//DFS
+function productIsInStock(partOfNumProductsLeftForListOfProducts) {
+    if(typeof partOfNumProductsLeftForListOfProducts === 'number') {
+        return partOfNumProductsLeftForListOfProducts>0;
+    }
+    //if it is not an int is a dict of type <string, object>
+    for(let key of Object.keys(partOfNumProductsLeftForListOfProducts)) {
+        if(productIsInStock(partOfNumProductsLeftForListOfProducts[key])) {
+            return true;
+        }
+    }
+    return false;
+}
 
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);

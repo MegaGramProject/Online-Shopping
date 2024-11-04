@@ -26,7 +26,7 @@ public class BackendController : ControllerBase
     }
 
     [HttpPost("addProductFlyer/{productId}")]
-    public async Task<IActionResult> AddProductFlyer(string productId, IFormFile file)
+    public async Task<IActionResult> AddProductFlyer(string productId, [FromForm] IFormFile file)
     {
         if (file == null || file.Length == 0)
         {
@@ -70,7 +70,7 @@ public class BackendController : ControllerBase
 
         foreach (var key in formData.Keys)
         {
-            var wasProductImageAdded = await _gcsService.AddProductImage($"{productId}-${key}-.jpg", formData.Files[key]);
+            var wasProductImageAdded = await _gcsService.AddProductImage($"{productId}-${key}.jpg", formData.Files[key]!);
             if(!wasProductImageAdded) {
                 numImgsFailed++;
             }
@@ -96,6 +96,14 @@ public class BackendController : ControllerBase
         }
 
         return Ok(true);
+    }
+
+    [HttpPost("getMainProductImagesOfProducts")]
+    public IActionResult getMainProductImagesOfProducts([FromBody] string[] productIds)
+    {
+        
+        var getMainProductImagesOfProducts = _gcsService.getMainProductImagesOfProducts(productIds);
+        return Ok(getMainProductImagesOfProducts);
     }
 
 

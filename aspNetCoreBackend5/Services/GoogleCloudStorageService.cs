@@ -187,6 +187,40 @@ public class GoogleCloudStorageService
         }
     }
 
+    public Dictionary<string, byte[]> getMainProductImagesOfProducts(string[] productIds)
+    {
+        string bucketName = "shopping-product-images";
+        
+        try
+        {
+            var objects = _storageClient.ListObjects(bucketName)
+                .Where(o => o.Name.Substring(24)=="-0-0.jpg" && productIds.Contains(o.Name.Substring(0, 24)))
+                .ToList();
+
+            if (!objects.Any())
+            {
+                return new Dictionary<string, byte[]>();
+            }
+
+            Dictionary<string, byte[]> mainProductImagesOfProducts = new Dictionary<string, byte[]>();
+            foreach (var obj in objects)
+            {
+                using (var memoryStream = new MemoryStream())
+                {
+                    _storageClient.DownloadObject(bucketName, obj.Name, memoryStream);
+
+                    mainProductImagesOfProducts[obj.Name.Substring(0, 24)] = memoryStream.ToArray();
+                }
+            }
+            return mainProductImagesOfProducts;
+        }
+        catch (Google.GoogleApiException e) when (e.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return new Dictionary<string, byte[]>();
+        }
+    }
+
+
 
     
 

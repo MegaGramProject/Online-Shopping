@@ -33,6 +33,27 @@ class BackendController extends Controller {
         return response()->json($data);
     }
 
+    public function getProductsThatDeliverToLocation(Request $request) {
+        $zipcode = $request->input('zipcode');
+        $country = $request->input('country');
+    
+        if ($country === null) {
+            return response()->json(['error' => 'Country is required'], 400);
+        }
+    
+        if ($zipcode === null) {
+            $data = $this->productDeliveryZones->find([
+                "listOfCountriesAndTheirZipsToDeliverTo.$country" => ['$exists' => true]
+            ], ['projection' => ['productId' => 1]])->toArray();
+        } else {
+            $data = $this->productDeliveryZones->find([
+                "listOfCountriesAndTheirZipsToDeliverTo.$country" => ['$in' => [$zipcode, 'all']]
+            ], ['projection' => ['productId' => 1]])->toArray();
+        }
+    
+        return response()->json($data);
+    }
+    
     public function addProductDeliveryZone(Request $request, string $productId) {
         $newDocument = [
             'productId' => $productId,
