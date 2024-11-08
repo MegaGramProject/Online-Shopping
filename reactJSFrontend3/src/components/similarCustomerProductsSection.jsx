@@ -16,12 +16,13 @@ function SimilarCustomerProductsSection({authenticatedUsername, deliveryAreaCoun
     //div1 refers to the div of products for this section: 'Recommended for you based on your history of searches, purchases, and reviews'
     //div2 refers to the div of products for this section: 'Customers who bought items in your purchasing history also bought'
     const [currPageInDiv1, setCurrPageInDiv1] = useState(1);
-    const [maxPageInDiv1, setMaxPageInDiv1] = useState(2);
+    const [maxPageInDiv1, setMaxPageInDiv1] = useState(1);
     const [currPageInDiv2, setCurrPageInDiv2] = useState(1);
-    const [maxPageInDiv2, setMaxPageInDiv2] = useState(2);
+    const [maxPageInDiv2, setMaxPageInDiv2] = useState(1);
     const [div1Prices, setDiv1Prices] = useState([]);
     const [div2Prices, setDiv2Prices] = useState([]);
     const [div1Products, setDiv1Products] = useState([]);
+    const [div2Products, setDiv2Products] = useState([]);
 
     const categoryToPagePathSegmentMappings = {
         '': 'shopAllItems',
@@ -76,9 +77,14 @@ function SimilarCustomerProductsSection({authenticatedUsername, deliveryAreaCoun
     };
 
     useEffect(() => {
-        if(div1Products.length==0 && authenticatedUsername.length>0 && allPastSearchesOfUser!==null && deliveryAreaCountry.length>0
+        if(authenticatedUsername.length>0 && allPastSearchesOfUser!==null && deliveryAreaCountry.length>0
         && selectedAddressOfUser!==null && idsOfProductsAvailableToUser!==null) {
-            fetchProductsForDiv1();
+            if(div1Products.length==0) {
+                fetchProductsForDiv1();
+            }
+            if(div2Products.length==0) {
+                fetchProductsForDiv2();
+            }
         }
     }, [authenticatedUsername, allPastSearchesOfUser, deliveryAreaCountry,
         selectedAddressOfUser, idsOfProductsAvailableToUser]);
@@ -104,7 +110,6 @@ function SimilarCustomerProductsSection({authenticatedUsername, deliveryAreaCoun
             throw new Error('Network response not ok');
         }
         let idsOfUserBoughtProducts = await response.json();
-
 
         const response2a = await fetch('http://localhost:8022/getProductIdsForCategoriesInPastSearches', {
             method: 'POST',
@@ -187,7 +192,6 @@ function SimilarCustomerProductsSection({authenticatedUsername, deliveryAreaCoun
         const idsOfSimilarProductsToThoseWithNoOr4PlusRating = await response4b.json();
 
         const idsOfPotentialNewDiv1Products = [...nameMatches, ...searchTagMatches, ...idsOfSimilarProductsToThoseWithNoOr4PlusRating];
-
 
         if(idsOfPotentialNewDiv1Products.length==0) {
             return;
@@ -291,6 +295,13 @@ function SimilarCustomerProductsSection({authenticatedUsername, deliveryAreaCoun
         scoresOfPotentialNewDiv1Products = scoresOfPotentialNewDiv1Products.slice(0, 24);
     
         const newDiv1Products = scoresOfPotentialNewDiv1Products.map(x=>x.id);
+        const numberOfNewDiv1Products = newDiv1Products.length;
+        if(numberOfNewDiv1Products%6==0) {
+            setMaxPageInDiv1(numberOfNewDiv1Products/6);
+        }
+        else {
+            setMaxPageInDiv1(Math.floor(numberOfNewDiv1Products/6)+1);
+        }
 
         const response9 = await fetch('http://localhost:8022/getNamesAndPricesOfListOfProducts', {
             method: 'POST',
@@ -349,6 +360,193 @@ function SimilarCustomerProductsSection({authenticatedUsername, deliveryAreaCoun
 
         setDiv1Prices(newDiv1Prices);
         setDiv1Products(newDiv1Products);
+    }
+
+
+    //Getting Available Products for 'Customers who bought items in your purchasing history also bought'
+    //No products that have already been purchased by the user will be recommended here.
+    async function fetchProductsForDiv2() {
+        const response = await fetch(`http://localhost:8028/getProductIdsPurchasedByUser/${authenticatedUsername}`);
+        if(!response.ok) {
+            throw new Error('Network response not ok');
+        }
+        let idsOfUserBoughtProducts = await response.json();
+        
+        const response1 = await fetch(`http://localhost:8028/getIdsOfProductsBoughtByCustomersWhoAlsoBought/${authenticatedUsername}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                productIds: idsOfUserBoughtProducts,
+                idsToInclude: idsOfProductsAvailableToUser
+            })
+        });
+        if(!response1.ok) {
+            throw new Error('Network response not ok');
+        }
+        let idsOfPotentialNewDiv2Products = await response1.json();
+
+        const response2 = await fetch('http://localhost:8028/avgAndNumRatingsOfProductsInList', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    country: 'all',
+                    productIds: idsOfPotentialNewDiv2Products
+                })
+            });
+        if(!response2.ok) {
+            throw new Error('Network response not ok');
+        }
+        const listOfAvgRatingsAndNumRatingsOfProducts = await response2.json();
+        const dictOfAvgRatingsAndNumRatingsOfProducts = getDictForAvgAndNumRatingsOfProducts(listOfAvgRatingsAndNumRatingsOfProducts);
+        /*
+        above is a dict where each key is a productId from idsOfPotentialNewDiv2Products, and each value
+        is a list of two elements: the avgRating and numRatings of that product in that order.
+        */
+        const bayesianAvgRatings = getBayesianAverageRatings(listOfAvgRatingsAndNumRatingsOfProducts);
+        /*
+        above is a dict where each key is a productId from idsOfPotentialNewDiv2Products, and value is bayesian avg rating of product.
+        one of the keys, however, one of the keys is the avgBayesianAvgRatingOfAllProducts, which will be used for those
+        products who have no ratings
+        */
+
+        const response3 = await fetch('http://localhost:8029/getFastestDeliveryTimesForProducts', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                hasPremium: hasPremium,
+                address: selectedAddressOfUser,
+                productIds: idsOfPotentialNewDiv2Products
+            })
+        });
+        if(!response3.ok){
+            throw new Error('Network response not ok');
+        }
+        const deliveryTimesOfPotentialDiv2Products = await response3.json();
+        /*
+        above is a dict where keys are productIds in idsOfPotentialNewDiv2Products, whereas values are the fastest
+        delivery times of these products in hours.
+        */
+
+        const response4 = await fetch('http://localhost:8030/checkIfDealsAreAvailableForProducts', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                productIds: idsOfPotentialNewDiv2Products,
+                hasPremium: hasPremium
+            })
+        });
+        if(!response4.ok) {
+            throw new Error('Network response not ok');
+        }
+        const productIdToDealAvailableMappings = await response4.json();
+        /*
+        above is a dict where the keys are productIds in idsOfPotentialNewDiv2Products, whereas values
+        are booleans: true if product has deal available, false otherwise
+        */
+
+        const response5 = await fetch('http://localhost:8032/api/checkForMegagramProductChoicesAndGetNumViewsInPastMonth', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                productIds: idsOfPotentialNewDiv2Products
+            })
+        });
+        if(!response5.ok) {
+            throw new Error('Network response not ok');
+        }
+        const productIdToProductChoiceAndNumViewsInPastMonthMappings = await response5.json();
+        /*
+        above is a dict where the keys are productIds in idsOfPotentialNewDiv2Products, whereas values
+        are lists with two elements: the first being a string of the choiceCategory of the product if it is a Megagram-Product-Choice, null
+        otherwise. the second one is an integer representing the number of views the product-page has received
+        in the past month
+        */
+    
+        let scoresOfPotentialNewDiv2Products = [];
+        for(let productId of idsOfPotentialNewDiv2Products) {
+            const productInfo = {
+                bayesianAvgRating: bayesianAvgRatings[productId] ?? bayesianAvgRatings['avgBayesianAvgRatingAcrossAllProducts'],
+                megagramsChoice: productIdToProductChoiceAndNumViewsInPastMonthMappings[productId][0]!==null,
+                numViewersInPastMonth: productIdToProductChoiceAndNumViewsInPastMonthMappings[productId][1],
+                fastestDeliveryTimeInHours: deliveryTimesOfPotentialDiv2Products[productId],
+                discountsAvailable: productIdToDealAvailableMappings[productId]
+            };
+            const scoreOfProduct = computeScoreForProduct(productInfo); //the higher the score, the more left it will be placed in div1.
+            //the products whose scores are in the top 24 will be selected in div1Products
+            scoresOfPotentialNewDiv2Products.push({
+                id: productId,
+                score: scoreOfProduct
+            });
+        }
+
+        scoresOfPotentialNewDiv2Products.sort((a,b) => b.score - a.score);
+        scoresOfPotentialNewDiv2Products = scoresOfPotentialNewDiv2Products.slice(0, 24);
+
+        const newDiv2Products = scoresOfPotentialNewDiv2Products.map(x=>x.id);
+        const numberOfNewDiv2Products = newDiv2Products.length;
+        if(numberOfNewDiv2Products%6==0) {
+            setMaxPageInDiv2(numberOfNewDiv2Products/6);
+        }
+        else {
+            setMaxPageInDiv2(Math.floor(numberOfNewDiv2Products/6)+1);
+        }
+
+        const response9 = await fetch('http://localhost:8022/getNamesAndPricesOfListOfProducts', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                productIds: newDiv2Products
+            })
+        });
+        if(!response9.ok) {
+            throw new Error('Network response not ok');
+        }
+        const dictOfNamesAndPricesOfNewDiv2Products = await response9.json();
+        /*
+        above is a dict where keys are productIds in newDiv2Products and
+        values are lists of 2 or 4 elements: first is the product-name,
+        second is the price of the product with all the default options,
+        and third and fourth(these two are missing for certain products)
+        is the price per unit of the product with all default options.
+
+        an example of a value of this dict is below.
+        ["Product-Name", "$20", "$2" "oz"]
+        */
+
+        const response10 = await fetch('http://localhost:8031/getMainProductImagesOfProducts', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(newDiv2Products)
+        });
+        if(!response10.ok) {
+            throw new Error('Network response not ok');
+        }
+        const mainImagesOfProducts = await response10.json();
+        /*
+        above is a dict where each key is productId and each value is the
+        fetched base-64-string of the main photo of product
+        */
+
+        const newDiv2Prices = [];
+        for(let i=0; i<newDiv2Products.length; i++) {
+            const currProductId = newDiv2Products[i];
+            const currProductName = dictOfNamesAndPricesOfNewDiv2Products[currProductId][0];
+            newDiv2Products[i] = {
+                id: currProductId,
+                name: currProductName.length<65 ? currProductName : currProductName.substring(0, 65)+"...",
+                avgRating: currProductId in dictOfAvgRatingsAndNumRatingsOfProducts ? dictOfAvgRatingsAndNumRatingsOfProducts[currProductId][0] : 0,
+                numRatings: currProductId in dictOfAvgRatingsAndNumRatingsOfProducts ? dictOfAvgRatingsAndNumRatingsOfProducts[currProductId][1] : 0,
+                imageSrc: `data:image/jpeg;base64,${mainImagesOfProducts[currProductId]}`,
+                megagramsChoice: productIdToProductChoiceAndNumViewsInPastMonthMappings[currProductId][0],
+                numViewersInPastMonth: productIdToProductChoiceAndNumViewsInPastMonthMappings[currProductId][1],
+                getItAsSoonAs: formatDeliveryArrivalText(deliveryTimesOfPotentialDiv2Products[currProductId]),
+                discountsAvailable: productIdToDealAvailableMappings[currProductId]
+            };
+
+            newDiv2Prices.push(dictOfNamesAndPricesOfNewDiv2Products[currProductId].slice(1));
+        }
+        setDiv2Prices(newDiv2Prices);
+        setDiv2Products(newDiv2Products);
     }
 
     function formatDeliveryArrivalText(numHours) {
@@ -465,6 +663,24 @@ function SimilarCustomerProductsSection({authenticatedUsername, deliveryAreaCoun
         }
     }
 
+    function goToNextPageInDiv2() {
+        if(currPageInDiv2==maxPageInDiv2) {
+            setCurrPageInDiv2(1);
+        }
+        else {
+            setCurrPageInDiv2(currPageInDiv2+1);
+        }
+    }
+
+    function goToPreviousPageInDiv2() {
+        if(currPageInDiv2==1) {
+            setCurrPageInDiv2(maxPageInDiv2);
+        }
+        else {
+            setCurrPageInDiv2(currPageInDiv2-1);
+        }
+    }
+
     function updateCurrenciesForDiv1Prices() {
         let currCurrency = "";
         currCurrency = div1Prices[0][0][0];
@@ -523,17 +739,22 @@ function SimilarCustomerProductsSection({authenticatedUsername, deliveryAreaCoun
 
                 <div id="div1" style={{width: '100%', borderStyle: 'solid', borderLeft: 'none', borderRight: 'none', borderColor: 'lightgray', height: '50%',
                 borderWidth:'0.07em', display: 'flex', flexDirection: 'column', padding: '0.5em 1em'}}>
+                    
+                
                     <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '96.5%'}}>
                         <b style={{marginLeft: '4em'}}>Recommended for you based on your history of searches, purchases, and reviews</b>
                         <small>{`Page ${currPageInDiv1} of ${maxPageInDiv1}`}</small>
                     </div>
+                    
 
                     <div style={{display: 'flex', alignItems: 'center', height: '80%', width: '98%', gap: '0.5em', justifyContent: 'space-between', marginTop: '-1.2em'}}>
 
-                        <div onClick={goToPreviousPageInDiv1} style={{backgroundColor: 'white', height: '2em', width: '2em', borderRadius: '0.75em',
-                        cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', borderStyle: 'solid', borderWidth: '0.03em'}}>
-                            <img src={leftArrow} style={{height: '1.2em', width: '1.2em'}}></img>
-                        </div>
+                        {maxPageInDiv1>1 &&
+                            <div onClick={goToPreviousPageInDiv1} style={{backgroundColor: 'white', height: '2em', width: '2em', borderRadius: '0.75em',
+                            cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', borderStyle: 'solid', borderWidth: '0.03em'}}>
+                                <img src={leftArrow} style={{height: '1.2em', width: '1.2em'}}></img>
+                            </div>
+                        }
 
                         {div1Products.slice(currPageInDiv1*6-6, 6*currPageInDiv1).map((product, index)=> {
                             const correspondingDiv1Prices = div1Prices.slice(currPageInDiv1*6-6, 6*currPageInDiv1);
@@ -580,24 +801,87 @@ function SimilarCustomerProductsSection({authenticatedUsername, deliveryAreaCoun
                         })
                         }
 
-                        <div onClick={goToNextPageInDiv1} style={{backgroundColor: 'white', height: '2em', width: '2em', borderRadius: '0.75em',
-                        cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', borderStyle: 'solid', borderWidth: '0.03em'}}>
-                            <img src={leftArrow} style={{height: '1.2em', width: '1.2em', transform: 'scaleX(-1)'}}></img>
-                        </div>
+                        {maxPageInDiv1>1 &&
+                            <div onClick={goToNextPageInDiv1} style={{backgroundColor: 'white', height: '2em', width: '2em', borderRadius: '0.75em',
+                            cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', borderStyle: 'solid', borderWidth: '0.03em'}}>
+                                <img src={leftArrow} style={{height: '1.2em', width: '1.2em', transform: 'scaleX(-1)'}}></img>
+                            </div>
+                        }
 
                     </div>
                 </div>
 
                 <div id="div2" style={{width: '100%', borderStyle: 'solid', borderLeft: 'none', borderRight: 'none', borderColor: 'lightgray', height: '50%',
                 borderWidth:'0.07em', display: 'flex', flexDirection: 'column', padding: '0.5em 1em'}}>
+
                     <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '96.5%'}}>
                         <b style={{marginLeft: '4em'}}>Customers who bought items in your purchasing history also bought</b>
                         <small>{`Page ${currPageInDiv2} of ${maxPageInDiv2}`}</small>
                     </div>
 
-                    <div style={{display: 'flex', alignItems: 'center', height: '80%', width: '98%', gap: '0.5em', justifyContent: 'space-between'}}>
+                    <div style={{display: 'flex', alignItems: 'center', height: '80%', width: '98%', gap: '0.5em', justifyContent: 'space-between', marginTop: '-1.2em'}}>
+
+                        {maxPageInDiv2>1 &&
+                            <div onClick={goToPreviousPageInDiv2} style={{backgroundColor: 'white', height: '2em', width: '2em', borderRadius: '0.75em',
+                            cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', borderStyle: 'solid', borderWidth: '0.03em'}}>
+                                <img src={leftArrow} style={{height: '1.2em', width: '1.2em'}}></img>
+                            </div>
+                        }
+
+                        {div2Products.slice(currPageInDiv2*6-6, 6*currPageInDiv2).map((product, index)=> {
+                            const correspondingDiv2Prices = div2Prices.slice(currPageInDiv2*6-6, 6*currPageInDiv2);
+                            return (
+                                <div key={index} style={{height: '23em', width: '13.67%', display: 'flex',
+                                flexDirection: 'column', alignItems: 'start', marginTop: '3em', paddingLeft: '3em'}}>
+                                    <img onClick={() => window.location.href=`http://localhost:8024/shoppingProductPage/${product.id}`} src={product.imageSrc} style={{height: '9em', width: '9em', cursor: 'pointer', objectFit: 'contain'}}>
+                                    </img>
+                                    <p onClick={() => window.location.href=`http://localhost:8024/shoppingProductPage/${product.id}`} style={{fontSize: '0.8em', maxWidth: '70%', color: '#1c78a3', cursor: 'pointer'}}>
+                                        {product.name}
+                                    </p>
+                                    {product.numRatings>0 &&
+                                        <div onClick={()=>window.location.href=`http://localhost:8024/shoppingProductReviews/${product.id}`} style={{display: 'flex', alignItems: 'center', cursor: 'pointer', marginTop:'-1em'}}>
+                                            <img src={getStarsForRating(product.avgRating)} style={{height: '1.6em', width: '6em', objectFit: 'contain'}}></img>
+                                            <p style={{fontSize: '0.8em', color: '#1c78a3'}}>{product.numRatings}</p>
+                                        </div>
+                                    }
+                                    <p style={{fontSize: '0.75em', marginTop: '-0.1em'}}>{product.numViewersInPastMonth} viewed in past month</p>
+                                    {product.megagramsChoice!==null &&
+                                        <p style={{maxWidth: '75%', lineHeight: '1.25', marginTop: '-0.1em'}}>
+                                            <span style={{color: 'white', backgroundColor: 'navy', padding: '0.1em 0.5em'}}>Megagram's Choice</span> in <a href={`http://localhost:8024/${categoryToPagePathSegmentMappings[product.megagramsChoice]}`} style={{color: '#1c78a3', cursor: 'pointer', textDecoration: 'none'}}>{product.megagramsChoice}</a>
+                                        </p>
+                                    }
+                                    <p style={{marginTop: '-0.5em'}}> {correspondingDiv2Prices.length>index && <b>{correspondingDiv2Prices[index][0]}</b>} {correspondingDiv2Prices.length>index && correspondingDiv2Prices[index].length>1 &&
+                                        <small>({correspondingDiv2Prices[index][1]}/{correspondingDiv2Prices[index][2]})</small>
+                                        }
+                                    </p>
+                                    <div style={{fontSize: '0.8em', maxWidth: '75%', marginTop: '-0.3em'}}>
+                                        {hasPremium &&
+                                            <div style={{display: 'flex', alignItems: 'end', gap: '0.2em', marginBottom: '-0.8em'}}>
+                                                <img src={checkmark} style={{pointerEvents: 'none', height: '1.1em', width: '1.1em'}}></img>
+                                                <b style={{color: '#5693f5', fontSize: '0.88em'}}>premium</b>
+                                            </div>
+                                        }
+                                        <p>Get it as soon as <b>{product.getItAsSoonAs}</b></p>
+                                    </div>
+                                    {product.discountsAvailable &&
+                                        <b style={{color: 'white', backgroundColor: '#b52d34', padding: '0.5em 1em', marginTop: '0em', fontSize: '0.77em'}}>
+                                            Deals available
+                                        </b>
+                                    }
+                                </div>
+                            )
+                        })
+                        }
+
+                        {maxPageInDiv2>1 &&
+                            <div onClick={goToNextPageInDiv2} style={{backgroundColor: 'white', height: '2em', width: '2em', borderRadius: '0.75em',
+                            cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', borderStyle: 'solid', borderWidth: '0.03em'}}>
+                                <img src={leftArrow} style={{height: '1.2em', width: '1.2em', transform: 'scaleX(-1)'}}></img>
+                            </div>
+                        }
 
                     </div>
+
                 </div>
 
             

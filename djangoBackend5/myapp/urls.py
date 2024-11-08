@@ -9,7 +9,7 @@ urlpatterns = [
     path("editPastOrder", views.editPastOrder, name="Edit Past-Order"),
     path("deletePastOrder", views.deletePastOrder, name="Delete Past-Order"),
     path("numSalesOfProductsInList", views.numSalesOfProductsInList, name="# of Sales Of Products In List"),
-
+    path("getIdsOfProductsBoughtByCustomersWhoAlsoBought/<str:username>", views.getIdsOfProductsBoughtByCustomersWhoAlsoBought, name="Get Ids Of Products Bought By Customers Who Also Bought"),
 
     path("getAllProductRatingsAndReviews", views.getAllProductRatingsAndReviews, name="Get All Product Ratings & Reviews"),
     path("getAllProductRatingsAndReviewsOfUser/<str:reviewer_username>", views.getAllProductRatingsAndReviewsOfUser, name="Get All Product Ratings & Reviews Of User"),
@@ -19,6 +19,4 @@ urlpatterns = [
     path("deleteProductRatingAndReview", views.deleteProductRatingAndReview, name="Delete Product Rating And Review"),
     path("avgAndNumRatingsOfProductsInList", views.avgAndNumRatingsOfProductsInList, name="Avg & Num-Ratings Of Product in List"),
     path("getPurchasesOfUserWithNoOr4PlusRating/<str:username>", views.getPurchasesOfUserWithNoOr4PlusRating, name="Get Purchases Of User With No/4+ Rating")
-
-
 ]

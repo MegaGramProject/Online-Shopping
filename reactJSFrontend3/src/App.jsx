@@ -195,6 +195,20 @@ function App({params}) {
             setSelectedAddressOfUser(newSelectedAddress);
         }
 
+        setIdsOfProductsAvailableToUser([
+            "671c4132368a9fb6fe7f7d62",
+            "671c474a368a9fb6fe7f7d66",
+            "671c49cb368a9fb6fe7f7d69",
+            "671c4e33368a9fb6fe7f7d6b",
+            "671c5003368a9fb6fe7f7d6d",
+            "671c52f4368a9fb6fe7f7d6f",
+            "671c54d0368a9fb6fe7f7d72",
+            "671c5644368a9fb6fe7f7d73",
+            "671c59a0368a9fb6fe7f7d75",
+            "671c5bb5f2f337dfead9f20d"
+        ]);
+        return;
+
         const response5 = await fetch('http://localhost:8027/api/getProductsThatDeliverToLocation', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},

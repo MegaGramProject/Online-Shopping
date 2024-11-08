@@ -72,7 +72,7 @@ def deletePastOrder(request):
 def numSalesOfProductsInList(request):
     try:
         country = request.data.get('country')
-        productIds = request.data.get('productIds')
+        productIds = set(request.data.get('productIds'))
 
         if country != 'all':
             numSalesOfProducts = (
@@ -158,7 +158,7 @@ def deleteProductRatingAndReview(request):
 def avgAndNumRatingsOfProductsInList(request):
     try:
         country = request.data.get('country')
-        productIds = request.data.get('productIds')
+        productIds = set(request.data.get('productIds'))
 
         if country != 'all':
             avgAndNumRatingsOfProducts = (
@@ -213,3 +213,32 @@ def getPurchasesOfUserWithNoOr4PlusRating(request, username):
         return Response(str(e), status=400)
 
     return Response(output, status=200)
+
+
+@api_view(['POST'])
+def getIdsOfProductsBoughtByCustomersWhoAlsoBought(request, username):
+    try:
+        productIds = set(request.data.get('productIds'))
+        idsToInclude = set(request.data.get('idsToInclude'))
+
+        customersWhoBoughtAProductOrMoreInProductIds = set(PastOrder.objects
+            .filter(productId__in=productIds)
+            .exclude(customerUsername=username)
+            .values_list('customerUsername', flat=True)
+        )
+
+        productsBoughtBySaidCustomers = list(PastOrder.objects
+            .filter(
+                productId__in=idsToInclude,
+                customerUsername__in=customersWhoBoughtAProductOrMoreInProductIds
+            )
+            .exclude(productId__in=productIds)
+            .values_list('productId', flat=True)
+            .distinct()
+        )
+
+    except Exception as e:
+        print(str(e))
+        return Response(str(e), status=400)
+    
+    return Response(productsBoughtBySaidCustomers, status=200)
