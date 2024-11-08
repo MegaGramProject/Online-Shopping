@@ -1,13 +1,21 @@
 package megagram.springBootBackend5;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import megagram.springBootBackend5.mysqlModels.ProductDeliveryTime;
@@ -18,6 +26,7 @@ import megagram.springBootBackend5.mysqlRepositories.ProductDeliveryTimeReposito
 import megagram.springBootBackend5.mysqlRepositories.ShoppingCartRepository;
 import megagram.springBootBackend5.psqlModels.WebsiteRatingAndReview;
 import megagram.springBootBackend5.psqlRepositories.WebsiteRatingAndReviewRepository;
+
 
 
 
@@ -89,6 +98,58 @@ public class graphqlController {
     public List<ProductDeliveryTime> getAllProductDeliveryTimesOfProduct(@Argument String productId) {
         List<ProductDeliveryTime> allProductDeliveryTimesOfProduct = productDeliveryTimeRepository.findById_ProductId(productId);
         return allProductDeliveryTimesOfProduct;
+    }
+
+    @PostMapping("/getFastestDeliveryTimesForProducts")
+    @CrossOrigin("http://localhost:8024")
+    public ResponseEntity<HashMap<String, Float>> getFastestDeliveryTimesForProducts(@RequestBody Map<String, Object> request) {
+        if(request.containsKey("hasPremium") && request.containsKey("address") && request.containsKey("productIds")) {
+            Boolean hasPremium = (Boolean) request.get("hasPremium");
+            String address = (String) request.get("address");
+            List<String> productIds = (List<String>) request.get("productIds");
+            List<List<String>> allPossibleDeliveryTimesOfGivenProducts;
+            if(!hasPremium) {
+                allPossibleDeliveryTimesOfGivenProducts = productDeliveryTimeRepository.getAllPossibleStandardDeliveryTimesOfGivenProducts(productIds);
+            }
+            else {
+                allPossibleDeliveryTimesOfGivenProducts =  productDeliveryTimeRepository.getAllPossiblePremiumDeliveryTimesOfGivenProducts(productIds);
+            }
+
+            HashMap<String, Float> fastestDeliveryTimesForProducts = new HashMap<String, Float>();
+            /*
+            the dict above is structured as such: the keys are productIds
+            and values are minimum number of hours it takes to deliver the product to the
+            given address.
+             */
+            for(List<String> productDeliveryTime : allPossibleDeliveryTimesOfGivenProducts) {
+                String productId = productDeliveryTime.get(0);
+                String factoryAddress = productDeliveryTime.get(1);
+                String timeFormulaForDelivery = productDeliveryTime.get(2);
+                Random random = new Random();
+                //for now, instead of using paid-distance-API, number of hours between address and
+                //factory will be deduced randomly
+                float distanceBetweenAddressAndFactoryInHours = 2 + random.nextFloat() * 22;
+                float deliveryTimeInHours = calculateDeliveryTime(distanceBetweenAddressAndFactoryInHours, timeFormulaForDelivery);
+                Object fastestDeliveryTimeForCurrentProductId = fastestDeliveryTimesForProducts.get(productId);
+                if(fastestDeliveryTimeForCurrentProductId==null ||
+                (float) fastestDeliveryTimeForCurrentProductId > deliveryTimeInHours) {
+                    fastestDeliveryTimesForProducts.put(productId, deliveryTimeInHours);
+                }
+            }
+
+            return new ResponseEntity<>(fastestDeliveryTimesForProducts, HttpStatus.OK);
+        }
+        else {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    private float calculateDeliveryTime(Float distanceInHours, String deliveryTimeFormula) {
+        /*
+        temporary solution
+         */
+        Random random = new Random();
+        return distanceInHours + random.nextFloat() * 550;
     }
 
     @MutationMapping

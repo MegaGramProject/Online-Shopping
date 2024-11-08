@@ -2,7 +2,7 @@ import { useState } from 'react';
 import thinGrayXIcon from '../assets/thinGrayXIcon.png';
 import '../styles.css';
 
-function SingleSearchResult({id, result, category, notifyParentToDeleteSearchResult,
+function SingleSearchResult({id, authenticatedUsername, result, category, notifyParentToDeleteSearchResult,
     isDeletable, showCategory}) {
     const categoryToPagePathSegmentMappings = {
         '': 'shopAllItems',
@@ -23,7 +23,19 @@ function SingleSearchResult({id, result, category, notifyParentToDeleteSearchRes
         notifyParentToDeleteSearchResult(id);
     }
 
-    function takeUserToPageForResult() {
+    async function takeUserToPageForResult() {
+        const response = await fetch(`http://localhost:8025/addShopSearch/${authenticatedUsername}`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                search: result,
+                searchCategory: category,
+                dateTime: (new Date()).toISOString()
+            })
+        });
+        if(!response.ok) {
+            throw new Error('Network response not ok');
+        }
         window.location.href = `http://localhost:8024/${categoryToPagePathSegmentMappings[category]}/${result}`;
     }
 

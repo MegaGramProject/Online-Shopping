@@ -14,6 +14,7 @@ function ProductPromotionRectangle({title, idsOfProductsAvailableToUser, deliver
 
 
     async function fetchTheProductsToPromote(title) {
+        return;
         if(idsOfProductsAvailableToUser==null || deliveryCountry.length==0) {
             return;
         }
@@ -122,11 +123,11 @@ function ProductPromotionRectangle({title, idsOfProductsAvailableToUser, deliver
             listOfAvgRatingsAndNumRatingsOfProducts = await response4.json();
         }
         let bayesianAvgRatings = getBayesianAverageRatings(listOfAvgRatingsAndNumRatingsOfProducts);
-
         /*bayesianAvgRatings is a dict where each key is productId and value is bayesian avg rating of product.
         one of the keys, however, one of the keys is the avgBayesianAvgRatingOfAllProducts, which will be used for those
         products who have no ratings
         */
+    
         let productsToPromote = [];
         for(let productNumSalesInfo of numProductSales) {
             if(productNumSalesInfo.productId in bayesianAvgRatings) {

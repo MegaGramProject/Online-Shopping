@@ -17,7 +17,7 @@ import TopMostSection from './components/topMostSection';
 //this is for the main page of the shop. i.e http://localhost:8024/onlineShopping/{username}
 function App({params}) {
     const [authenticatedUsername, setAuthenticatedUsername] = useState("");
-    const [hasPremium, setHasPremium] = useState(false);
+    const [hasPremium, setHasPremium] = useState(null);
     const [displayLeftSidebar, setDisplayLeftSidebar] = useState(false);
     const [displayDarkScreen, setDisplayDarkScreen] = useState(false);
     const [displayDarkScreen2, setDisplayDarkScreen2] = useState(false);
@@ -28,6 +28,8 @@ function App({params}) {
     const [numItemsInCart, setNumItemsInCart] = useState(0);
     const [deliveryZipcode, setDeliveryZipcode] = useState(null);
     const [idsOfProductsAvailableToUser, setIdsOfProductsAvailableToUser] = useState(null);
+    const [allPastSearchesOfUser, setAllPastSearchesOfUser] = useState(null);
+    const [selectedAddressOfUser, setSelectedAddressOfUser] = useState(null);
 
     async function authenticateUser(username) {
         /*
@@ -152,8 +154,48 @@ function App({params}) {
         setNumItemsInCart(shoppingCartItemsOfUser.length);
         */
         setNumItemsInCart(25);
+        
+        const response3 = await fetch(`http://localhost:8025/getShopSearchesOfUser/${authUsername}`);
+        if(!response3.ok) {
+            throw new Error('Network response not ok');
+        }
+        const fetchedPastSearches = await response3.json();
+        let newPastSearchesOfUser = [];
+        for(let fetchedPastSearch of fetchedPastSearches) {
+            newPastSearchesOfUser.push([fetchedPastSearch.search, fetchedPastSearch.searchCategory]);
+        }
+        setAllPastSearchesOfUser(newPastSearchesOfUser);
 
-        const response3 = await fetch('http://localhost:8027/api/getProductsThatDeliverToLocation', {
+        const response4 = await fetch(`http://localhost:8026/getSelectedAddressOfUser/${authUsername}`);
+        if(!response4.ok){
+            setSelectedAddressOfUser("");
+        }
+        else {
+            let selectedAddressOfUser = await response4.json();
+
+            let newSelectedAddress = "";
+            if(selectedAddressOfUser.house_or_building_number!==null) {
+                newSelectedAddress+=selectedAddressOfUser.house_or_building_number + " " + selectedAddressOfUser.street_name+", ";
+            }
+            else {
+                newSelectedAddress+=selectedAddressOfUser.street_name+", ";
+            }
+            if(selectedAddressOfUser.apartment_or_suite!==null) {
+                newSelectedAddress+=selectedAddressOfUser.apartment_or_suite+", ";
+            }
+            newSelectedAddress+=selectedAddressOfUser.town_or_city;
+            if(selectedAddressOfUser.state_or_province!==null) {
+                newSelectedAddress+=" " + selectedAddressOfUser.state_or_province + " " + selectedAddressOfUser.zipcode+", ";
+            }
+            else {
+                newSelectedAddress+=" " + selectedAddressOfUser.zipcode+", ";
+            }
+
+            newSelectedAddress+=selectedAddressOfUser.country;
+            setSelectedAddressOfUser(newSelectedAddress);
+        }
+
+        const response5 = await fetch('http://localhost:8027/api/getProductsThatDeliverToLocation', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
@@ -161,34 +203,34 @@ function App({params}) {
                 country: 'the United States'
             })
         });
-        if(!response3.ok) {
+        if(!response5.ok) {
             throw new Error('Network response not ok');
         }
-        let newIdsOfProductsAvailableToUser = await response3.json();
+        let newIdsOfProductsAvailableToUser = await response5.json();
         newIdsOfProductsAvailableToUser = newIdsOfProductsAvailableToUser.map(x=>x.productId);
         
-        const response4 = await fetch('http://localhost:8026/getNumProductsLeftForListOfProducts', {
+        const response6 = await fetch('http://localhost:8026/getNumProductsLeftForListOfProducts', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(newIdsOfProductsAvailableToUser)
         });
-        if(!response4.ok) {
+        if(!response6.ok) {
             throw new Error('Network response not ok');
         }
-        const numProductsLeftForListOfProducts = await response4.json();
+        const numProductsLeftForListOfProducts = await response6.json();
 
-        const response5 = await fetch('http://localhost:8030/getProductIdsOfThoseInStock', {
+        const response7 = await fetch('http://localhost:8030/getProductIdsOfThoseInStock', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 numProductsLeftForListOfProducts: numProductsLeftForListOfProducts
             })
         });
-        if(!response5.ok) {
+        if(!response7.ok) {
             throw new Error('Network response not ok');
         }
 
-        newIdsOfProductsAvailableToUser = await response5.json();
+        newIdsOfProductsAvailableToUser = await response7.json();
         setIdsOfProductsAvailableToUser(newIdsOfProductsAvailableToUser);
     }
 
@@ -325,7 +367,7 @@ function App({params}) {
         flexDirection: "column"}}>
             <TopMostSection authenticatedUsername={authenticatedUsername} showDarkScreen={showDarkScreen} hideDarkScreen={hideDarkScreen}
             showChooseYourLocationPopup={showChooseYourLocationPopup} deliveryArea={deliveryArea} hasPremium={hasPremium}
-            numItemsInCart={numItemsInCart}></TopMostSection>
+            numItemsInCart={numItemsInCart} allPastSearchesOfUser={allPastSearchesOfUser}></TopMostSection>
             <SecondTopMostSection isLeftSidebarDisplayed={displayLeftSidebar} notifyParentToToggleLeftSidebar={toggleLeftSidebar}
             toggleDarkScreen={toggleDarkScreen} hasPremium={hasPremium}></SecondTopMostSection>
 
@@ -354,7 +396,9 @@ function App({params}) {
                 <ProductPromotionRectangle title={`International Bestsellers in Food Available for Your Location`}
                 idsOfProductsAvailableToUser={idsOfProductsAvailableToUser} deliveryCountry={deliveryAreaCountry}></ProductPromotionRectangle>
 
-                <SimilarCustomerProductsSection deliveryAreaCountry={deliveryAreaCountry}></SimilarCustomerProductsSection>
+                <SimilarCustomerProductsSection deliveryAreaCountry={deliveryAreaCountry} allPastSearchesOfUser={allPastSearchesOfUser}
+                hasPremium={hasPremium} authenticatedUsername={authenticatedUsername} idsOfProductsAvailableToUser={idsOfProductsAvailableToUser}
+                selectedAddressOfUser={selectedAddressOfUser}></SimilarCustomerProductsSection>
 
                 <Footer notifyParentToUpdateDeliveryAreaCountry={updateDeliveryAreaCountryFromFooter} deliveryAreaCountry={deliveryAreaCountry}></Footer>
 

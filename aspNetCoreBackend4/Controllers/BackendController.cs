@@ -38,6 +38,21 @@ public class BackendController : ControllerBase
 
         return Ok(addressesOfUser);
     }
+
+    [HttpGet("getSelectedAddressOfUser/{username}")]
+    public async Task<IActionResult> getSelectedAddressOfUser(string username)
+    {
+        var selectedAddress = await _megaDBContext
+            .customerAddresses
+            .Where(x => x.username == username && x.is_selected)
+            .FirstOrDefaultAsync();
+
+        if(selectedAddress==null) {
+            return NotFound(null);
+        }
+
+        return Ok(selectedAddress);
+    }
     
 
     [HttpPost("addNewCustomerAddress")]

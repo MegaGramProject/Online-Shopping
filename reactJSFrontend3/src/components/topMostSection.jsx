@@ -8,7 +8,8 @@ import '../styles.css';
 import SearchResults from './searchResults';
 
 function TopMostSection({authenticatedUsername, showDarkScreen, hideDarkScreen,
-    showChooseYourLocationPopup, deliveryArea, hasPremium, numItemsInCart}) {
+    showChooseYourLocationPopup, deliveryArea, hasPremium, numItemsInCart,
+    allPastSearchesOfUser}) {
     const [isHoveringOnDeliverToDiv, setIsHoveringOnDeliverToDiv] = useState(false);
     const [isHoveringOnListsDiv, setIsHoveringOnListsDiv] = useState(false);
     const [isHoveringOnReturnsAndOrdersDiv, setIsHoveringOnReturnsAndOrdersDiv] = useState(false);
@@ -168,7 +169,7 @@ function TopMostSection({authenticatedUsername, showDarkScreen, hideDarkScreen,
                     <textarea value={textareaValue} onChange={handleTextareaChange} placeholder="Search Megagram Shop" style={{fontFamily: "Arial", paddingTop: "1em", paddingLeft: "1em", fontSize: "1em",
                     resize: 'none'}}></textarea>
                     {displaySearchResults && <SearchResults authenticatedUsername={authenticatedUsername} search={textareaValue}
-                    searchCategory={selectedCategoryForSearch}></SearchResults>}
+                    searchCategory={selectedCategoryForSearch} allPastSearchesOfUser={allPastSearchesOfUser}></SearchResults>}
                 </div>
                 <img onClick={submitSearch} src={orangeSearchButton} style={{height: "3.6em", width: "3.5em", cursor: 'pointer'}}></img>
             </div>

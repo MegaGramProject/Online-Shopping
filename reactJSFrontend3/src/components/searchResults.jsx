@@ -3,15 +3,29 @@ import { useEffect, useState } from 'react';
 import '../styles.css';
 import SingleSearchResult from './singleSearchResult';
 
-function SearchResults({authenticatedUsername, search, searchCategory}) {
+function SearchResults({authenticatedUsername, search, searchCategory, allPastSearchesOfUser}) {
 
     const [listOfSearchResults, setListOfSearchResults] = useState([]);
-    const [allPastSearchesOfUser, setAllPastSearchesOfUser] = useState([]);
     const [pastSearchesOfUserInCurrentSearchCategory, setPastSearchesOfUserInCurrentSearchCategory] = useState([]);
 
     useEffect(() => {
-        fetchPastSearchesOfUser();
-    }, []);
+        if(allPastSearchesOfUser!==null) {
+            let newPastSearchesOfUserInCurrentSearchCategory = allPastSearchesOfUser;
+            if(searchCategory.length>0) {
+                newPastSearchesOfUserInCurrentSearchCategory = allPastSearchesOfUser.filter(x=>{
+                    if(x[1]===searchCategory) {
+                        return true;
+                    }
+                    return false;
+                });
+            }
+            setPastSearchesOfUserInCurrentSearchCategory(newPastSearchesOfUserInCurrentSearchCategory);
+            if(search.length==0) {
+                setListOfSearchResults(newPastSearchesOfUserInCurrentSearchCategory);
+            }
+        }
+    }, [allPastSearchesOfUser]);
+
 
     useEffect(() => {
         if(search.length==0) {
@@ -20,10 +34,13 @@ function SearchResults({authenticatedUsername, search, searchCategory}) {
         else {
             fetchSearchResults();
         }
-    }, [search]);
+    }, [search, pastSearchesOfUserInCurrentSearchCategory]);
 
 
     useEffect(() => {
+        if(allPastSearchesOfUser==null) {
+            return;
+        }
         if(searchCategory.length==0) {
             setPastSearchesOfUserInCurrentSearchCategory(allPastSearchesOfUser);
         }
@@ -37,32 +54,6 @@ function SearchResults({authenticatedUsername, search, searchCategory}) {
         }
     }, [searchCategory]);
 
-
-
-    async function fetchPastSearchesOfUser() {
-        const response = await fetch(`http://localhost:8025/getShopSearchesOfUser/${authenticatedUsername}`);
-        if(!response.ok) {
-            throw new Error('Network response not ok');
-        }
-        const fetchedPastSearches = await response.json();
-        let newPastSearchesOfUser = [];
-        for(let fetchedPastSearch of fetchedPastSearches) {
-            newPastSearchesOfUser.push([fetchedPastSearch.search, fetchedPastSearch.searchCategory]);
-        }
-        if(search.length==0) {
-            setAllPastSearchesOfUser(newPastSearchesOfUser);
-            if(searchCategory.length>0) {
-                newPastSearchesOfUser = newPastSearchesOfUser.filter(x=>{
-                    if(x[1]===searchCategory) {
-                        return true;
-                    }
-                    return false;
-                });
-            }
-            setPastSearchesOfUserInCurrentSearchCategory(newPastSearchesOfUser);
-            setListOfSearchResults(newPastSearchesOfUser);
-        }
-    }
 
     async function fetchSearchResults() {
         const response = await fetch(`http://localhost:8025/getShopSearchResults/${search}/${searchCategory.length>0 ? searchCategory : 'all'}`);
@@ -80,7 +71,6 @@ function SearchResults({authenticatedUsername, search, searchCategory}) {
             searchResults.splice(0, 0, search);
         }
         searchResults = searchResults.map(searchResult=> [searchResult, searchCategory]);
-        //console.log(searchResults);
         setListOfSearchResults(searchResults);
     }
 
@@ -112,7 +102,7 @@ function SearchResults({authenticatedUsername, search, searchCategory}) {
             display: 'flex', flexDirection: 'column'}}>
                 {listOfSearchResults.map((result, index) => {
                     return (
-                        <SingleSearchResult key={index} id={index} result={result[0]} category={result[1]}
+                        <SingleSearchResult key={index} authenticatedUsername={authenticatedUsername} id={index} result={result[0]} category={result[1]}
                         notifyParentToDeleteSearchResult={deleteSearchResult} isDeletable={search.length==0}
                         showCategory={searchCategory.length==0}/>
                     );

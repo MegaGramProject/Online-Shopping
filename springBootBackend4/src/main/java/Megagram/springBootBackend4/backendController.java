@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -44,11 +45,15 @@ public class backendController {
     @Autowired
     private ShopSearchRepository shopSearchRepository;
 
-    @GetMapping("/getAllPSTDocuments")
+    @GetMapping("/getAllPSTsAsDict")
     @CrossOrigin({"http://localhost:8024"})
-    public ResponseEntity<List<ProductSearchTag>> getAllPSTDocuments() {
+    public ResponseEntity<HashMap<String, String[]>> getAllPSTsAsDict() {
         List<ProductSearchTag> allPSTDocuments = productSearchTagRepository.findAll();
-        return new ResponseEntity<>(allPSTDocuments, HttpStatus.OK);
+        HashMap<String, String[]> output = new HashMap<String, String[]>();
+        for(ProductSearchTag pst: allPSTDocuments) {
+            output.put(pst.getProductId(), pst.getTags());
+        }
+        return new ResponseEntity<>(output, HttpStatus.OK);
     }
 
     @GetMapping("/getTagsOfProduct/{productId}")
@@ -100,6 +105,46 @@ public class backendController {
         return new ResponseEntity<>("The command to delete has been made!", HttpStatus.OK);
     }
 
+    @PostMapping("/getProductSearchTagMatches")
+    @CrossOrigin(origins = "http://localhost:8024")
+    public ResponseEntity<List<String>> getProductSearchTagMatches(@RequestBody Map<String, Object> request) {
+        if (request.containsKey("pastSearches") &&
+            request.containsKey("productIdsForCategoriesInPastSearches")) {
+            
+            List<List<String>> pastSearches = (List<List<String>>) request.get("pastSearches");
+            Map<String, List<String>> productIdsForCategoriesInPastSearches = (Map<String, List<String>>) request.get("productIdsForCategoriesInPastSearches");
+            List<String> nameMatchesToExclude = (List<String>) productIdsForCategoriesInPastSearches.get("nameMatches");
+    
+            HashSet<String> outputAsSet = new HashSet<>();
+    
+            for (List<String> pastSearch : pastSearches) {
+                String pastSearchValue = pastSearch.get(0);
+                String pastSearchCategory = pastSearch.get(1).isEmpty() ? "all" : pastSearch.get(1);
+    
+                List<String> productIds = productIdsForCategoriesInPastSearches.get(pastSearchCategory);
+                if(productIds==null) continue;
+    
+                for (String productId : productIds) {
+                    if (!Arrays.asList(nameMatchesToExclude).contains(productId)) {
+                        ProductSearchTag pst = productSearchTagRepository.findByProductId(productId);
+                        for (String tag : pst.getTags()) {
+                            if (tag.startsWith(pastSearchValue)) {
+                                outputAsSet.add(productId);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+    
+            List<String> output = new ArrayList<>(outputAsSet);
+            return new ResponseEntity<>(output, HttpStatus.OK);
+    
+        } else {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+    
     @GetMapping("/getAllShopSearches")
     @CrossOrigin({"http://localhost:8024"})
     public ResponseEntity<List<ShopSearch>> getAllShopSearches() {
@@ -278,18 +323,36 @@ public class backendController {
         return gson.fromJson(json, new TypeToken<List<String>>(){}.getType());
     }
 
-    public List<String> getAllTagsStartingWithSearchTextForSearchCategory(String searchText, List<String> productIdsOfCategory) {
+    private List<String> getAllTagsStartingWithSearchTextForSearchCategory(String searchText, List<String> productIdsOfCategory) {
         return productSearchTagRepository.filterByProductIdInList(productIdsOfCategory).stream()
                 .flatMap(productSearchTag -> Arrays.stream(productSearchTag.getTags()))
                 .filter(tag -> tag.startsWith(searchText))
                 .collect(Collectors.toList());
     }
 
-    public List<String> getAllTagsStartingWithSearchTextForAllCategories(String searchText) {
+    private List<String> getAllTagsStartingWithSearchTextForAllCategories(String searchText) {
         return productSearchTagRepository.findAll().stream()
                 .flatMap(productSearchTag -> Arrays.stream(productSearchTag.getTags()))
                 .filter(tag -> tag.startsWith(searchText))
                 .collect(Collectors.toList());
+    }
+
+
+    @PostMapping("/getSearchTagsOfMultipleProducts")
+    @CrossOrigin({"http://localhost:8024"})
+    public ResponseEntity<Map<String, String[]>> getSearchTagsOfMultipleProducts(@RequestBody Map<String, String[]> request) {
+        if(request.containsKey("productIds")) {
+            String[] productIds = request.get("productIds");
+            Map<String, String[]> output = new HashMap<String, String[]>();
+            for(String productId: productIds) {
+                ProductSearchTag pst = productSearchTagRepository.findByProductId(productId);
+                output.put(productId, pst.getTags());
+            }
+            return new ResponseEntity<>(output, HttpStatus.OK);
+        }
+        else {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
     }
 
 

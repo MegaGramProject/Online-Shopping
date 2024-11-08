@@ -4,6 +4,10 @@ from rest_framework.response import Response
 from .models import PastOrder, ProductRatingAndReview
 from django.db.models import Count, Avg
 from .serializers import PastOrderSerializer, ProductRatingAndReviewSerializer
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+
 
 @api_view(['GET'])
 def getAllPastOrders(request):
@@ -17,6 +21,11 @@ def getAllPastOrdersOfUser(request, username):
     pastOrdersOfUser = PastOrder.objects.filter(customerUsername = username)
     pastOrdersOfUser = PastOrderSerializer(pastOrdersOfUser, many=True)
     return Response(pastOrdersOfUser.data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def getProductIdsPurchasedByUser(request, username):
+    idsOfUserBoughtProducts = PastOrder.objects.filter(customerUsername = username).values_list('productId', flat=True)
+    return Response(idsOfUserBoughtProducts, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
@@ -167,6 +176,40 @@ def avgAndNumRatingsOfProductsInList(request):
             )
 
     except Exception as e:
-        return Response([], status=400)
+        return Response(e, status=400)
 
     return Response(avgAndNumRatingsOfProducts, status=200)
+
+@api_view(['POST'])
+def getPurchasesOfUserWithNoOr4PlusRating(request, username):
+    try:
+        idsOfUserBoughtProducts = request.data.get('idsOfUserBoughtProducts')
+
+        idsOfPurchasedProductsWithRatings = set(
+            ProductRatingAndReview.objects
+            .values_list('product_id', flat=True)
+            .distinct()
+        )
+
+        idsOfPurchasedProductsWithoutRatings = [
+            product_id for product_id in idsOfUserBoughtProducts
+            if product_id not in idsOfPurchasedProductsWithRatings
+        ]
+
+        idsOfPurchasedProductsWith4PlusRating = list(
+            ProductRatingAndReview.objects
+            .filter(
+                reviewer_username=username,
+                rating__gte=4,
+            )
+            .distinct()
+            .values_list('product_id', flat=True)
+        )
+
+        output = idsOfPurchasedProductsWithoutRatings + idsOfPurchasedProductsWith4PlusRating
+
+    except Exception as e:
+        print(str(e))
+        return Response(str(e), status=400)
+
+    return Response(output, status=200)

@@ -27,6 +27,13 @@ app.use(express.json());
 const url = 'mongodb://localhost:27017';
 const mongoClient = new MongoClient(url);
 
+async function connectToDatabase() {
+    if (!mongoClient.isConnected) {
+        await mongoClient.connect();
+    }
+}
+
+connectToDatabase().catch(console.error);
 
 const psqlPool = new Pool({
     user: 'postgres',
@@ -38,30 +45,24 @@ const psqlPool = new Pool({
 var root = {
     async getAllProductDeals() {
         try {
-            await mongoClient.connect();
             const database = mongoClient.db('Megagram');
             const collection = database.collection('productDeals');
             const allProductDeals = await collection.find({}, { projection: { _id: 0 } }).toArray();
             return allProductDeals;
         } catch (error) {
             return [];
-        } finally {
-            await mongoClient.close();
         }
     },
 
     async getAllProductDealsOfProduct(args) {
         try {
             const productId = args.productId;
-            await mongoClient.connect();
             const database = mongoClient.db('Megagram');
             const collection = database.collection('productDeals');
             const allProductDealsOfProduct = await collection.find({productId: productId}, { projection: { _id: 0 } }).toArray();
             return allProductDealsOfProduct;
         } catch (error) {
             return [];
-        } finally {
-            await mongoClient.close();
         }
     },
 
@@ -77,15 +78,12 @@ var root = {
                 required: required,
                 expiration: expiration
             };
-            await mongoClient.connect();
             const database = mongoClient.db('Megagram');
             const collection = database.collection('productDeals');
             const result = await collection.insertOne(newProductDeal);
             return result.insertedId.toString();
         } catch (error) {
             return null;
-        } finally {
-            await mongoClient.close();
         }
     },
 
@@ -275,7 +273,7 @@ app.post("/getProductIdsOfThoseInStock", (req, res) => {
         }
     }
     res.send(output);
-})
+});
 
 //DFS
 function productIsInStock(partOfNumProductsLeftForListOfProducts) {
@@ -291,6 +289,46 @@ function productIsInStock(partOfNumProductsLeftForListOfProducts) {
     return false;
 }
 
+app.post("/checkIfDealsAreAvailableForProducts", async (req, res) => {
+    const output = {};
+    try {
+        const hasPremium = req.body.hasPremium;
+        const productIds = new Set(req.body.productIds);
+
+        for (let productId of productIds) {
+            output[productId] = false;
+        }
+
+        const database = mongoClient.db('Megagram');
+        const productDealsCollection = database.collection('productDeals');
+        const currDateTime = new Date();
+        let allDealsOfGivenProductsForUser;
+
+        if (!hasPremium) {
+            allDealsOfGivenProductsForUser = await productDealsCollection
+                .find({ productId: { '$in': Array.from(productIds) }, required: { '$eq': 'NONE' } },
+                { projection: { productId: 1, expiration: 1 } })
+                .toArray();
+        } else {
+            allDealsOfGivenProductsForUser = await productDealsCollection
+                .find({ productId: { '$in': Array.from(productIds) }, required: { '$in': ['NONE', 'PREMIUM'] } },
+                { projection: { productId: 1, expiration: 1 } })
+                .toArray();
+        }
+
+        allDealsOfGivenProductsForUser
+            .filter(x => new Date(x.expiration) > currDateTime)
+            .forEach(x => output[x.productId] = true);
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send({ error: "An error occurred while checking deals." });
+    }
+
+    res.send(output);
+});
+
+
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
@@ -298,6 +336,6 @@ app.listen(port, () => {
 
 process.on('SIGINT', async () => {
     await psqlPool.end();
-    await mongoClient.end();
+    await mongoClient.close();
     process.exit(0);
 });
