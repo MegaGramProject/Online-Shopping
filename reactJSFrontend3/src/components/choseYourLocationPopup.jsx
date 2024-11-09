@@ -65,10 +65,10 @@ function ChooseYourLocationPopup({closePopup, showAddressesPopup}) {
 
     return (
         <>
-            <div style={{position: 'absolute', top: '25%', left: '40%', backgroundColor: 'white', zIndex: '10', display: 'flex',
+            <div className="popup" style={{position: 'absolute', top: '25%', left: '40%', backgroundColor: 'white', zIndex: '10', display: 'flex',
             flexDirection: 'column', alignItems: 'center', width: '25%', height: '45%', borderRadius: '0.5em'}}>
 
-                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8em 1.5em', backgroundColor: '#e8e8e8',
+                <div className="popupHeader" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8em 1.5em', backgroundColor: '#e8e8e8',
                 width: '89%', borderRadius: '0.5em'}}>
                     <b>Choose your location</b>
                     <img onClick={() => closePopup([null, null])} src={thinGrayXIcon} style={{cursor: 'pointer', height: '1.5em', width: '1.5em'}}></img>

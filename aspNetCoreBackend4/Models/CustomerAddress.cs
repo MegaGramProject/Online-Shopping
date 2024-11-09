@@ -13,7 +13,7 @@ public class CustomerAddress
     public string username {get; set; }
 
     [Column("house_or_building_number")]
-    public string? house_or_building_number {get; set;}
+    public string? house_or_building_number {get; set; }
 
     [Column("street_name")]
     public string street_name {get; set; }

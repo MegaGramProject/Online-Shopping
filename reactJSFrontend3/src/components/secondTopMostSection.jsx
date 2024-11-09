@@ -103,7 +103,7 @@ function SecondTopMostSection({isLeftSidebarDisplayed, notifyParentToToggleLeftS
                 </div>
                 
                 {displayGiftCardsPopup &&
-                    <div style={{position: 'absolute', top: '102%', backgroundColor: 'white', width: '350%', height: '1600%', zIndex: '10',
+                    <div className="popup" style={{position: 'absolute', top: '102%', backgroundColor: 'white', width: '350%', height: '1600%', zIndex: '10',
                     padding: '0.5em 1em'}}>
                             <h3>Explore Gift Cards</h3>
 

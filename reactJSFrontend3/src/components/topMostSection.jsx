@@ -181,7 +181,7 @@ function TopMostSection({authenticatedUsername, showDarkScreen, hideDarkScreen,
             </div>
 
             {(isHoveringOnListsDiv || isHoveringOnListsPopupDiv) &&
-                <div onMouseEnter={toggleIsHoveringOnListsPopupDiv} onMouseLeave={toggleIsHoveringOnListsPopupDiv} style={{position: 'absolute', left:'77%', top: '82%', backgroundColor: 'white', width: '20em', height: '30em',
+                <div className="popup" onMouseEnter={toggleIsHoveringOnListsPopupDiv} onMouseLeave={toggleIsHoveringOnListsPopupDiv} style={{position: 'absolute', left:'77%', top: '82%', backgroundColor: 'white', width: '20em', height: '30em',
                 display: 'flex', flexDirection: 'column', padding: '0.5em 1em', zIndex: '10'}}>
                     <div style={{width: "100%", display: "flex", justifyContent: 'center', alignItems: 'center', borderStyle: 'solid',
                     borderColor: 'lightgray', borderTop: 'none', borderLeft: 'none', borderRight: 'none'}}>

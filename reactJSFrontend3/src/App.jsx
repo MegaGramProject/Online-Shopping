@@ -12,6 +12,7 @@ import SecondTopMostSection from './components/secondTopMostSection';
 import SimilarCustomerProductsSection from './components/similarCustomerProductsSection';
 import ThirdRowOfProductPromotionSquares from './components/thirdRowOfProductPromotionSquares';
 import TopMostSection from './components/topMostSection';
+import './styles.css';
 
 
 //this is for the main page of the shop. i.e http://localhost:8024/onlineShopping/{username}
@@ -110,6 +111,7 @@ function App({params}) {
     }, []);
 
     async function fetchRelevantDataAtStart(authUsername) {
+        return;
         /*
         const response = await fetch(`http://localhost:8022/getBasicUserInfo/${authUsername}`);
         if(!response.ok) {
@@ -288,11 +290,19 @@ function App({params}) {
                 setDeliveryArea(newLocationInfo[0]);
                 setDeliveryZipcode(newLocationInfo[0].split(",")[1].substring(1));
                 setDeliveryAreaCountry(newLocationInfo[1]);
+                if(selectedAddressOfUser!==null && selectedAddressOfUser.length>0) {
+                    const response1 = await fetch(`http://localhost:8026/unselectSelectedAddressOfUser/${authenticatedUsername}`, {
+                        method: 'PATCH'
+                    });
+                    if(!response1.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    setSelectedAddressOfUser("");
+                }
             }
         }
         else if(newLocationInfo[1]!==null) {
-            //changing country
-            if(newLocationInfo[1]!==deliveryArea || newLocationInfo[1]!==deliveryAreaCountry) {
+            if(newLocationInfo[1]!==deliveryAreaCountry) {
                 const response = await fetch(`http://localhost:8022/editBasicUserInfo/${authenticatedUsername}`, {
                     method: 'PATCH',
                     headers: {'Content-Type': 'application/json'},
@@ -309,6 +319,15 @@ function App({params}) {
                 setDeliveryArea(newLocationInfo[1]);
                 setDeliveryZipcode(null);
                 setDeliveryAreaCountry(newLocationInfo[1]);
+                if(selectedAddressOfUser!==null && selectedAddressOfUser.length>0) {
+                    const response1 = await fetch(`http://localhost:8026/unselectSelectedAddressOfUser/${authenticatedUsername}`, {
+                        method: 'PATCH'
+                    });
+                    if(!response1.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    setSelectedAddressOfUser("");
+                }
             }
         }
         setDisplayChooseYourLocationPopup(false);
@@ -345,6 +364,15 @@ function App({params}) {
                 setDeliveryArea(newAddressInfo[0]);
                 setDeliveryZipcode(newAddressInfo[0].split(",")[1].substring(1));
                 setDeliveryAreaCountry(newAddressInfo[1]);
+                if(selectedAddressOfUser!==null && selectedAddressOfUser.length>0) {
+                    const response1 = await fetch(`http://localhost:8026/unselectSelectedAddressOfUser/${authenticatedUsername}`, {
+                        method: 'PATCH'
+                    });
+                    if(!response1.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    setSelectedAddressOfUser("");
+                }
             }
         }
     }
@@ -369,6 +397,16 @@ function App({params}) {
         setDeliveryArea(newCountry);
         setDeliveryZipcode(null);
         setDeliveryAreaCountry(newCountry);
+
+        if(selectedAddressOfUser!==null && selectedAddressOfUser.length>0) {
+            const response1 = await fetch(`http://localhost:8026/unselectSelectedAddressOfUser/${authenticatedUsername}`, {
+                method: 'PATCH'
+            });
+            if(!response1.ok) {
+                throw new Error('Network response not ok');
+            }
+            setSelectedAddressOfUser("");
+        }
     }
 
     return (

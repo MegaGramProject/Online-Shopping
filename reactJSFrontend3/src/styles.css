@@ -12,8 +12,8 @@ body {
 
 @media (prefers-color-scheme: dark) {
     body {
-        background-color: #232424;
-        color: white;
+        background-color: #232424 !important;
+        color: white !important;
     }
     .popup {
         background-color: #232424 !important;
@@ -28,7 +28,45 @@ body {
         background-color: #232424 !important;
         color: white !important;
     }
+
+    .productPromotionSquare {
+        background-color: #545454 !important;
+        color: white !important;
+    }
+
+    .productPromotionRectangle {
+        background-color: #545454 !important;
+        color: white !important;
+    }
+
+    #similarCustomerProductsSection {
+        background-color: #545454 !important;
+        color: white !important;
+    }
+
+    .sidebarElement:hover {
+        color: black !important;
+    }
+
+    .hoverableElement:hover {
+        color: black !important;
+    }
+
+    #leftSideBarPopupGap {
+        background-color: #232424 !important;
+    }
+
+    .singleSearchResult {
+        background-color: #545454 !important;
+        color: white !important;
+    }
+
+    .popupHeader {
+        background-color:lightgray !important;
+        color: black !important;
+    }
 }
+
 
 .sidebarElement:hover {
     background-color: #f0f0f0;

@@ -57,7 +57,7 @@ function LeftSidebarPopup({authenticatedUsername}) {
                     <p style={{fontSize:'0.89em', marginLeft:'0.4em'}}>Activity</p>
                 </div>
                 <div onClick={takeUserToSeeTheirSavedPosts} className="sidebarElement" style={{display:'flex', justifyContent:'start', alignItems:'center', marginLeft:'0.9em', width:'14em'}}>
-                    <img src={saveIcon} style={{height:'2em', width:'2em', pointerEvents:'none', objectFit:'contain'}}/>
+                    <img className="iconToBeAdjustedForDarkMode" src={saveIcon} style={{height:'2em', width:'2em', pointerEvents:'none', objectFit:'contain'}}/>
                     <p style={{fontSize:'0.89em', marginLeft:'0.4em'}}>Saved</p>
                 </div>
                 <div className="sidebarElement" style={{display:'flex', justifyContent:'start', alignItems:'center', marginLeft:'0.9em', width:'14em'}}>

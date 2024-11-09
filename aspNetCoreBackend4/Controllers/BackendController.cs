@@ -56,7 +56,7 @@ public class BackendController : ControllerBase
     
 
     [HttpPost("addNewCustomerAddress")]
-    public async Task<ActionResult> addNewCustomerAddress([FromBody] CustomerAddress newCustomerAddress) {
+    public async Task<IActionResult> addNewCustomerAddress([FromBody] CustomerAddress newCustomerAddress) {
         if (newCustomerAddress == null) {
             return BadRequest("Invalid address data.");
         }
@@ -68,7 +68,7 @@ public class BackendController : ControllerBase
     }
 
     [HttpPatch("toggleSelectCustomerAddress/{id}")]
-    public async Task<ActionResult> toggleSelectCustomerAddress(int id) {
+    public async Task<IActionResult> toggleSelectCustomerAddress(int id) {
         var customerAddressToToggleSelect = await _megaDBContext.customerAddresses
         .FirstOrDefaultAsync(cl => cl.id == id);
 
@@ -82,7 +82,7 @@ public class BackendController : ControllerBase
     }
 
     [HttpPatch("editCustomerAddress")]
-    public async Task<ActionResult> editCustomerAddress([FromBody] EditCustomerAddress ca) {
+    public async Task<IActionResult> editCustomerAddress([FromBody] EditCustomerAddress ca) {
         if (ca == null) {
             return BadRequest(false);
         }
@@ -123,7 +123,20 @@ public class BackendController : ControllerBase
             return Ok(true);
         }
         return NotFound(false);
+    }
 
+    [HttpPatch("unselectSelectedAddressOfUser/{username}")]
+    public async Task<IActionResult> unselectSelectedAddressOfUser(string username) {
+        var customerAddressToUnselect = await _megaDBContext.customerAddresses
+        .FirstOrDefaultAsync(cl => cl.username == username && cl.is_selected);
+
+        if(customerAddressToUnselect==null) {
+            return NotFound(false);
+        }
+        customerAddressToUnselect.is_selected = false;
+        _megaDBContext.customerAddresses.Update(customerAddressToUnselect);
+        await _megaDBContext.SaveChangesAsync();
+        return Ok(true);
     }
 
     [HttpDelete("deleteCustomerAddress/{id}")]

@@ -22,7 +22,7 @@ notifyParentToDeleteAddress}) {
                     <p style={{ maxWidth: '85%', whiteSpace: 'pre-wrap' }}>{address}</p>
 
                     <div style={{display: 'flex', alignItems: 'center', gap: '0.5em'}}>
-                        <img onClick={deleteAddress} src={trashCan} style={{height: '0.7em', width: '0.7em', cursor: 'pointer'}}></img>
+                        <img className="iconToBeAdjustedForDarkMode" onClick={deleteAddress} src={trashCan} style={{height: '0.7em', width: '0.7em', cursor: 'pointer'}}></img>
                         {isSelected &&
                             <button onClick={unselectAddress} style={{color: 'white', backgroundColor: 'black', cursor: 'pointer', borderRadius: '1em', border: 'none', padding: '0.35em 0.8em'}}>Unselect</button>
                         }

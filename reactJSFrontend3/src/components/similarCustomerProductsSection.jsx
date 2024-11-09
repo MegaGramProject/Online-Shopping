@@ -77,7 +77,7 @@ function SimilarCustomerProductsSection({authenticatedUsername, deliveryAreaCoun
     };
 
     useEffect(() => {
-        if(authenticatedUsername.length>0 && allPastSearchesOfUser!==null && deliveryAreaCountry.length>0
+        if(authenticatedUsername.length>0 && allPastSearchesOfUser!==null
         && selectedAddressOfUser!==null && idsOfProductsAvailableToUser!==null) {
             if(div1Products.length==0) {
                 fetchProductsForDiv1();
@@ -86,7 +86,7 @@ function SimilarCustomerProductsSection({authenticatedUsername, deliveryAreaCoun
                 fetchProductsForDiv2();
             }
         }
-    }, [authenticatedUsername, allPastSearchesOfUser, deliveryAreaCountry,
+    }, [authenticatedUsername, allPastSearchesOfUser,
         selectedAddressOfUser, idsOfProductsAvailableToUser]);
     
 
@@ -105,6 +105,7 @@ function SimilarCustomerProductsSection({authenticatedUsername, deliveryAreaCoun
     //Getting Available Products for 'Recommended for you based on your history of searches, purchases, and reviews'
     //No products that have already been purchased by the user will be recommended here.
     async function fetchProductsForDiv1() {
+        return;
         const response = await fetch(`http://localhost:8028/getProductIdsPurchasedByUser/${authenticatedUsername}`);
         if(!response.ok) {
             throw new Error('Network response not ok');
@@ -366,6 +367,7 @@ function SimilarCustomerProductsSection({authenticatedUsername, deliveryAreaCoun
     //Getting Available Products for 'Customers who bought items in your purchasing history also bought'
     //No products that have already been purchased by the user will be recommended here.
     async function fetchProductsForDiv2() {
+        return;
         const response = await fetch(`http://localhost:8028/getProductIdsPurchasedByUser/${authenticatedUsername}`);
         if(!response.ok) {
             throw new Error('Network response not ok');
@@ -734,7 +736,7 @@ function SimilarCustomerProductsSection({authenticatedUsername, deliveryAreaCoun
 
     return (
         <>
-            <div style={{width: '100%', height: '62em', backgroundColor: 'white', marginTop: '2.5em', display: 'flex',
+            <div id="similarCustomerProductsSection" style={{width: '100%', height: '62em', backgroundColor: 'white', marginTop: '2.5em', display: 'flex',
             flexDirection: 'column', padding: '1em 2em'}}>
 
                 <div id="div1" style={{width: '100%', borderStyle: 'solid', borderLeft: 'none', borderRight: 'none', borderColor: 'lightgray', height: '50%',

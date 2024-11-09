@@ -41,7 +41,7 @@ function SingleSearchResult({id, authenticatedUsername, result, category, notify
 
     return (
     <>
-        <div className="hoverableElement" onClick={takeUserToPageForResult} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.2em 0.4em',
+        <div className="hoverableElement singleSearchResult" onClick={takeUserToPageForResult} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.2em 0.4em',
         fontSize: '0.91em', zIndex: '10', backgroundColor: 'white'}}>
             <p><b>{result}</b> {showCategory && category!=="" &&
                 <span style={{color: 'gray'}}>in <span style={{fontFamily: 'Roboto', fontSize: '1.2em'}}>{category}</span></span>

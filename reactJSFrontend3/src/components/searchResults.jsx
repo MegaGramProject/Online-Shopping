@@ -98,7 +98,7 @@ function SearchResults({authenticatedUsername, search, searchCategory, allPastSe
     return (
     <>
         {listOfSearchResults.length>0 &&
-            <div style={{backgroundColor: 'white', height: '33em', boxShadow: 'rgba(0, 0, 0, 0.24) 0px 3px 8px', overflowY: 'scroll',
+            <div className="popup" style={{backgroundColor: 'white', height: '33em', boxShadow: 'rgba(0, 0, 0, 0.24) 0px 3px 8px', overflowY: 'scroll',
             display: 'flex', flexDirection: 'column'}}>
                 {listOfSearchResults.map((result, index) => {
                     return (

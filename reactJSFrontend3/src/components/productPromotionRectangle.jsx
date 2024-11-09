@@ -240,7 +240,7 @@ function ProductPromotionRectangle({title, idsOfProductsAvailableToUser, deliver
 
     return (
         <>
-            <div style={{display: 'flex', flexDirection: 'column', backgroundColor: 'white', width: '85em', height: '17.5em',
+            <div className="productPromotionRectangle" style={{display: 'flex', flexDirection: 'column', backgroundColor: 'white', width: '85em', height: '17.5em',
             padding: '0.1em 0.8em', marginTop: '-5em', position: 'relative'}}>
                 <h4>{title}</h4>
 
@@ -261,7 +261,7 @@ function ProductPromotionRectangle({title, idsOfProductsAvailableToUser, deliver
                 <div ref={scrollableDivRef} onScroll={onScrollingScrollableDiv} onMouseEnter={setIsUserHoveringOnThisToTrue} onMouseLeave={setIsUserHoveringOnThisToFalse} style={{display: 'flex', alignItems: 'center', height: '65%', width: '100%', overflowX: 'scroll'}}>
                     {promotedProducts.map((promotedProductInfo, index) => {
                         return (
-                            <img key={index} onClick={() => window.location.href = promotedProductInfo.link} src={promotedProductInfo.imageSrc} style={{height: '100%', width: '16.67%', cursor: 'pointer'}}></img>
+                            <img key={index} onClick={() => window.location.href = promotedProductInfo.link} src={promotedProductInfo.imageSrc} style={{height: '100%', width: '16.67%', cursor: 'pointer', objectFit: 'contain'}}></img>
                         );
                         })
                     }

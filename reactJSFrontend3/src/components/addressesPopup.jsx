@@ -257,10 +257,10 @@ function AddressesPopup({authenticatedUsername, closePopup}) {
 
     return (
         <>
-            <div style={{position: 'absolute', top: '2%', left: '25%', backgroundColor: 'white', zIndex: '10', display: 'flex',
+            <div className="popup" style={{position: 'absolute', top: '2%', left: '25%', backgroundColor: 'white', zIndex: '10', display: 'flex',
             flexDirection: 'column', alignItems: 'center', width: '55%', height: '95%', borderRadius: '0.5em', paddingBottom: '0.6em', overflowY: 'scroll'}}>
 
-                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8em 1.5em', backgroundColor: '#e8e8e8',
+                    <div className="popupHeader" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8em 1.5em', backgroundColor: '#e8e8e8',
                     width: '95%', borderRadius: '0.5em'}}>
                         <b>Addresses</b>
                         <img onClick={() => closePopup([null, null])} src={thinGrayXIcon} style={{cursor: 'pointer', height: '1.5em', width: '1.5em'}}></img>
@@ -310,7 +310,7 @@ function AddressesPopup({authenticatedUsername, closePopup}) {
                             <option value="United Kingdom">United Kingdom</option>
                         </select>
                         
-                        <img onClick={!isNewAddressAddable ? null : addNewAddress} src={plusIcon} style={{height: '1.5em', width: '1.5em', opacity: !isNewAddressAddable ? '0.3' : '1', cursor: !isNewAddressAddable ? 'auto' : 'pointer'}}></img>
+                        <img className="iconToBeAdjustedForDarkMode" onClick={!isNewAddressAddable ? null : addNewAddress} src={plusIcon} style={{height: '1.5em', width: '1.5em', opacity: !isNewAddressAddable ? '0.3' : '1', cursor: !isNewAddressAddable ? 'auto' : 'pointer'}}></img>
                     </div>
                     {isAddressFormatInvalid &&
                         <small style={{color: 'red', textAlign: 'center'}}>Invalid format</small>
