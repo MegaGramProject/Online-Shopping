@@ -153,7 +153,7 @@ public class backendController {
     }
 
     @GetMapping("/getShopSearchesOfUser/{username}")
-    @CrossOrigin({"http://localhost:8024"})
+    @CrossOrigin({"http://localhost:8024", "http://localhost:8033"})
     public ResponseEntity<List<ShopSearch>> getShopSearchesOfUser(@PathVariable String username) {
         List<ShopSearch> allShopSearchesOfUser = shopSearchRepository.findBySearcherUsernameOrderByDateTimeDesc(username);
         return new ResponseEntity<>(allShopSearchesOfUser, HttpStatus.OK);

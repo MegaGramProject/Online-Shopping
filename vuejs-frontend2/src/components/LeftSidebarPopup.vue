@@ -109,5 +109,5 @@ import yourActivityIcon from '@/assets/images/yourActivityIcon.png';
                 }
             }
         }
-    }
+    };
 </script>

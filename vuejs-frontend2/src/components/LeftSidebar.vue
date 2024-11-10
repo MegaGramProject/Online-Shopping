@@ -1,6 +1,6 @@
 <template>
     <div id="leftSidebar" :style="{width: '100%', height: '100%', borderStyle: 'solid', borderColor: 'lightgray',
-    borderWidth: '0px 0.01em 0px 0em', position: 'relative', overflow: 'scroll'}">
+    borderWidth: '0px 0.01em 0px 0em', position: 'relative', overflow: 'scroll', backgroundColor: 'white'}">
 
         <h1 @click="takeUserHome" class="headerMegagram" :style="headerStyle">
         <span :style="{ cursor: 'pointer' }">Megagram</span>
@@ -82,7 +82,7 @@ import LeftSidebarPopup from './LeftSidebarPopup.vue';
         },
 
         props: {
-            authenticatedUsername: String,
+            authenticatedUsername: String
         },
 
         data() {

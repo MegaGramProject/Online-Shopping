@@ -8,9 +8,11 @@
 
 <script>
 import './styles.css';
-export default {
-    mounted() {
-        document.title = "Not Found";
+
+    export default {
+        mounted() {
+            document.title = "Not Found";
+        }
     }
-}
+    
 </script>

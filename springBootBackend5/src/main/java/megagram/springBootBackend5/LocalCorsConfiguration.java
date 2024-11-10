@@ -14,10 +14,12 @@ public class LocalCorsConfiguration {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowCredentials(true);
+        config.setAllowCredentials(false);
         config.addAllowedOrigin("http://localhost:8024");
+        config.addAllowedOrigin("http://localhost:8033");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
+        
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/graphql", config);

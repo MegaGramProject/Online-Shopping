@@ -83,7 +83,7 @@ function TopMostSection({authenticatedUsername, showDarkScreen, hideDarkScreen,
     }
 
     function takeUserToShoppingCartPage() {
-        window.location.href = "http://localhost:8024/shoppingCart";
+        window.location.href = `http://localhost:8033/onlineShoppingCart/${authenticatedUsername}`;
     }
 
     function takeUserToReturnsAndOrdersPage() {
