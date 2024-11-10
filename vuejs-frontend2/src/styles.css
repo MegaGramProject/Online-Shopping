@@ -1,0 +1,57 @@
+@font-face {
+    font-family: Billabong;
+    src: url('assets/fonts/billabong_regular.otf');
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+    font-family: Arial;
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #232424 !important;
+        color: white !important;
+    }
+    .popup {
+        background-color: #232424 !important;
+        color: white !important;
+    }
+
+    .iconToBeAdjustedForDarkMode {
+        filter: brightness(5) contrast(0);
+    }
+
+    .sidebarElement:hover {
+        color: black !important;
+    }
+
+    .hoverableElement:hover {
+        color: black !important;
+    }
+
+    #leftSideBarPopupGap {
+        background-color: #232424 !important;
+    }
+}
+
+.sidebarElement {
+    cursor: pointer;
+}
+
+.sidebarElement:hover {
+    background-color: #f0f0f0;
+    width: 12em;
+    border-radius: 0.4em;
+}
+
+.hoverableElement:hover {
+    background-color: #f0f0f0;
+    cursor: pointer;
+}
+
+a:hover {
+    color: green !important;
+}
+
