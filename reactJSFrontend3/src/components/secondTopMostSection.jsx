@@ -23,10 +23,10 @@ function SecondTopMostSection({isLeftSidebarDisplayed, notifyParentToToggleLeftS
     }
 
     function togglePremiumPopup() {
+        setIsHoveringOnPremiumPopup(!isHoveringOnPremiumPopup);
         if(hasPremium) {
             return;
         }
-        setIsHoveringOnPremiumPopup(!isHoveringOnPremiumPopup);
         setDisplayPremiumPopup(!displayPremiumPopup);
         toggleDarkScreen();
     }

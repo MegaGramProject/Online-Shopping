@@ -47,12 +47,14 @@ function LeftSidebar({authenticatedUsername}) {
 
     useEffect(() => {
         async function getProfilePhotoOfAuthUser() {
+            /*
             const response = await fetch('http://localhost:8003/getProfilePhoto/'+authenticatedUsername);
             if(!response.ok) {
                 throw new Error('Network response not ok');
             }
             let profilePhotoBlob = await response.blob();
             SetProfilePhotoString(URL.createObjectURL(profilePhotoBlob));
+            */
         }
 
         if(authenticatedUsername.length>0) {

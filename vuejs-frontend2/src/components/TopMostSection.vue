@@ -1,5 +1,5 @@
 <template>
-        <div id="topmostSection" :style="{display: 'flex', alignItems: 'center', width: '100%', backgroundColor: '#020b1f', padding: '0.5em 0.5em',
+        <div id="topmostSection" :style="{display: 'flex', alignItems: 'center', width: '99.6%', backgroundColor: '#020b1f', padding: '0.5em 0.5em',
         position: 'relative', height: '6.6%'}">
 
             <div @click="takeUserToShoppingMainPage" :style="{ display: 'flex', flexDirection: 'column', alignItems: 'start',
@@ -54,7 +54,7 @@
 
             <div @mouseenter="toggleIsHoveringOnListsDiv" @mouseleave="toggleIsHoveringOnListsDiv"
             :style="{display: 'flex', alignItems: 'start', cursor: 'pointer', borderStyle: isHoveringOnListsDiv ? 'solid' : 'none',
-            borderColor: 'white', padding: '0.5em 1em', gap: '0.2em', width: '3.5em', marginLeft: '6em'}">
+            borderColor: 'white', padding: '0.5em 1em', gap: '0.2em', width: '3.5em', marginLeft: '7em'}">
                 <b :style="{color: 'white'}">Lists</b>
                 <img :src="downwardTriangle" :style="{height: '1em', width: '1em', pointerEvents: 'none'}"/>
             </div>
