@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 import megagram.springBootBackend5.mysqlModels.ProductDeliveryTime;
 import megagram.springBootBackend5.mysqlModels.ProductDeliveryTimeId;
 import megagram.springBootBackend5.mysqlModels.ShoppingCart;
-import megagram.springBootBackend5.mysqlModels.ShoppingCartId;
 import megagram.springBootBackend5.mysqlRepositories.ProductDeliveryTimeRepository;
 import megagram.springBootBackend5.mysqlRepositories.ShoppingCartRepository;
 import megagram.springBootBackend5.psqlModels.WebsiteRatingAndReview;
@@ -46,7 +45,7 @@ public class graphqlController {
     private WebsiteRatingAndReviewRepository websiteRatingAndReviewRepository;
 
     @QueryMapping
-    public List<ShoppingCart> getAllShoppingCarts() {
+    public List<ShoppingCart> getAllShoppingCartItems() {
         List<ShoppingCart> allShoppingCarts = shoppingCartRepository.findAll();
         return allShoppingCarts;
     }
@@ -58,28 +57,27 @@ public class graphqlController {
     }
 
     @MutationMapping
-    public ShoppingCart addShoppingCartItem(@Argument String username, @Argument String productId, @Argument String optionsChosen) {
-        ShoppingCartId newShoppingCartItemId = new ShoppingCartId(username, productId);
-        ShoppingCart newShoppingCartItem = new ShoppingCart(newShoppingCartItemId, optionsChosen);
+    public ShoppingCart addShoppingCartItem(@Argument String username, @Argument String productId, @Argument int quantity, @Argument String options) {
+        ShoppingCart newShoppingCartItem = new ShoppingCart(username, productId, quantity, options);
         shoppingCartRepository.save(newShoppingCartItem);
         return newShoppingCartItem;
     }
 
     @MutationMapping
-    public ShoppingCart editShoppingCartItem(@Argument String username, @Argument String productId, @Argument String newOptionsChosen) {
-        Optional<ShoppingCart> optionalShoppingCartItemToEdit = shoppingCartRepository.findById(new ShoppingCartId(username, productId));
+    public ShoppingCart editShoppingCartItem(@Argument int id, @Argument int newQuantity) {
+        Optional<ShoppingCart> optionalShoppingCartItemToEdit = shoppingCartRepository.findById(id);
         if (!optionalShoppingCartItemToEdit.isPresent()) {
             return null;
         }
         ShoppingCart shoppingCartItemToEdit = optionalShoppingCartItemToEdit.get();
-        shoppingCartItemToEdit.setOptionsChosen(newOptionsChosen);
+        shoppingCartItemToEdit.setQuantity(newQuantity);
         shoppingCartRepository.save(shoppingCartItemToEdit);
         return shoppingCartItemToEdit;
     }
 
     @MutationMapping
-    public Boolean deleteShoppingCartItem(@Argument String username, @Argument String productId) {
-        Optional<ShoppingCart> optionalShoppingCartItemToDelete = shoppingCartRepository.findById(new ShoppingCartId(username, productId));
+    public Boolean deleteShoppingCartItem(@Argument int id) {
+        Optional<ShoppingCart> optionalShoppingCartItemToDelete = shoppingCartRepository.findById(id);
         if (!optionalShoppingCartItemToDelete.isPresent()) {
             return false;
         }

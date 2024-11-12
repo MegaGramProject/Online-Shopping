@@ -1,50 +1,80 @@
 package megagram.springBootBackend5.mysqlModels;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "shoppingCarts")
 public class ShoppingCart {
 
-    @EmbeddedId
-    private ShoppingCartId id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private int id;
 
-    @Column(columnDefinition = "json")
-    private String optionsChosen;
+    @Column(name = "username")
+    private String username;
+
+    @Column(name = "productId")
+    private String productId;
+
+    @Column(name = "quantity")
+    private int quantity;
+
+    @Column(name = "options")
+    private String options;
 
     public ShoppingCart() {
     }
 
-    public ShoppingCart(ShoppingCartId id, String optionsChosen) {
+    public ShoppingCart(String username, String productId, int quantity, String options) {
+        this.username = username;
+        this.productId = productId;
+        this.quantity = quantity;
+        this.options = options;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
         this.id = id;
-        this.optionsChosen = optionsChosen;
     }
 
     public String getUsername() {
-        return this.id.getUsername();
+        return username;
     }
 
     public void setUsername(String username) {
-        this.id.setUsername(username);
+        this.username = username;
     }
 
     public String getProductId() {
-        return this.id.getProductId();
+        return productId;
     }
 
     public void setProductId(String productId) {
-        this.id.setProductId(productId);
+        this.productId = productId;
     }
 
-    public String getOptionsChosen() {
-        return this.optionsChosen;
+    public int getQuantity() {
+        return quantity;
     }
 
-    public void setOptionsChosen(String optionsChosen) {
-        this.optionsChosen = optionsChosen;
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
     }
 
+    public String getOptions() {
+        return options;
+    }
+
+    public void setOptions(String options) {
+        this.options = options;
+    }
 }

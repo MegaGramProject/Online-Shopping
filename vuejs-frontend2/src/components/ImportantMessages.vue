@@ -2,7 +2,7 @@
     <div v-if="shoppingCartPriceDecreases.length>0 || shoppingCartPriceIncreases.length>0 || savedItemsPriceDecreases.length>0 ||
     savedItemsPriceIncreases.length>0 || unavailableProducts.length>0"
     :style="{borderStyle: 'solid', borderColor: 'orange', width: '75%', padding: '1em 1em', backgroundColor: 'white',
-    display: 'flex', flexDirection: 'column', fontSize: '0.83em'}">
+    display: 'flex', flexDirection: 'column', fontSize: '0.83em', display: 'none'}">
 
         <div :style="{display: 'flex', alignItems: 'center', gap: '0.4em', pointerEvents: 'none',
         marginBottom: '1.5em'}">

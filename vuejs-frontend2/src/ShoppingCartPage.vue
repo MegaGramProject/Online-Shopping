@@ -15,7 +15,7 @@
             <ImportantMessages :deliveryAreaCountry="deliveryAreaCountry"/>
             <div :style="{display: 'flex', justifyContent: 'center', alignItems: 'start', width: '100%', gap: '3em',
             marginTop: '2em'}">
-                <CartItems @updateSelectedCartItems="updateSelectedCartItems"/>
+                <CartItems @updateSelectedCartItems="updateSelectedCartItems" :hasPremium="hasPremium"/>
                 <div :style="{display: 'flex', flexDirection: 'column', alignItems: 'center', width: '17%', gap: '1em'}">
                     <SubtotalAndProceedToCheckout :numSelectedCartItems="numSelectedCartItems" :selectedCartItemsPriceSubtotal="selectedCartItemsPriceSubtotal"
                     :deliveryAreaCountry="deliveryAreaCountry"/>
@@ -216,7 +216,7 @@ import './styles.css';
                 */
 
                 this.numItemsInCart = 2;
-                this.cartPriceSubtotal = '$58.12';
+                this.cartPriceSubtotal = '$39.98';
                 this.numSelectedCartItems = this.numItemsInCart;
                 this.selectedCartItemsPriceSubtotal = this.cartPriceSubtotal;
 
@@ -290,13 +290,15 @@ import './styles.css';
             },
 
             updateSelectedCartItems(newSelectedItems) {
-                this.numSelectedCartItems = newSelectedItems.length;
+                let numSelectedCartItems = 0;
                 let selectedCartItemsPriceSubtotal = 0;
                 for(let selectedItem of newSelectedItems) {
-                    selectedCartItemsPriceSubtotal+= parseFloat(selectedItem.productPrice.substring(1));
+                    selectedCartItemsPriceSubtotal+= parseFloat(selectedItem.productPrice.substring(1)*selectedItem.quantity);
+                    numSelectedCartItems+=selectedItem.quantity;
                 }
+                this.numSelectedCartItems = numSelectedCartItems;
                 this.selectedCartItemsPriceSubtotal =
-                this.selectedCartItemsPriceSubtotal[0]+ selectedCartItemsPriceSubtotal.toFixed(2);
+                this.selectedCartItemsPriceSubtotal[0] + selectedCartItemsPriceSubtotal.toFixed(2);
             }
         },
 

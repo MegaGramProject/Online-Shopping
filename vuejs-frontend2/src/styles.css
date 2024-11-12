@@ -61,3 +61,10 @@ a:hover {
 a {
     text-decoration: none;
 }
+
+.vertical-line {
+    width: 1px;
+    height: 1.1em;
+    background-color: lightgray;
+    margin: 20px;
+}

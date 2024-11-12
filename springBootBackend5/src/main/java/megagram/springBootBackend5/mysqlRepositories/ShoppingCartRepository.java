@@ -7,13 +7,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import megagram.springBootBackend5.mysqlModels.ShoppingCart;
-import megagram.springBootBackend5.mysqlModels.ShoppingCartId;
 
-public interface ShoppingCartRepository extends JpaRepository<ShoppingCart, ShoppingCartId> {
+public interface ShoppingCartRepository extends JpaRepository<ShoppingCart, Integer> {
 
-    @Query("SELECT s FROM ShoppingCart s WHERE s.id.username = :username")
+    @Query("SELECT s FROM ShoppingCart s WHERE s.username = :username")
     List<ShoppingCart> findByUsername(@Param("username") String username);
 
-    Optional<ShoppingCart> findById(ShoppingCartId id);
+    Optional<ShoppingCart> findById(Integer id);
 
 }

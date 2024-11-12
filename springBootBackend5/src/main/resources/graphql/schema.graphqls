@@ -1,7 +1,9 @@
 type ShoppingCart {
+    id: Int!
     username: String!
     productId: String!
-    optionsChosen: String!
+    options: String!
+    quantity: Int!
 }
 
 type ProductDeliveryTime {
@@ -20,7 +22,7 @@ type WebsiteRatingAndReview {
 }
 
 type Query {
-    getAllShoppingCarts: [ShoppingCart!]!
+    getAllShoppingCartItems: [ShoppingCart!]!
     getAllShoppingCartItemsOfUser(username: String!): [ShoppingCart!]!
 
     getAllProductDeliveryTimes: [ProductDeliveryTime!]!
@@ -31,9 +33,9 @@ type Query {
 }
 
 type Mutation {
-    addShoppingCartItem(username: String!, productId: String!, optionsChosen: String!): ShoppingCart!
-    editShoppingCartItem(username: String!, productId: String!, newOptionsChosen: String!): ShoppingCart
-    deleteShoppingCartItem(username: String!, productId: String!): Boolean!
+    addShoppingCartItem(username: String!, productId: String!, quantity: Int!, options: String!): ShoppingCart!
+    editShoppingCartItem(id: Int!, newQuantity: Int!): ShoppingCart
+    deleteShoppingCartItem(id: Int!): Boolean!
 
     addProductDeliveryTime(productId: String!, factoryAddress: String!, timeFormulaForDelivery: String!, timeFormulaForPremiumDelivery: String!): ProductDeliveryTime!
     editProductDeliveryTime(productId: String!, factoryAddress: String!, newTimeFormulaForDelivery: String, newTimeFormulaForPremiumDelivery: String): ProductDeliveryTime
