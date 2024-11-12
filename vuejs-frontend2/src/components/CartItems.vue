@@ -1,7 +1,6 @@
 <template>
-    <div :style="{backgroundColor: 'white', width: '60%', paddingLeft: '1.5em', paddingRight: '1.5em',
-    paddingBottom: '2.4em', display: 'flex',
-    flexDirection: 'column'}">
+    <div :style="{backgroundColor: 'white', width: '100%', paddingLeft: '1.5em', paddingRight: '1.5em',
+    paddingBottom: '2.4em', display: 'flex', flexDirection: 'column'}">
         <p :style="{fontSize: '2em'}">Shopping Cart</p>
         <p v-if="selectedItems.length==0 && items.length>0">No items selected. <a @click="selectAllItems" :style="{color: '#4180b0', cursor: 'pointer'}">Select all items</a></p>
         <p v-if="selectedItems.length>0 && selectedItems.length<items.length"><a @click="selectAllItems" :style="{color: '#4180b0', cursor: 'pointer'}">Select all items</a></p>
@@ -25,11 +24,11 @@
 
 <script>
 import SingleItemInCart from './SingleItemInCart.vue';
-import toys from '@/assets/images/toys.jpg';
 
     export default {
         props: {
-            hasPremium: Boolean
+            hasPremium: Boolean,
+            items: Array
         },
 
         components: {
@@ -38,59 +37,22 @@ import toys from '@/assets/images/toys.jpg';
 
         data() {
             return {
-                toys,
-                selectedItems: [
-                    {
-                        id: 0,
-                        productPrice: "$19.99",
-                        quantity: 2,
-                    }
-                ],
-                items: [
-                    {
-                        id: 0,
-                        productId: "0",
-                        productImage: toys,
-                        productName: "Gibelle Grey Marble Shower Curtain Set, Abstract Silver Marble Gold Stripes Fabric Shower Curtain, Modern Ink Art Decor Waterproof Shower Curtain for Bathroom Decor, 71x71",
-                        inStock: true,
-                        options: {
-                            Color: 'Grey',
-                            Size: '71W x 71L (Pack of 1)'
-                        },
-                        productPrice: "$19.99",
-                        getItAsSoonAs: "Wed, Nov 7",
-                        quantity: 2,
-                        dealsAvailable: true,
-                        megagramChoiceCategory: 'a',
-                        numberOneBestSeller: null,
-                        isSelected: true,
-                        hasBeenRemoved: false,
-                        hasBeenSavedForLater: false
-                    }
-                ],
+                selectedItems: [],
             }
         },
 
         methods: {
             selectAllItems() {
-                this.items.map(item=> {
-                    if(!item.hasBeenRemoved && !item.hasBeenSavedForLater) {
-                        item.isSelected = true;
-                    }
-                    return item;
-                });
+                this.$emit("selectAllCartItems");
             },
 
             deselectAllItems() {
-                this.items.map(item=> {
-                    item.isSelected = false;
-                    return item;
-                })
+                this.$emit("deselectAllCartItems");
             },
 
             selectItem(indexOfCartItemToSelect) {
+                this.$emit("selectCartItem", indexOfCartItemToSelect);
                 const cartItemToSelect = this.items[indexOfCartItemToSelect];
-                this.items[indexOfCartItemToSelect].isSelected = true;
                 this.selectedItems.push({
                     id: cartItemToSelect.id,
                     productPrice: cartItemToSelect.productPrice,
@@ -100,14 +62,14 @@ import toys from '@/assets/images/toys.jpg';
             },
 
             unselectItem(indexOfCartItemToUnselect) {
+                this.$emit("unselectCartItem", indexOfCartItemToUnselect);
                 const idOfCartItemToUnselect = this.items[indexOfCartItemToUnselect].id;
-                this.items[indexOfCartItemToUnselect].isSelected = false;
                 this.selectedItems = this.selectedItems.filter((selectedItem) => idOfCartItemToUnselect!==selectedItem.id);
                 this.$emit('updateSelectedCartItems', this.selectedItems);
             },
 
             removeItem(info) {
-                this.items[info.index].hasBeenRemoved = true;
+                this.$emit("removeCartItem", info.index);
                 if(info.isSelected==true) {
                     this.selectedItems = this.selectedItems.filter(selectedItem=> {
                         return selectedItem.id!==info.id;
@@ -117,7 +79,7 @@ import toys from '@/assets/images/toys.jpg';
             },
 
             updateQuantity(info) {
-                this.items[info.index].quantity = info.newQuantity;
+                this.$emit("updateCartItemQuantity", info);
                 if(info.isSelected==true) {
                     this.selectedItems = this.selectedItems.map(selectedItem=> {
                         if(selectedItem.id===info.id) {
@@ -130,7 +92,7 @@ import toys from '@/assets/images/toys.jpg';
             },
 
             saveItemForLater(info) {
-                this.items[info.index].hasBeenSavedForLater = true;
+                this.$emit("saveCartItemForLater", info.index);
                 if(info.isSelected==true) {
                     this.selectedItems = this.selectedItems.filter(selectedItem=> {
                         return selectedItem.id!==info.id;
@@ -138,7 +100,7 @@ import toys from '@/assets/images/toys.jpg';
                     this.$emit('updateSelectedCartItems', this.selectedItems);
                 }
             }
-        },
+        }
     }
 
 </script>

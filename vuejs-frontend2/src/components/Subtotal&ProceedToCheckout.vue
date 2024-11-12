@@ -57,7 +57,7 @@
                 let selectedCartItemsPriceSubtotal = parseFloat(this.selectedCartItemsPriceSubtotal.substring(currentCurrency.length));
                 selectedCartItemsPriceSubtotal/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
                 selectedCartItemsPriceSubtotal*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
-                this.mutableSelectedCartItemsPriceSubtotal = newCurrency+selectedCartItemsPriceSubtotal.toFixed(2);
+                this.mutableSelectedCartItemsPriceSubtotal = newCurrency+selectedCartItemsPriceSubtotal.toFixed(2).toLocaleString();
             }
         },
 

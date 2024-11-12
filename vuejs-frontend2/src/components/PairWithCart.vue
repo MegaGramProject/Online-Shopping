@@ -3,7 +3,7 @@
         <h3>Pair with your cart</h3>
 
         <SingleItemToPairWithCart v-for="(item, index) in itemsToPairWithCart" :key="index"
-        :productId="item.id" :productImage="item.image" :productName="item.name"
+        :productId="item.productId" :productImage="item.image" :productName="item.name"
         :productPrice="item.price" :avgRating="item.avgRating" :numRatings="item.numRatings" :hasPremium="hasPremium"
         @addItemToCart="addItemToCart"/>
     </div>
@@ -40,7 +40,6 @@ import jeans from '@/assets/images/jeans.jpg';
                     "Mexico": "MX$",         // MXN - Mexican Peso
                     "United Kingdom": "£"  // GBP - British Pound
                 },
-
                 currencyToDollarMap: {
                     "$": 1,            // USD - United States
                     "A$": 1.5063,        // AUD - Australian Dollar
@@ -54,7 +53,7 @@ import jeans from '@/assets/images/jeans.jpg';
                 },
                 itemsToPairWithCart: [
                     {
-                        id: "0",
+                        productId: "0",
                         image: bedding,
                         name: "Bed mattess and blankets full set",
                         price: "$59.99",
@@ -62,7 +61,7 @@ import jeans from '@/assets/images/jeans.jpg';
                         numRatings: 123
                     },
                     {
-                        id: "1",
+                        productId: "1",
                         image: jeans,
                         name: "Apple-bottom jeans",
                         price: "$89.99",
@@ -70,7 +69,7 @@ import jeans from '@/assets/images/jeans.jpg';
                         numRatings: 143500
                     },
                     {
-                        id: "2",
+                        productId: "2",
                         image: jeans,
                         name: "Apple-bottom jeans2",
                         price: "$89.99",
@@ -78,7 +77,7 @@ import jeans from '@/assets/images/jeans.jpg';
                         numRatings: 143500
                     },
                     {
-                        id: "3",
+                        productId: "3",
                         image: jeans,
                         name: "Apple-bottom jeans3",
                         price: "$89.99",
@@ -86,7 +85,7 @@ import jeans from '@/assets/images/jeans.jpg';
                         numRatings: 14350
                     },
                     {
-                        id: "4",
+                        productId: "4",
                         image: bedding,
                         name: "Bedding2",
                         price: "$89.99",
@@ -100,9 +99,10 @@ import jeans from '@/assets/images/jeans.jpg';
         methods: {
             async addItemToCart(itemInfo) {
                 //make API-request to add item to cart
+                itemInfo.id = Math.floor(Math.random() * 5010) + 150;
                 this.itemsToPairWithCart = this.itemsToPairWithCart.filter(
                     x=> {
-                        return x.id!==itemInfo.productId;
+                        return x.productId!==itemInfo.productId;
                     }
                 );
                 this.$emit("addItemToCart", itemInfo);
