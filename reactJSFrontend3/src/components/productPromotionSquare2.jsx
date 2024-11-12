@@ -35,7 +35,7 @@ function ProductPromotionSquare2({title, deliveryAreaCountry}) {
         "¥": 151.88,       // JPY - Japanese Yen (for Japan)
         "₹": 84.079,        // INR - Indian Rupee (for India)
         "€": 0.9240,         // EUR - Euro (for Germany)
-        "¥ (CNY)": 7.1198,   // CNY - Chinese Yuan (for China)
+        "¥": 7.1198,   // CNY - Chinese Yuan (for China)
         "MX$": 19.86,      // MXN - Mexican Peso (for Mexico)
         "£": 0.7709          // GBP - British Pound (for United Kingdom)
     };

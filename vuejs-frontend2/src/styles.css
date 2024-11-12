@@ -7,6 +7,7 @@
 
 body {
     font-family: Arial;
+    background-color: #ededed;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -53,5 +54,10 @@ body {
 
 a:hover {
     color: green !important;
+    text-decoration: underline;
 }
 
+
+a {
+    text-decoration: none;
+}

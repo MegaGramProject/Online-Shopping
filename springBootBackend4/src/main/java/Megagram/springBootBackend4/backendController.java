@@ -239,10 +239,15 @@ public class backendController {
         return new ResponseEntity<>(true, HttpStatus.OK);
     }
 
-    @GetMapping("/getShopSearchResults/{searchText}/{searchCategory}")
-    @CrossOrigin({"http://localhost:8024"})
-    public ResponseEntity<List<String>> getShopSearchResults(@PathVariable String searchText, @PathVariable String searchCategory)
+    @PostMapping("/getShopSearchResults")
+    @CrossOrigin({"http://localhost:8024", "http://localhost:8033"})
+    public ResponseEntity<List<String>> getShopSearchResults(@RequestBody Map<String, String> request)
     throws Exception {
+        if(!request.containsKey("search") || !request.containsKey("searchCategory")) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        String searchText = request.get("search");
+        String searchCategory = request.get("searchCategory");
         List<String> allTagsStartingWithSearchTextForSearchCategory;
         List<String> popularSearchesInThisCategory;
         if(searchCategory.equals("all")) {

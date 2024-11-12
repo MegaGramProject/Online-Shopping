@@ -1,16 +1,32 @@
 <template>
-    <div :style="{position: 'absolute', top: '0%', left: displayLeftSidebar ? '14%' : '0%', width: displayLeftSidebar ? '86%' : '100%', height: '100%',
+    <div :style="{position: 'absolute', top: '0%', left: displayLeftSidebar ? '14%' : '0%', width: displayLeftSidebar ? '86%' : '100%', height: '190%',
     display: 'flex', flexDirection: 'column'}">
         <TopMostSection :authenticatedUsername="authenticatedUsername" :hasPremium="hasPremium"
         :deliveryArea="deliveryArea" @showChooseYourLocationPopup="showChooseYourLocationPopup"
         @showDarkScreen1="showDarkScreen1" @hideDarkScreen1="hideDarkScreen1"
-        :numItemsInCart="numItemsInCart"/>
+        :numItemsInCart="numItemsInCart" :allPastSearchesOfUser="allPastSearchesOfUser"/>
 
         <SecondTopMostSection :authenticatedUsername="authenticatedUsername" :hasPremium="hasPremium"
         :isLeftSidebarDisplayed="displayLeftSidebar" @toggleLeftSidebar="toggleLeftSidebar"
         @showDarkScreen1="showDarkScreen1" @hideDarkScreen1="hideDarkScreen1"/>
 
-        <img v-if="displayDarkScreen1" :src="blackScreen" :style="{height: '93.4%', width: '101%', opacity: '0.7'}">
+        <div :style="{display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', height: '100%',
+        position: 'relative', paddingTop: '2em'}">
+            <ImportantMessages :deliveryAreaCountry="deliveryAreaCountry"/>
+            <div :style="{display: 'flex', justifyContent: 'center', alignItems: 'start', width: '100%', gap: '3em',
+            marginTop: '2em'}">
+                <CartItems @updateSelectedCartItems="updateSelectedCartItems"/>
+                <div :style="{display: 'flex', flexDirection: 'column', alignItems: 'center', width: '17%', gap: '1em'}">
+                    <SubtotalAndProceedToCheckout :numSelectedCartItems="numSelectedCartItems" :selectedCartItemsPriceSubtotal="selectedCartItemsPriceSubtotal"
+                    :deliveryAreaCountry="deliveryAreaCountry"/>
+                    <PairWithCart :hasPremium="hasPremium" @addItemToCart="addItemToCart"
+                    :deliveryAreaCountry="deliveryAreaCountry"/>
+                </div>
+            </div>
+            <img v-if="displayDarkScreen1" :src="blackScreen" :style="{height: '100%', width: '100%', opacity: '0.7',
+            position: 'absolute', top: '0%', left: '0%'}">
+        </div>
+
     </div>
 
     <div v-if="displayLeftSidebar" :style="{width: '14%', position: 'fixed', top: '0%', left: '0%', height: '100%'}">
@@ -28,6 +44,10 @@ import blackScreen from '@/assets/images/blackScreen.png';
 import LeftSidebar from './components/LeftSidebar.vue';
 import TopMostSection from './components/TopMostSection.vue';
 import SecondTopMostSection from './components/SecondTopMostSection.vue';
+import ImportantMessages from './components/ImportantMessages.vue';
+import CartItems from './components/CartItems.vue';
+import SubtotalAndProceedToCheckout from './components/Subtotal&ProceedToCheckout.vue';
+import PairWithCart from './components/PairWithCart.vue';
 import './styles.css';
 
     export default {
@@ -37,14 +57,17 @@ import './styles.css';
             authenticatedUsername: "",
             displayLeftSidebar: false,
             numTimesRouteParamsWasWatched: 0,
-            hasPremium: true,
+            hasPremium: false,
             deliveryArea: "",
             deliveryAreaCountry: "",
             displayDarkScreen1: false,
             displayDarkScreen2: false,
             numItemsInCart: 0,
+            numSelectedCartItems: 0,
+            cartPriceSubtotal: "",
+            selectedCartItemsPriceSubtotal: "",
             deliveryZipcode: "",
-            pastSearchesOfUser: null,
+            allPastSearchesOfUser: null,
             selectedAddressOfUser: null
             };
         },
@@ -52,7 +75,11 @@ import './styles.css';
         components: {
             LeftSidebar,
             TopMostSection,
-            SecondTopMostSection
+            SecondTopMostSection,
+            ImportantMessages,
+            CartItems,
+            SubtotalAndProceedToCheckout,
+            PairWithCart
         },
 
         mounted() {
@@ -188,7 +215,10 @@ import './styles.css';
                 this.numItemsInCart = shoppingCartItemsOfUser.length;
                 */
 
-                this.numItemsInCart = 25;
+                this.numItemsInCart = 2;
+                this.cartPriceSubtotal = '$58.12';
+                this.numSelectedCartItems = this.numItemsInCart;
+                this.selectedCartItemsPriceSubtotal = this.cartPriceSubtotal;
 
                 /*
                 const response2 = await fetch(`http://localhost:8025/getShopSearchesOfUser/${this.authenticatedUsername}`);
@@ -196,14 +226,18 @@ import './styles.css';
                     throw new Error('Network response not ok');
                 }
                 const fetchedPastSearches = await response2.json();
-                let pastSearchesOfUser = [];
+                let pastSearcallPastSearchesOfUserhesOfUser = [];
                 for(let fetchedPastSearch of fetchedPastSearches) {
-                pastSearchesOfUser.push([fetchedPastSearch.search, fetchedPastSearch.searchCategory]);
+                allPastSearchesOfUser.push([fetchedPastSearch.search, fetchedPastSearch.searchCategory]);
                 }
-                this.pastSearchesOfUser = pastSearchesOfUser;
+                this.allPastSearchesOfUser = allPastSearchesOfUser;
                 */
 
-                this.pastSearchesOfUser = [];
+                this.allPastSearchesOfUser = [
+                    ["hot wheels", "Toys for Kids"],
+                    ["hotpockets", "Food"],
+                    ["walkie-talkie", ""]
+                ];
 
                 /*
                 const response3 = await fetch(`http://localhost:8026/getSelectedAddressOfUser/${this.authenticatedUsername}`);
@@ -242,8 +276,28 @@ import './styles.css';
 
             toggleLeftSidebar() {
                 this.displayLeftSidebar = !this.displayLeftSidebar;
-            }
+            },
 
+            addItemToCart(itemInfo) {
+                this.numItemsInCart++;
+                this.cartPriceSubtotal = this.getNewCartPriceSubtotal(itemInfo.productPrice);
+            },
+
+            getNewCartPriceSubtotal(priceOfNewlyAddedItem) {
+                return this.cartPriceSubtotal[0] +
+                ( parseFloat(this.cartPriceSubtotal.substring(1)) + parseFloat(priceOfNewlyAddedItem.substring(1)) )
+                .toFixed(2);
+            },
+
+            updateSelectedCartItems(newSelectedItems) {
+                this.numSelectedCartItems = newSelectedItems.length;
+                let selectedCartItemsPriceSubtotal = 0;
+                for(let selectedItem of newSelectedItems) {
+                    selectedCartItemsPriceSubtotal+= parseFloat(selectedItem.productPrice.substring(1));
+                }
+                this.selectedCartItemsPriceSubtotal =
+                this.selectedCartItemsPriceSubtotal[0]+ selectedCartItemsPriceSubtotal.toFixed(2);
+            }
         },
 
         watch: {

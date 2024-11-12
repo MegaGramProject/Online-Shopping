@@ -40,14 +40,9 @@
                     <textarea v-model="searchTextareaValue" placeholder="Search Megagram Shop"
                     :style="{fontFamily: 'Arial', paddingTop: '1em', paddingLeft: '1em', fontSize: '1em', resize: 'none'}">
                     </textarea>
-                    <div v-if="displaySearchResults" :style="{padding: '0.5em 1em', backgroundColor: 'white', zIndex: '10'}">
-                        <p>Search Results</p>
-                        <p>Search Results</p>
-                        <p>Search Results</p>
-                        <p>Search Results</p>
-                        <p>Search Results</p>
-                        <p>Search Results</p>
-                    </div>
+                    <SearchResults :authenticatedUsername="authenticatedUsername"
+                    :search="searchTextareaValue" :searchCategory="selectedCategoryForSearch"
+                    :allPastSearchesOfUser="allPastSearchesOfUser" :displaySearchResults="displaySearchResults"/>
                 </div>
                 <img @click="submitSearch" :src="orangeSearchButton" :style="{height: '3.6em', width: '3.5em', cursor: 'pointer'}">
             </div>
@@ -111,13 +106,19 @@ import downwardTriangle from '@/assets/images/downwardTriangle.png';
 import mapPinIcon from '@/assets/images/mapPinIcon.png';
 import orangeSearchButton from '@/assets/images/orangeSearchButton.png';
 import smileyArrow from '@/assets/images/smileyArrow.png';
+import SearchResults from './SearchResults.vue';
 
     export default {
         props: {
             hasPremium: Boolean,
             authenticatedUsername: String,
             deliveryArea: String,
-            numItemsInCart: Number
+            numItemsInCart: Number,
+            allPastSearchesOfUser: Array
+        },
+
+        components: {
+            SearchResults
         },
 
         data() {
@@ -217,7 +218,7 @@ import smileyArrow from '@/assets/images/smileyArrow.png';
                     throw new Error('Network response not ok');
                 }
                 */
-                window.location.href = `http://localhost:8024/${this.categoryToPagePathSegmentMappings[this.selectedCategoryForSearch]}/${this.searchTextareaValue}/${this.authenticatedUsername}`;
+                window.location.href = `http://localhost:8024/${this.categoryToPagePathSegmentMappings[this.selectedCategoryForSearch]}/${this.searchTextareaValue}`;
             },
 
             handleClick(event) {
