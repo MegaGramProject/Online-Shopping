@@ -28,34 +28,36 @@
                 borderWidth: '0.08em', marginRight: '0.8em', marginBottom: '0.55em', fontWeight: currentCategoryOfSavedItems===category ? 'bold' : '',
                 backgroundColor: currentCategoryOfSavedItems===category ? '#c8e6fa' : 'white', fontSize: '0.8em'}"
                 @click="updateCurrentCategoryOfSavedItems(category)">{{ category }} ({{ savedItemCountPerCategory[category] }})</button>
-            </template>
 
-            <template v-if="currentSection==='saved-items'">
                 <h4>{{ currentCategoryOfSavedItems }}</h4>
-                <div v-for="(rowStartIndex, index) in indicesOfRowStartsOfSavedItems" :key="index"
-                :style="{display: 'flex', alignItems: 'center', gap: '1em', marginTop:'1em'}">
+                <div v-for="(rowStartIndex, index) in indicesOfRowStartsOfSavedItems"
+                :style="{display: 'flex', alignItems: 'center', gap: '1em', marginTop:'1em'}" :key="index">
                     <SingleItemSavedForLater v-if="currentCategoryOfSavedItems.length==0 || itemsSavedForLater[rowStartIndex].category===currentCategoryOfSavedItems" :productId="itemsSavedForLater[rowStartIndex].productId" :productImage="itemsSavedForLater[rowStartIndex].productImage"
                     :productName="itemsSavedForLater[rowStartIndex].productName" :inStock="itemsSavedForLater[rowStartIndex].inStock"
                     :hasPremium="hasPremium" :options="itemsSavedForLater[rowStartIndex].options" :numBuyersInPastMonth="itemsSavedForLater[rowStartIndex].numBuyersInPastMonth"
-                    :productPrice="itemsSavedForLater[rowStartIndex].productPrice"
+                    :productPrice="itemsSavedForLater[rowStartIndex].productPrice" :id="itemsSavedForLater[rowStartIndex].id"
+                    @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart"
                     />
                     <SingleItemSavedForLater v-if="rowStartIndex+1<itemsSavedForLater.length && (currentCategoryOfSavedItems.length==0 || itemsSavedForLater[rowStartIndex+1].category===currentCategoryOfSavedItems)"
                     :productId="itemsSavedForLater[rowStartIndex+1].productId" :productImage="itemsSavedForLater[rowStartIndex+1].productImage"
                     :productName="itemsSavedForLater[rowStartIndex+1].productName" :inStock="itemsSavedForLater[rowStartIndex+1].inStock"
                     :hasPremium="hasPremium" :options="itemsSavedForLater[rowStartIndex+1].options" :numBuyersInPastMonth="itemsSavedForLater[rowStartIndex+1].numBuyersInPastMonth"
-                    :productPrice="itemsSavedForLater[rowStartIndex+1].productPrice"
+                    :productPrice="itemsSavedForLater[rowStartIndex+1].productPrice" :id="itemsSavedForLater[rowStartIndex+1].id"
+                    @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart"
                     />
                     <SingleItemSavedForLater v-if="rowStartIndex+2<itemsSavedForLater.length && (currentCategoryOfSavedItems.length==0 || itemsSavedForLater[rowStartIndex+2].category===currentCategoryOfSavedItems)"
                     :productId="itemsSavedForLater[rowStartIndex+2].productId" :productImage="itemsSavedForLater[rowStartIndex+2].productImage"
                     :productName="itemsSavedForLater[rowStartIndex+2].productName" :inStock="itemsSavedForLater[rowStartIndex+2].inStock"
                     :hasPremium="hasPremium" :options="itemsSavedForLater[rowStartIndex+2].options" :numBuyersInPastMonth="itemsSavedForLater[rowStartIndex+2].numBuyersInPastMonth"
-                    :productPrice="itemsSavedForLater[rowStartIndex+2].productPrice"
+                    :productPrice="itemsSavedForLater[rowStartIndex+2].productPrice" :id="itemsSavedForLater[rowStartIndex+2].id"
+                    @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart"
                     />
                     <SingleItemSavedForLater v-if="rowStartIndex+3<itemsSavedForLater.length && (currentCategoryOfSavedItems.length==0 || itemsSavedForLater[rowStartIndex+3].category===currentCategoryOfSavedItems)"
                     :productId="itemsSavedForLater[rowStartIndex+3].productId" :productImage="itemsSavedForLater[rowStartIndex+3].productImage"
                     :productName="itemsSavedForLater[rowStartIndex+3].productName" :inStock="itemsSavedForLater[rowStartIndex+3].inStock"
                     :hasPremium="hasPremium" :options="itemsSavedForLater[rowStartIndex+3].options" :numBuyersInPastMonth="itemsSavedForLater[rowStartIndex+3].numBuyersInPastMonth"
-                    :productPrice="itemsSavedForLater[rowStartIndex+3].productPrice"
+                    :productPrice="itemsSavedForLater[rowStartIndex+3].productPrice" :id="itemsSavedForLater[rowStartIndex+3].id"
+                    @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart"
                     />
                 </div>
 
@@ -66,29 +68,40 @@
                         <SingleItemSavedForLater v-if="itemsSavedForLater[rowStartIndex].category!==currentCategoryOfSavedItems" :productId="itemsSavedForLater[rowStartIndex].productId" :productImage="itemsSavedForLater[rowStartIndex].productImage"
                         :productName="itemsSavedForLater[rowStartIndex].productName" :inStock="itemsSavedForLater[rowStartIndex].inStock"
                         :hasPremium="hasPremium" :options="itemsSavedForLater[rowStartIndex].options" :numBuyersInPastMonth="itemsSavedForLater[rowStartIndex].numBuyersInPastMonth"
-                        :productPrice="itemsSavedForLater[rowStartIndex].productPrice"
+                        :productPrice="itemsSavedForLater[rowStartIndex].productPrice" :id="itemsSavedForLater[rowStartIndex].id"
+                        @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart"
                         />
                         <SingleItemSavedForLater v-if="rowStartIndex+1<itemsSavedForLater.length && itemsSavedForLater[rowStartIndex+1].category!==currentCategoryOfSavedItems"
                         :productId="itemsSavedForLater[rowStartIndex+1].productId" :productImage="itemsSavedForLater[rowStartIndex+1].productImage"
                         :productName="itemsSavedForLater[rowStartIndex+1].productName" :inStock="itemsSavedForLater[rowStartIndex+1].inStock"
                         :hasPremium="hasPremium" :options="itemsSavedForLater[rowStartIndex+1].options" :numBuyersInPastMonth="itemsSavedForLater[rowStartIndex+1].numBuyersInPastMonth"
-                        :productPrice="itemsSavedForLater[rowStartIndex+1].productPrice"
+                        :productPrice="itemsSavedForLater[rowStartIndex+1].productPrice" :id="itemsSavedForLater[rowStartIndex+1].id"
+                        @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart"
                         />
                         <SingleItemSavedForLater v-if="rowStartIndex+2<itemsSavedForLater.length && itemsSavedForLater[rowStartIndex+2].category!==currentCategoryOfSavedItems"
                         :productId="itemsSavedForLater[rowStartIndex+2].productId" :productImage="itemsSavedForLater[rowStartIndex+2].productImage"
                         :productName="itemsSavedForLater[rowStartIndex+2].productName" :inStock="itemsSavedForLater[rowStartIndex+2].inStock"
                         :hasPremium="hasPremium" :options="itemsSavedForLater[rowStartIndex+2].options" :numBuyersInPastMonth="itemsSavedForLater[rowStartIndex+2].numBuyersInPastMonth"
-                        :productPrice="itemsSavedForLater[rowStartIndex+2].productPrice"
+                        :productPrice="itemsSavedForLater[rowStartIndex+2].productPrice" :id="itemsSavedForLater[rowStartIndex+2].id"
+                        @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart"
                         />
                         <SingleItemSavedForLater v-if="rowStartIndex+3<itemsSavedForLater.length && itemsSavedForLater[rowStartIndex+3].category!==currentCategoryOfSavedItems"
                         :productId="itemsSavedForLater[rowStartIndex+3].productId" :productImage="itemsSavedForLater[rowStartIndex+3].productImage"
                         :productName="itemsSavedForLater[rowStartIndex+3].productName" :inStock="itemsSavedForLater[rowStartIndex+3].inStock"
                         :hasPremium="hasPremium" :options="itemsSavedForLater[rowStartIndex+3].options" :numBuyersInPastMonth="itemsSavedForLater[rowStartIndex+3].numBuyersInPastMonth"
-                        :productPrice="itemsSavedForLater[rowStartIndex+3].productPrice"
+                        :productPrice="itemsSavedForLater[rowStartIndex+3].productPrice" :id="itemsSavedForLater[rowStartIndex+3].id"
+                        @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart"
                         />
                     </div>
                 </template>
 
+            </template>
+
+            <template v-if="currentSection==='buy-again'">
+                <SingleItemInBuyAgainSection  v-for="(item, index) in itemsAlreadyBought" :key="index"
+                :productImage="item.productImage" :productName="item.productName"
+                :inStock="item.inStock" :productPrice="item.productPrice" :productId="item.productId"
+                @addBuyAgainItemToCart="addBuyAgainItemToCart"/>
             </template>
 
 
@@ -99,7 +112,11 @@
 </template>
 
 <script>
-import SingleItemSavedForLater from './SingleItemSavedForLater.vue'
+import SingleItemInBuyAgainSection from './SingleItemInBuyAgainSection.vue';
+import SingleItemSavedForLater from './SingleItemSavedForLater.vue';
+import deodorantSpray from '@/assets/images/deodorantSpray.jpg';
+import milano from '@/assets/images/milano.jpg';
+import socks from '@/assets/images/socks.jpg';
 
     export default {
         props: {
@@ -108,16 +125,21 @@ import SingleItemSavedForLater from './SingleItemSavedForLater.vue'
         },
 
         components: {
-            SingleItemSavedForLater
+            SingleItemSavedForLater,
+            SingleItemInBuyAgainSection
         },
 
         data() {
             return {
-                currentSection: "saved-items",
+                deodorantSpray,
+                milano,
+                socks,
+                currentSection: "buy-again",
                 currentCategoryOfSavedItems: "",
                 itemsAlreadyBought: [],
                 savedItemCountPerCategory: {},
-                indicesOfRowStartsOfSavedItems: []
+                indicesOfRowStartsOfSavedItems: [],
+                haveFetchedItemsAlreadyBought: false
             }
         },
 
@@ -128,6 +150,34 @@ import SingleItemSavedForLater from './SingleItemSavedForLater.vue'
 
             showItemsToBuyAgain() {
                 this.currentSection = "buy-again";
+                if(!this.haveFetchedItemsAlreadyBought) {
+                    //fetch items already bought by user
+                    this.itemsAlreadyBought = [
+                        {
+                            productId: "deo",
+                            productImage: deodorantSpray,
+                            productName: "Degree Men Antiperspirant Spray Black + White 3 Count Protects from Deodorant Stains Instantly Dry Spray Deodorant 3.8 oz",
+                            productPrice: "$17.34",
+                            inStock: true
+                        },
+                        {
+                            productId: "mil",
+                            productImage: milano,
+                            productName: "Pepperidge Farm Milano Cookies, Mint, 10 Packs, 2 Cookies per Pack",
+                            productPrice: "$7.49",
+                            inStock: true
+
+                        },
+                        {
+                            productId: "soc",
+                            productImage: socks,
+                            productName: "POLO RALPH LAUREN Men's Classic Sport Solid Socks 6 Pair Pack - Cushioned Cotton Comfort, Gray Heather Assorted, 6-12.5",
+                            productPrice: "$25.40",
+                            inStock: false
+                        }
+                    ];
+                    this.haveFetchedItemsAlreadyBought = true;
+                }
             },
 
             updateCurrentCategoryOfSavedItems(newCategory) {
@@ -137,12 +187,25 @@ import SingleItemSavedForLater from './SingleItemSavedForLater.vue'
                 else {
                     this.currentCategoryOfSavedItems = newCategory;
                 }
+            },
+
+            deleteSavedItem(idOfSavedItemToDelete) {
+                this.$emit("deleteSavedItem", idOfSavedItemToDelete);
+            },
+
+            moveSavedItemToCart(idOfSavedItemToMoveToCart) {
+                this.$emit("moveSavedItemToCart", idOfSavedItemToMoveToCart);
+            },
+
+            addBuyAgainItemToCart(itemInfo) {
+                this.$emit("addBuyAgainItemToCart", itemInfo);
             }
         },
         
         watch: {
             itemsSavedForLater(newVal) {
                 const countsPerCategoryOfSavedItems = {};
+                this.indicesOfRowStartsOfSavedItems = [];
                 for(let i=0; i<newVal.length; i++) {
                     const savedItem = newVal[i];
                     if(savedItem.category in countsPerCategoryOfSavedItems) {
@@ -161,9 +224,3 @@ import SingleItemSavedForLater from './SingleItemSavedForLater.vue'
     };
 
 </script>
-
-<style>
-    .darkenOnHover:hover {
-        background-color: #f2f2f2 !important;
-    }
-</style>

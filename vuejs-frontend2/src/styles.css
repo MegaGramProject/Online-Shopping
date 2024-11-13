@@ -54,7 +54,7 @@ body {
 
 a:hover {
     color: green !important;
-    text-decoration: underline;
+    text-decoration: underline !important;
 }
 
 
@@ -67,4 +67,8 @@ a {
     height: 1.1em;
     background-color: lightgray;
     margin: 20px;
+}
+
+.darkenOnHover:hover {
+    background-color: #f2f2f2 !important;
 }

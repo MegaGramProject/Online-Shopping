@@ -23,10 +23,12 @@
                     @selectCartItem="selectCartItem" @unselectCartItem="unselectCartItem" @removeCartItem="removeCartItem"
                     @updateCartItemQuantity="updateCartItemQuantity" @saveCartItemForLater="saveCartItemForLater"/>
                     
-                    <YourItems :itemsSavedForLater="itemsSavedForLater" :hasPremium="hasPremium"/>
+                    <YourItems :itemsSavedForLater="itemsSavedForLater" :hasPremium="hasPremium"
+                    @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart"
+                    @addBuyAgainItemToCart="addBuyAgainItemToCart"/>
 
-                    <p :style="{fontSize: '0.75em', maxWidth: '100%', display: 'none'}">The price and availability of items at Amazon.com are subject to change. The Cart is a temporary place to store a list of your items and reflects each item's most recent price.</p>
-                    <p :style="{fontSize: '0.75em', maxWidth: '100%', marginTop:'-1.5em', display: 'none'}">Do you have a gift card or promotional code? We'll ask you to enter your claim code when it's time to pay.</p>
+                    <p :style="{fontSize: '0.8em', maxWidth: '100%'}">The price and availability of items at Amazon.com are subject to change. The Cart is a temporary place to store a list of your items and reflects each item's most recent price.</p>
+                    <p :style="{fontSize: '0.8em', maxWidth: '100%', marginTop:'-1.5em'}">Do you have a gift card or promotional code? We'll ask you to enter your claim code when it's time to pay.</p>
                 </div>
 
                 <div :style="{display: 'flex', flexDirection: 'column', alignItems: 'center', width: '17%', gap: '1em'}">
@@ -345,6 +347,7 @@ import './styles.css';
                 //fetch items saved for later
                 this.itemsSavedForLater = [
                     {
+                        id: 0,
                         productId: "a",
                         productImage: showerCurtains,
                         productName: "Gibelle Grey Marble Shower Curtain Set, Abstract Silver…",
@@ -358,6 +361,7 @@ import './styles.css';
                         }
                     },
                     {
+                        id: 1,
                         productId: "b",
                         productImage: ledLightStrips,
                         productName: "Tenmiro 50ft LED Strip Lights, RGB LED Smart Music Sync…",
@@ -370,6 +374,7 @@ import './styles.css';
                         }
                     },
                     {
+                        id: 2,
                         productId: "c",
                         productImage: blueCologne,
                         productName: "Davidoff Cool Water Edt Spray for Men, 4.2 oz",
@@ -380,6 +385,7 @@ import './styles.css';
                         options: {}
                     },
                     {
+                        id: 3,
                         productId: "d",
                         productImage: redCologne,
                         productName: "RawChemistry For Him, Pheromone Infused Cologne...",
@@ -478,7 +484,20 @@ import './styles.css';
             },
 
             saveCartItemForLater(indexOfCartItemToSaveForLater) {
+                const cartItemToSaveForLater = this.itemsOfCart[indexOfCartItemToSaveForLater];
                 this.itemsOfCart[indexOfCartItemToSaveForLater].hasBeenSavedForLater = true;
+                this.itemsSavedForLater = [...this.itemsSavedForLater, {
+                        id: Math.floor(Math.random()*5000)+140, //later fetch the id of the newly created saved-for-later-item
+                        productId: cartItemToSaveForLater.productId,
+                        productImage: cartItemToSaveForLater.productImage,
+                        productName: cartItemToSaveForLater.productName,
+                        category: "Random category", //later fetch
+                        productPrice: cartItemToSaveForLater.productPrice,
+                        numBuyersInPastMonth: 550, //later fetch
+                        inStock: cartItemToSaveForLater.inStock,
+                        options: cartItemToSaveForLater.options
+                    }];
+
             },
 
             updateCurrencies(currentCurrency, newCurrency) {
@@ -489,6 +508,61 @@ import './styles.css';
                     currItemPrice*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
                     this.itemsOfCart[i].productPrice = newCurrency+currItemPrice.toFixed(2);
                 }
+            },
+
+            deleteSavedItem(idOfSavedItemToDelete) {
+                this.itemsSavedForLater = this.itemsSavedForLater.filter(x=> x.id!==idOfSavedItemToDelete);
+            },
+
+            moveSavedItemToCart(idOfSavedItemToMoveToCart) {
+                this.itemsSavedForLater = this.itemsSavedForLater.filter(savedItem=> {
+                    if(savedItem.id==idOfSavedItemToMoveToCart) {
+                        this.itemsOfCart.push({
+                            id: Math.floor(Math.random()*5000)+140, //later fetch the id of the newly created shopping-cart-item
+                            productId: savedItem.productId,
+                            productImage: savedItem.productImage,
+                            productName: savedItem.productName,
+                            inStock: savedItem.inStock,
+                            options: savedItem.options,
+                            productPrice: savedItem.productPrice,
+                            getItAsSoonAs: "Wed, Nov 12", //later fetch
+                            quantity: 1,
+                            dealsAvailable: true, //later fetch
+                            megagramChoiceCategory: null, //later fetch
+                            numberOneBestSeller: 'Everything', //later fetch
+                            isSelected: false,
+                            hasBeenRemoved: false,
+                            hasBeenSavedForLater: false
+                        });
+                        return false;
+                    }
+                    return true;
+                });
+            },
+
+            addBuyAgainItemToCart(itemInfo) {
+                for(let item of this.itemsOfCart) {
+                    if(item.productId===itemInfo.productId) {
+                        return;
+                    }
+                }
+                this.itemsOfCart.push({
+                    id: Math.floor(Math.random()*5000)+140, //later fetch the id of the newly created shopping-cart-item
+                    productId: itemInfo.productId,
+                    productImage: itemInfo.productImage,
+                    productName: itemInfo.productName,
+                    inStock: itemInfo.inStock,
+                    options: {}, //later fetch the default options
+                    productPrice: itemInfo.productPrice,
+                    getItAsSoonAs: "Wed, Nov 18", //later fetch
+                    quantity: 1,
+                    dealsAvailable: true, //later fetch
+                    megagramChoiceCategory: null, //later fetch
+                    numberOneBestSeller: 'Everything', //later fetch
+                    isSelected: false,
+                    hasBeenRemoved: false,
+                    hasBeenSavedForLater: false
+                });
             }
         },
 
