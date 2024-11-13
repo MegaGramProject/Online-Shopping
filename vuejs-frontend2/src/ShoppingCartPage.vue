@@ -25,7 +25,7 @@
                     
                     <YourItems :itemsSavedForLater="itemsSavedForLater" :hasPremium="hasPremium"
                     @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart"
-                    @addBuyAgainItemToCart="addBuyAgainItemToCart"/>
+                    @addBuyAgainItemToCart="addBuyAgainItemToCart" :deliveryAreaCountry="deliveryAreaCountry"/>
 
                     <p :style="{fontSize: '0.8em', maxWidth: '100%'}">The price and availability of items at Amazon.com are subject to change. The Cart is a temporary place to store a list of your items and reflects each item's most recent price.</p>
                     <p :style="{fontSize: '0.8em', maxWidth: '100%', marginTop:'-1.5em'}">Do you have a gift card or promotional code? We'll ask you to enter your claim code when it's time to pay.</p>
@@ -39,6 +39,10 @@
                 </div>
 
             </div>
+
+            <ProductPromotionRect :deliveryAreaCountry="deliveryAreaCountry" :hasPremium="hasPremium"/>
+
+            <YourBrowsingHistory :authenticatedUsername="authenticatedUsername"/>
 
             <img v-if="displayDarkScreen1" :src="blackScreen" :style="{height: '100%', width: '100%', opacity: '0.7',
             position: 'absolute', top: '0%', left: '0%', objectFit: 'cover'}">
@@ -71,6 +75,8 @@ import showerCurtains from '@/assets/images/showerCurtains.jpg';
 import ledLightStrips from '@/assets/images/ledLightStrips.jpg';
 import blueCologne from '@/assets/images/blueCologne.jpg';
 import redCologne from '@/assets/images/redCologne.jpg';
+import ProductPromotionRect from './components/ProductPromotionsRect.vue';
+import YourBrowsingHistory from './components/YourBrowsingHistory.vue';
 import './styles.css';
 
     export default {
@@ -132,7 +138,9 @@ import './styles.css';
             CartItems,
             SubtotalAndProceedToCheckout,
             PairWithCart,
-            YourItems
+            YourItems,
+            ProductPromotionRect,
+            YourBrowsingHistory
         },
 
         mounted() {
@@ -508,6 +516,14 @@ import './styles.css';
                     currItemPrice*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
                     this.itemsOfCart[i].productPrice = newCurrency+currItemPrice.toFixed(2);
                 }
+
+                for(let i=0; i<this.itemsSavedForLater.length; i++) {
+                    let currItemPrice = this.itemsSavedForLater[i].productPrice;
+                    currItemPrice = parseFloat(currItemPrice.substring(currentCurrency.length));
+                    currItemPrice/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                    currItemPrice*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
+                    this.itemsSavedForLater[i].productPrice = newCurrency+currItemPrice.toFixed(2);
+                }
             },
 
             deleteSavedItem(idOfSavedItemToDelete) {
@@ -590,10 +606,19 @@ import './styles.css';
             },
 
             deliveryAreaCountry(newVal) {
-                if(this.itemsOfCart.length==0 || newVal.length==0) {
+                if((this.itemsOfCart.length==0 && this.itemsSavedForLater.length==0) || newVal.length==0) {
                     return;
                 }
-                let currentCurrency = this.itemsOfCart[0].productPrice[0];
+                let currentCurrency;
+                let secondCharacter;
+                if(this.itemsOfCart.length>0) {
+                    currentCurrency = this.itemsOfCart[0].productPrice[0];
+                    secondCharacter = this.itemsOfCart[0].productPrice[1];
+                }
+                else {
+                    currentCurrency = this.itemsSavedForLater[0].productPrice[0];
+                    secondCharacter = this.itemsSavedForLater[0].productPrice[1];
+                }
                 if(currentCurrency==="A") {
                     currentCurrency+="$";
                 }
@@ -601,7 +626,7 @@ import './styles.css';
                     currentCurrency+="X$";
                 }
                 else if(currentCurrency==="C") {
-                    if(this.itemsOfCart[0].productPrice[1]==="$") {
+                    if(secondCharacter==="$") {
                         currentCurrency="C$";
                     }
                     else {
@@ -618,7 +643,7 @@ import './styles.css';
                 if(newVal.length==0 || this.deliveryAreaCountry.length==0) {
                     return;
                 }
-                let currentCurrency = this.itemsOfCart[0].productPrice[0];
+                let currentCurrency = newVal[0].productPrice[0];
                 if(currentCurrency==="A") {
                     currentCurrency+="$";
                 }
@@ -626,7 +651,32 @@ import './styles.css';
                     currentCurrency+="X$";
                 }
                 else if(currentCurrency==="C") {
-                    if(this.itemsOfCart[0].productPrice[1]==="$") {
+                    if(newVal[0].productPrice[1]==="$") {
+                        currentCurrency="C$";
+                    }
+                    else {
+                        currentCurrency="CN¥";
+                    }
+                }
+                const newCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
+                if(currentCurrency!==newCurrency) {
+                    this.updateCurrencies(currentCurrency, newCurrency);
+                }
+            },
+
+            itemsSavedForLater(newVal) {
+                if(newVal.length==0 || this.deliveryAreaCountry.length==0) {
+                    return;
+                }
+                let currentCurrency = newVal[0].productPrice[0];
+                if(currentCurrency==="A") {
+                    currentCurrency+="$";
+                }
+                else if(currentCurrency==="M") {
+                    currentCurrency+="X$";
+                }
+                else if(currentCurrency==="C") {
+                    if(newVal[0].productPrice[1]==="$") {
                         currentCurrency="C$";
                     }
                     else {

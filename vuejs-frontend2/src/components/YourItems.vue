@@ -121,7 +121,8 @@ import socks from '@/assets/images/socks.jpg';
     export default {
         props: {
             itemsSavedForLater: Array,
-            hasPremium: Boolean
+            hasPremium: Boolean,
+            deliveryAreaCountry: String
         },
 
         components: {
@@ -134,7 +135,29 @@ import socks from '@/assets/images/socks.jpg';
                 deodorantSpray,
                 milano,
                 socks,
-                currentSection: "buy-again",
+                countryCurrencyMap: {
+                    "the United States": "$", // USD - US Dollar
+                    "Australia": "A$",     // AUD - Australian Dollar
+                    "Canada": "C$",        // CAD - Canadian Dollar
+                    "China": "CN¥",          // CNY - Chinese Yuan
+                    "Germany": "€",        // EUR - Euro
+                    "India": "₹",          // INR - Indian Rupee
+                    "Japan": "¥",          // JPY - Japanese Yen
+                    "Mexico": "MX$",         // MXN - Mexican Peso
+                    "United Kingdom": "£"  // GBP - British Pound
+                },
+                currencyToDollarMap: {
+                    "$": 1,            // USD - United States
+                    "A$": 1.5063,        // AUD - Australian Dollar
+                    "C$": 1.3855,        // CAD - Canadian Dollar
+                    "¥": 151.88,       // JPY - Japanese Yen (for Japan)
+                    "₹": 84.079,        // INR - Indian Rupee (for India)
+                    "€": 0.9240,         // EUR - Euro (for Germany)
+                    "CN¥": 7.1198,   // CNY - Chinese Yuan (for China)
+                    "MX$": 19.86,      // MXN - Mexican Peso (for Mexico)
+                    "£": 0.7709          // GBP - British Pound (for United Kingdom)
+                },
+                currentSection: "saved-items",
                 currentCategoryOfSavedItems: "",
                 itemsAlreadyBought: [],
                 savedItemCountPerCategory: {},
@@ -199,6 +222,16 @@ import socks from '@/assets/images/socks.jpg';
 
             addBuyAgainItemToCart(itemInfo) {
                 this.$emit("addBuyAgainItemToCart", itemInfo);
+            },
+
+            updateCurrencies(currentCurrency, newCurrency) {
+                for(let i=0; i<this.itemsAlreadyBought.length; i++) {
+                    let currItemPrice = this.itemsAlreadyBought[i].productPrice;
+                    currItemPrice = parseFloat(currItemPrice.substring(currentCurrency.length));
+                    currItemPrice/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                    currItemPrice*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
+                    this.itemsAlreadyBought[i].productPrice = newCurrency+currItemPrice.toFixed(2);
+                }
             }
         },
         
@@ -219,6 +252,57 @@ import socks from '@/assets/images/socks.jpg';
                     }
                 }
                 this.savedItemCountPerCategory = countsPerCategoryOfSavedItems;
+            },
+
+            deliveryAreaCountry(newVal) {
+                if(this.itemsAlreadyBought.length==0 || newVal.length==0) {
+                    return;
+                }
+                let currentCurrency = this.itemsAlreadyBought[0].productPrice[0];
+                if(currentCurrency==="A") {
+                    currentCurrency+="$";
+                }
+                else if(currentCurrency==="M") {
+                    currentCurrency+="X$";
+                }
+                else if(currentCurrency==="C") {
+                    if(this.itemsAlreadyBought[0].productPrice[1]==="$") {
+                        currentCurrency="C$";
+                    }
+                    else {
+                        currentCurrency="CN¥";
+                    }
+                }
+                const newCurrency = this.countryCurrencyMap[newVal];
+                if(currentCurrency!==newCurrency) {
+                    this.updateCurrencies(currentCurrency, newCurrency);
+                }
+            },
+
+            itemsAlreadyBought(newVal) {
+                if(this.deliveryAreaCountry.length==0 || newVal.length==0) {
+                    return;
+                }
+                let currentCurrency = newVal[0].productPrice[0];
+                if(currentCurrency==="A") {
+                    currentCurrency+="$";
+                }
+                else if(currentCurrency==="M") {
+                    currentCurrency+="X$";
+                }
+                else if(currentCurrency==="C") {
+                    if(newVal.productPrice[1]==="$") {
+                        currentCurrency="C$";
+                    }
+                    else {
+                        currentCurrency="CN¥";
+                    }
+                }
+                const newCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
+                if(currentCurrency!==newCurrency) {
+                    this.updateCurrencies(currentCurrency, newCurrency);
+                }
+
             }
         }
     };

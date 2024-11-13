@@ -14,7 +14,7 @@
                         <div :style="{display: 'flex', flexDirection: 'column', marginTop: '-1em'}">
                             <p :style="{fontSize:'1.15em', cursor: 'pointer'}">{{ productName }}</p>
                             <p v-if="megagramChoiceCategory!==null" :style="{fontSize: '0.8em', marginTop: '-0.5em', color: 'gray'}">
-                                <b :style="{padding: '0.2em 0.6em', color: 'white', backgroundColor: '#143f85', marginRight:'0.3em', fontSize: '1.1em'}">Megagram's Choice</b> in {{ megagramChoiceCategory }}
+                                <span :style="{padding: '0.2em 0.6em', color: 'white', backgroundColor: 'navy', marginRight:'0.3em', fontSize: '1.1em', clipPath: 'polygon(0 0, 90% 0, 100% 50%, 90% 100%, 0 100%)'}">Megagram's <span :style="{color:'orange'}">Choice</span></span> in {{ megagramChoiceCategory }}
                             </p>
                             <p v-if="numberOneBestSeller!==null" :style="{fontSize: '0.8em', marginTop: '-0.2em', color: 'gray'}">
                                 <b :style="{padding: '0.2em 0.6em', color: 'white', backgroundColor: '#d96404', marginRight:'0.3em', fontSize: '1.1em'}">#1 Best Seller</b> in {{ numberOneBestSeller }}

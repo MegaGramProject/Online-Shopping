@@ -50,7 +50,9 @@
 
         methods: {
             takeUserToCheckoutPage() {
-                window.location.href = "http://localhost:8033/shoppingCheckout"
+                if(this.numSelectedCartItems>0) {
+                    window.location.href = "http://localhost:8033/shoppingCheckout";
+                }
             },
 
             updateCurrencies(currentCurrency, newCurrency) {
