@@ -155,7 +155,7 @@ function ProductPromotionSquare({productCategory, deliveryAreaCountry})  {
 
     return (
         <>
-        <div className="productPromotionSquare" style={{width: '25em', height: '100%', backgroundColor: 'white', padding: '1em 1em', display: 'flex',
+        <div className="miniSection" style={{width: '25em', height: '100%', backgroundColor: 'white', padding: '1em 1em', display: 'flex',
         flexDirection: 'column'}}>
             <b>{textToUseForTitle}</b>
             <br></br>

@@ -1,6 +1,6 @@
 <template>
 
-    <div :style="{backgroundColor: 'white', width: '101%', paddingLeft: '1.5em', paddingRight: '1em',
+    <div class="miniSection" :style="{backgroundColor: 'white', width: '101%', paddingLeft: '1.5em', paddingRight: '1em',
     paddingBottom: '2.4em', display: 'flex', flexDirection: 'column'}">
         <h2>Your Items</h2>
 

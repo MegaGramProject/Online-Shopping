@@ -1,5 +1,5 @@
 <template>
-    <div :style="{backgroundColor: 'white', width: '100%', display: 'flex',
+    <div class="miniSection" :style="{backgroundColor: 'white', width: '100%', display: 'flex',
     flexDirection: 'column', alignItems: 'start', paddingLeft: '12%', paddingBottom: '1.5em',
     paddingTop: '1em'}">
         <p v-if="numSelectedCartItems==0">No items selected</p>

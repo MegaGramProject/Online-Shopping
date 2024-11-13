@@ -1,5 +1,5 @@
 <template>
-    <div :style="{backgroundColor: 'white', width: '100%', paddingLeft: '1.5em', paddingRight: '1.5em',
+    <div class="miniSection" :style="{backgroundColor: 'white', width: '100%', paddingLeft: '1.5em', paddingRight: '1.5em',
     paddingBottom: '2.4em', display: 'flex', flexDirection: 'column'}">
         <p :style="{fontSize: '2em'}">Shopping Cart</p>
         <p v-if="selectedItems.length==0 && items.length>0">No items selected. <a @click="selectAllItems" :style="{color: '#4180b0', cursor: 'pointer'}">Select all items</a></p>

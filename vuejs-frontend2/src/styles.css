@@ -35,6 +35,15 @@ body {
     #leftSideBarPopupGap {
         background-color: #232424 !important;
     }
+
+    .miniSection {
+        background-color: #303030 !important;
+        color: white !important;
+    }
+
+    .optionOfItemSavedForLater {
+        color: white !important;
+    }
 }
 
 .sidebarElement {
@@ -71,4 +80,12 @@ a {
 
 .darkenOnHover:hover {
     background-color: #f2f2f2 !important;
+}
+
+.linkInFooter {
+    color: white;
+}
+
+.linkInFooter:visited {
+    color: white !important;
 }

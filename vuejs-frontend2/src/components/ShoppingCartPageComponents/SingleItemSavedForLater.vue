@@ -14,7 +14,7 @@
         </div>
         <p v-for="(optionKey, index) in Object.keys(options)" :style="{color: 'gray', fontSize: '0.9em', marginTop: '0em'}"
         :key="index">
-            <b :style="{color: 'black'}">{{ optionKey }}:</b> {{ options[optionKey] }}
+            <b class="optionOfItemSavedForLater" :style="{color: 'black'}">{{ optionKey }}:</b> {{ options[optionKey] }}
         </p>
         <button @click="moveSavedItemToCart" class="darkenOnHover" :style="{backgroundColor: 'white', borderRadius: '2em', padding: '0.5em 1em', borderWidth: '0.07em', cursor: 'pointer'}">
             Move to cart

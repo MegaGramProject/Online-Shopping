@@ -1,5 +1,5 @@
 <template>
-    <div :style="{backgroundColor: 'white', width: '100%', padding: '0.5em 1em', borderRadius: '0.6em'}">
+    <div class="miniSection" :style="{backgroundColor: 'white', width: '100%', padding: '0.5em 1em', borderRadius: '0.6em'}">
         <h3>Pair with your cart</h3>
 
         <SingleItemToPairWithCart v-for="(item, index) in itemsToPairWithCart" :key="index"

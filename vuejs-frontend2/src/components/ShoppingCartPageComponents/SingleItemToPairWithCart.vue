@@ -7,7 +7,7 @@
                 <img v-if="ratingsImg!==null" :src="ratingsImg" :style="{height: '1em', width: '5em', cursor: 'pointer'}"/>
                 <a href="" :style="{fontSize: '0.9em', color:'#4180b0'}">{{ numRatings.toLocaleString() }}</a>
             </div>
-            <p :style="{color: 'maroon'}">{{ productPrice }}</p>
+            <p :style="{color: '#e02636'}">{{ productPrice }}</p>
             <div v-if="hasPremium" :style="{display: 'flex', alignItems: 'center', fontSize: '0.8em', marginTop: '-1em', marginBottom:'0.5em'}">
                 <img :src="checkmark" :style="{height: '1em', width: '1em', objectFit:'contain', pointerEvents:'none'}">
                 <b :style="{color:'#2d9aed'}">premium</b>

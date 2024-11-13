@@ -1,6 +1,6 @@
 <template>
 
-    <div :style="{height: '13em', width: '98%', backgroundColor: 'white', paddingLeft: '3em', paddingTop: '1em',
+    <div class="miniSection" :style="{height: '13em', width: '98%', backgroundColor: 'white', paddingLeft: '3em', paddingTop: '1em',
     display: 'flex', flexDirection: 'column', gap: '1em', paddingBottom: '1.5em',
     borderStyle: 'solid', borderColor: 'lightgray', borderLeft: 'none', borderRight: 'none', borderTop: 'none'}">
         <div :style="{display: 'flex', gap: '1.8em', alignItems: 'center', position: 'relative'}">
@@ -19,7 +19,7 @@
 
             <div v-for="(item, index) in browsingHistory.slice(currPage*8-8,currPage*8)" :key="index" @mouseenter="updateCurrentlyHoveredImage(index)" @mouseleave="updateCurrentlyHoveredImage(index)" :style="{position: 'relative', height: '80%', width: '10em'}">
                 <img :src="item.productImage" :style="{height: '100%', width: '100%', cursor: 'pointer'}"/>
-                <img v-if="currentlyHoveredImage==index" :src="xInCircle" @click="removeProductFromBrowsingHistory(item.productId)" :style="{height: '1.1em', width: '1.2em', cursor: 'pointer', position: 'absolute',
+                <img v-if="currentlyHoveredImage==index" :src="xInCircle" class="iconToBeAdjustedForDarkMode" @click="removeProductFromBrowsingHistory(item.productId)" :style="{height: '1.1em', width: '1.2em', cursor: 'pointer', position: 'absolute',
                 top: '-10%', left:'98%'}"/>
             </div>
             

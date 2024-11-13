@@ -240,7 +240,7 @@ function ProductPromotionRectangle({title, idsOfProductsAvailableToUser, deliver
 
     return (
         <>
-            <div className="productPromotionRectangle" style={{display: 'flex', flexDirection: 'column', backgroundColor: 'white', width: '85em', height: '17.5em',
+            <div className="miniSection" style={{display: 'flex', flexDirection: 'column', backgroundColor: 'white', width: '85em', height: '17.5em',
             padding: '0.1em 0.8em', marginTop: '-5em', position: 'relative'}}>
                 <h4>{title}</h4>
 

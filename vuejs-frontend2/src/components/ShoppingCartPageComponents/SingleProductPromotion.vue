@@ -17,7 +17,7 @@
         maxWidth:'90%', lineHeight:'1.5'}">
             <b :style="{padding: '0.2em 0.6em', color: 'white', backgroundColor: '#d96404', marginRight:'0.3em', fontSize: '1.1em'}">#1 Best Seller</b> in {{ bestsellerCategory }}
         </p>
-        <p :style="{marginTop: '0.5em'}"><b>{{ productPrice }}</b> <small>{{ productPricePerOption }}</small></p>
+        <p :style="{marginTop: '0.5em'}"><b>{{ productPrice }}</b> <small :style="{color: 'gray'}">{{ productPricePerOption }}</small></p>
         <div v-if="hasPremium" :style="{display: 'flex', alignItems: 'center', marginTop:'-0.5em'}">
             <img :src="checkmark" :style="{height: '1em', width: '1em', objectFit: 'contain', pointerEvents: 'none'}">
             <b :style="{color:'#2d9aed'}">premium</b>

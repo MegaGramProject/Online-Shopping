@@ -27,7 +27,7 @@
                     @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart"
                     @addBuyAgainItemToCart="addBuyAgainItemToCart" :deliveryAreaCountry="deliveryAreaCountry"/>
 
-                    <p :style="{fontSize: '0.8em', maxWidth: '100%'}">The price and availability of items at Amazon.com are subject to change. The Cart is a temporary place to store a list of your items and reflects each item's most recent price.</p>
+                    <p :style="{fontSize: '0.8em', maxWidth: '100%'}">The price and availability of items at Megagram-Shop are subject to change. The Cart is a temporary place to store a list of your items and reflects each item's most recent price.</p>
                     <p :style="{fontSize: '0.8em', maxWidth: '100%', marginTop:'-1.5em'}">Do you have a gift card or promotional code? We'll ask you to enter your claim code when it's time to pay.</p>
                 </div>
 
@@ -44,7 +44,9 @@
 
             <YourBrowsingHistory :authenticatedUsername="authenticatedUsername"/>
 
-            <img v-if="displayDarkScreen1" :src="blackScreen" :style="{height: '100%', width: '100%', opacity: '0.7',
+            <FooterSection @updateDeliveryAreaCountry="updateDeliveryAreaCountry"/>
+
+            <img v-if="displayDarkScreen1" :src="blackScreen" :style="{height: '100%', width: '100.5%', opacity: '0.7',
             position: 'absolute', top: '0%', left: '0%', objectFit: 'cover'}">
         </div>
 
@@ -62,21 +64,22 @@
 
 <script>
 import blackScreen from '@/assets/images/blackScreen.png';
-import LeftSidebar from './components/LeftSidebar.vue';
-import TopMostSection from './components/TopMostSection.vue';
-import SecondTopMostSection from './components/SecondTopMostSection.vue';
-import ImportantMessages from './components/ImportantMessages.vue';
-import CartItems from './components/CartItems.vue';
-import SubtotalAndProceedToCheckout from './components/Subtotal&ProceedToCheckout.vue';
-import PairWithCart from './components/PairWithCart.vue';
+import LeftSidebar from './components/ShoppingCartPageComponents/LeftSidebar.vue';
+import TopMostSection from './components/ShoppingCartPageComponents/TopMostSection.vue';
+import SecondTopMostSection from './components/ShoppingCartPageComponents/SecondTopMostSection.vue';
+import ImportantMessages from './components/ShoppingCartPageComponents/ImportantMessages.vue';
+import CartItems from './components/ShoppingCartPageComponents/CartItems.vue';
+import SubtotalAndProceedToCheckout from './components/ShoppingCartPageComponents/Subtotal&ProceedToCheckout.vue';
+import PairWithCart from './components/ShoppingCartPageComponents/PairWithCart.vue';
 import toys from '@/assets/images/toys.jpg';
-import YourItems from './components/YourItems.vue';
+import YourItems from './components/ShoppingCartPageComponents/YourItems.vue';
 import showerCurtains from '@/assets/images/showerCurtains.jpg';
 import ledLightStrips from '@/assets/images/ledLightStrips.jpg';
 import blueCologne from '@/assets/images/blueCologne.jpg';
 import redCologne from '@/assets/images/redCologne.jpg';
-import ProductPromotionRect from './components/ProductPromotionsRect.vue';
-import YourBrowsingHistory from './components/YourBrowsingHistory.vue';
+import ProductPromotionRect from './components/ShoppingCartPageComponents/ProductPromotionsRect.vue';
+import YourBrowsingHistory from './components/ShoppingCartPageComponents/YourBrowsingHistory.vue';
+import FooterSection from './components/ShoppingCartPageComponents/FooterSection.vue';
 import './styles.css';
 
     export default {
@@ -140,7 +143,8 @@ import './styles.css';
             PairWithCart,
             YourItems,
             ProductPromotionRect,
-            YourBrowsingHistory
+            YourBrowsingHistory,
+            FooterSection
         },
 
         mounted() {
@@ -579,6 +583,10 @@ import './styles.css';
                     hasBeenRemoved: false,
                     hasBeenSavedForLater: false
                 });
+            },
+
+            updateDeliveryAreaCountry(newDeliveryAreaCountry) {
+                this.deliveryAreaCountry = newDeliveryAreaCountry;
             }
         },
 
@@ -688,6 +696,7 @@ import './styles.css';
                     this.updateCurrencies(currentCurrency, newCurrency);
                 }
             }
+
         }
     };
 

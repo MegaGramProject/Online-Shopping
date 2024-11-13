@@ -1,7 +1,7 @@
 <template>
-    <div class="hoverableElement singleSearchResult" @click="takeUserToPageForResult"
+    <div class="miniSection" @click="takeUserToPageForResult"
     :style="{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.2em 0.4em',
-    fontSize: '0.91em', zIndex: '10', backgroundColor: 'white'}">
+    fontSize: '0.91em', zIndex: '10', backgroundColor: 'white', cursor: 'pointer'}">
         <p><b>{{result}}</b> <span v-if="showCategory && category.length>0" :style="{color: 'gray'}">in <span :style="{fontFamily: 'Roboto', fontSize: '1.2em'}">{{category}}</span></span></p>
         <img v-if="isDeletable" :src="thinGrayXIcon" @click="deletePastSearch" :style="{cursor: 'pointer', height: '1.5em', width: '1.5em'}"/>
     </div>

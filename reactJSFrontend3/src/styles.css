@@ -29,18 +29,13 @@ body {
         color: white !important;
     }
 
-    .productPromotionSquare {
-        background-color: #545454 !important;
-        color: white !important;
-    }
-
-    .productPromotionRectangle {
-        background-color: #545454 !important;
+    .miniSection {
+        background-color: #303030 !important;
         color: white !important;
     }
 
     #similarCustomerProductsSection {
-        background-color: #545454 !important;
+        background-color: #303030 !important;
         color: white !important;
     }
 
@@ -57,7 +52,7 @@ body {
     }
 
     .singleSearchResult {
-        background-color: #545454 !important;
+        background-color: #303030 !important;
         color: white !important;
     }
 
