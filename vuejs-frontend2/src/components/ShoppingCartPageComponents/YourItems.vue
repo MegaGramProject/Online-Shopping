@@ -112,17 +112,18 @@
 </template>
 
 <script>
-import SingleItemInBuyAgainSection from './SingleItemInBuyAgainSection.vue';
-import SingleItemSavedForLater from './SingleItemSavedForLater.vue';
 import deodorantSpray from '@/assets/images/deodorantSpray.jpg';
 import milano from '@/assets/images/milano.jpg';
 import socks from '@/assets/images/socks.jpg';
+import SingleItemInBuyAgainSection from './SingleItemInBuyAgainSection.vue';
+import SingleItemSavedForLater from './SingleItemSavedForLater.vue';
 
     export default {
         props: {
             itemsSavedForLater: Array,
             hasPremium: Boolean,
-            deliveryAreaCountry: String
+            deliveryAreaCountry: String,
+            authenticatedUsername: String
         },
 
         components: {
@@ -171,34 +172,85 @@ import socks from '@/assets/images/socks.jpg';
                 this.currentSection = "saved-items";
             },
 
-            showItemsToBuyAgain() {
+            async showItemsToBuyAgain() {
                 this.currentSection = "buy-again";
                 if(!this.haveFetchedItemsAlreadyBought) {
                     //fetch items already bought by user
-                    this.itemsAlreadyBought = [
-                        {
-                            productId: "deo",
-                            productImage: deodorantSpray,
-                            productName: "Degree Men Antiperspirant Spray Black + White 3 Count Protects from Deodorant Stains Instantly Dry Spray Deodorant 3.8 oz",
-                            productPrice: "$17.34",
-                            inStock: true
-                        },
-                        {
-                            productId: "mil",
-                            productImage: milano,
-                            productName: "Pepperidge Farm Milano Cookies, Mint, 10 Packs, 2 Cookies per Pack",
-                            productPrice: "$7.49",
-                            inStock: true
+                    const response = await fetch(`http://localhost:8028/getProductIdsOfPastOrdersOfUserInOrder/${this.authenticatedUsername}`);
+                    if(!response.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const productIdsOfPastOrdersInOrder = await response.json();
 
-                        },
-                        {
-                            productId: "soc",
-                            productImage: socks,
-                            productName: "POLO RALPH LAUREN Men's Classic Sport Solid Socks 6 Pair Pack - Cushioned Cotton Comfort, Gray Heather Assorted, 6-12.5",
-                            productPrice: "$25.40",
-                            inStock: false
+                    if(productIdsOfPastOrdersInOrder.length>0) {
+                        const response1 = await fetch('http://localhost:8022/getNamesAndPricesOfListOfProducts', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                productIds: productIdsOfPastOrdersInOrder
+                            })
+                        });
+                        if(!response1.ok) {
+                            throw new Error('Network response not ok');
                         }
-                    ];
+                        const namesAndPricesOfListOfProducts = await response1.json();
+                        /*
+                            above is a dict where keys are productIds in productIdsOfPastOrdersInOrder and
+                            values are lists of 2 or 4 elements:
+                            first is the product-name, second is the price of the product with
+                            all the default options, and third & fourth(these two are missing for certain products)
+                            are the price per unit of the product with all the default options.
+
+                            an examples of 2 values of this dict are:
+                            ["Product-Name", "$35"], &
+                            ["Product-Name", "$20", "$2" "oz"]
+                            
+                        */
+
+                        const response2a = await fetch('http://localhost:8026/getNumProductsLeftForListOfProducts', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify(productIdsOfPastOrdersInOrder)
+                        });
+                        if(!response2a.ok) {
+                            throw new Error('Network response not ok');
+                        }
+                        const numProductsLeftForListOfProducts = await response2a.json();
+
+                        const response2b = await fetch('http://localhost:8030/getProductIdsOfThoseInStock', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                numProductsLeftForListOfProducts: numProductsLeftForListOfProducts
+                            })
+                        });
+                        if(!response2b.ok) {
+                            throw new Error('Network response not ok');
+                        }
+                        let productIdsOfThoseInStock = await response2b.json();
+                        productIdsOfThoseInStock = new Set(productIdsOfThoseInStock);
+
+                        const response3 = await fetch('http://localhost:8031/getMainProductImagesOfProducts',  {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify(productIdsOfPastOrdersInOrder)
+                        });
+                        if(!response3.ok) {
+                            throw new Error('Network response not ok');
+                        }
+                        const productIdToMainImageMappings = await response3.json();
+
+                        this.itemsAlreadyBought = productIdsOfPastOrdersInOrder.map(productId => {
+                            return {
+                                productId: productId,
+                                productImage: `data:image/jpeg;base64,${productIdToMainImageMappings[productId]}`,
+                                productName: namesAndPricesOfListOfProducts[productId][0],
+                                productPrice: namesAndPricesOfListOfProducts[productId][1],
+                                inStock: productIdsOfThoseInStock.has(productId)
+                            }
+                        });
+                    }
+
                     this.haveFetchedItemsAlreadyBought = true;
                 }
             },

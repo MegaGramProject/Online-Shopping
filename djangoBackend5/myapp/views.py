@@ -94,6 +94,19 @@ def numSalesOfProductsInList(request):
 
     return Response(numSalesOfProducts, status=200)
 
+
+@api_view(['GET'])
+def getProductIdsOfPastOrdersOfUserInOrder(request, username):
+    productIdsOfPastOrdersOfUserInOrder = (
+        PastOrder.objects.filter(customerUsername=username)
+        .order_by('-dateTimeOfPurchase')
+        .values_list('productId', flat=True)
+        .distinct()
+    )
+
+    return Response(productIdsOfPastOrdersOfUserInOrder, status=status.HTTP_200_OK)
+
+
 @api_view(['GET'])
 def getAllProductRatingsAndReviews(request):
     allProductRatingsAndReviews = ProductRatingAndReview.objects.all()

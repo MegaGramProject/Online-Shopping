@@ -25,7 +25,8 @@
                     
                     <YourItems :itemsSavedForLater="itemsSavedForLater" :hasPremium="hasPremium"
                     @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart"
-                    @addBuyAgainItemToCart="addBuyAgainItemToCart" :deliveryAreaCountry="deliveryAreaCountry"/>
+                    @addBuyAgainItemToCart="addBuyAgainItemToCart" :deliveryAreaCountry="deliveryAreaCountry"
+                    :authenticatedUsername="authenticatedUsername"/>
 
                     <p :style="{fontSize: '0.8em', maxWidth: '100%'}">The price and availability of items at Megagram-Shop are subject to change. The Cart is a temporary place to store a list of your items and reflects each item's most recent price.</p>
                     <p :style="{fontSize: '0.8em', maxWidth: '100%', marginTop:'-1.5em'}">Do you have a gift card or promotional code? We'll ask you to enter your claim code when it's time to pay.</p>
@@ -903,28 +904,65 @@ import './styles.css';
                 });
             },
 
-            addBuyAgainItemToCart(itemInfo) {
+            async addBuyAgainItemToCart(itemInfo) {
                 for(let item of this.itemsOfCart) {
                     if(item.productId===itemInfo.productId) {
                         return;
                     }
                 }
+
+                const response = await fetch(`http://localhost:8022/getOptionsOfProduct/${itemInfo.productId}`);
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+                const optionsOfProduct = await response.json();
+                const defaultOptionsOfItem = {};
+                for(let option of Object.keys(optionsOfProduct)) {
+                    defaultOptionsOfItem[option] = 0;
+                }
+
+                const escapedDefaultOptions = JSON.stringify(defaultOptionsOfItem).replace(/"/g, '\\"');
+
+                const response1 = await fetch("http://localhost:8029/graphql", {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        query: `mutation {
+                            addShoppingCartItem(username: "${this.authenticatedUsername}", productId: "${itemInfo.productId}", quantity: 1, options: "${escapedDefaultOptions}") {
+                                id
+                            }
+                        }`
+                    })
+                });
+                if(!response1.ok) {
+                    throw new Error('Network response not ok');
+                }
+                let newlyAddedShoppingCartItemId = await response1.json();
+                newlyAddedShoppingCartItemId = newlyAddedShoppingCartItemId.data.addShoppingCartItem.id;
+                itemInfo.id = newlyAddedShoppingCartItemId;
+
+                for(let option of Object.keys(optionsOfProduct)) {
+                    defaultOptionsOfItem[option] = optionsOfProduct[option][0];
+                }
+                itemInfo.options = defaultOptionsOfItem;
+
                 this.itemsOfCart.push({
-                    id: Math.floor(Math.random()*5000)+140, //later fetch the id of the newly created shopping-cart-item
+                    id: itemInfo.id,
                     productId: itemInfo.productId,
                     productImage: itemInfo.productImage,
                     productName: itemInfo.productName,
                     inStock: itemInfo.inStock,
-                    options: {}, //later fetch the default options
+                    options: itemInfo.options,
                     productPrice: itemInfo.productPrice,
-                    getItAsSoonAs: "Wed, Nov 18", //later fetch
+                    getItAsSoonAs: null,
                     quantity: 1,
-                    dealsAvailable: true, //later fetch
-                    megagramChoiceCategory: null, //later fetch
+                    dealsAvailable: false,
+                    megagramChoiceCategory: null,
                     isSelected: false,
                     hasBeenRemoved: false,
                     hasBeenSavedForLater: false
                 });
+                this.numItemsInCart++;
             },
 
             async updateDeliveryAreaCountry(newDeliveryAreaCountry) {

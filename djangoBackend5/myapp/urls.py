@@ -10,6 +10,7 @@ urlpatterns = [
     path("deletePastOrder", views.deletePastOrder, name="Delete Past-Order"),
     path("numSalesOfProductsInList", views.numSalesOfProductsInList, name="# of Sales Of Products In List"),
     path("getIdsOfProductsBoughtByCustomersWhoAlsoBought/<str:username>", views.getIdsOfProductsBoughtByCustomersWhoAlsoBought, name="Get Ids Of Products Bought By Customers Who Also Bought"),
+    path("getProductIdsOfPastOrdersOfUserInOrder/<str:username>", views.getProductIdsOfPastOrdersOfUserInOrder, name="Get Product-Ids of Past-Orders Of User In Order"),
 
     path("getAllProductRatingsAndReviews", views.getAllProductRatingsAndReviews, name="Get All Product Ratings & Reviews"),
     path("getAllProductRatingsAndReviewsOfUser/<str:reviewer_username>", views.getAllProductRatingsAndReviewsOfUser, name="Get All Product Ratings & Reviews Of User"),

@@ -48,7 +48,7 @@
                         </div>
                     </div>
 
-                    <div :style="{display: 'flex', flexDirection: 'column', gap: '1em'}">
+                    <div :style="{display: 'flex', flexDirection: 'column', gap: '1em', alignItems: 'flex-end'}">
                         <b v-if="dealsAvailable" :style="{color: 'white', padding: '0.5em 0.5em', backgroundColor: '#e02636', fontSize: '0.85em'}">Deals available</b>
                         <b>{{ productPrice }}</b>
                         <small v-if="productPricePerUnit!==null" :style="{color: 'gray'}">{{ productPricePerUnit }}</small>
