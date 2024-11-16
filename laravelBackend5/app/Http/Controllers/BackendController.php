@@ -106,4 +106,22 @@ class BackendController extends Controller {
     }
 
 
+    public function checkForMegagramProductChoices(Request $request) {
+        $productIds = $request->input('productIds');
+
+        $allMegagramProductChoices = MegaProductChoice::all()->toArray();
+        $allMegagramProductChoicesAsDict = [];
+        foreach ($allMegagramProductChoices as $mpc) {
+            $allMegagramProductChoicesAsDict[$mpc['productId']] = $mpc['choiceCategory'];
+        }
+                
+        $output = [];
+        foreach ($productIds as $productId) {
+            $output[$productId] = $allMegagramProductChoicesAsDict[$productId] ?? null;
+        }
+
+        return response()->json($output, 200);
+    }
+
+
 }

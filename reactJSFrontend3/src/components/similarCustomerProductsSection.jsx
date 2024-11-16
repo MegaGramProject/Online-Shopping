@@ -560,7 +560,7 @@ function SimilarCustomerProductsSection({authenticatedUsername, deliveryAreaCoun
                         "July", "August", "September", "October", "November", "December"];
     
         if (deliveryDate.toDateString() === now.toDateString()) {
-            return "Today";
+            return `Today, in ${numHours} hours`;
         }
     
         const tomorrow = new Date(now);

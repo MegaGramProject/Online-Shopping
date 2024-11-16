@@ -11,12 +11,13 @@
 </template>
 
 <script>
-import SingleItemToPairWithCart from './SingleItemToPairWithCart.vue';
 import bedding from '@/assets/images/bedding.jpg';
 import jeans from '@/assets/images/jeans.jpg';
+import SingleItemToPairWithCart from './SingleItemToPairWithCart.vue';
 
     export default {
         props: {
+            authenticatedUsername: String,
             hasPremium: Boolean,
             deliveryAreaCountry: String
         },
@@ -53,53 +54,69 @@ import jeans from '@/assets/images/jeans.jpg';
                 },
                 itemsToPairWithCart: [
                     {
-                        productId: "0",
+                        productId: "671c5644368a9fb6fe7f7d73",
                         image: bedding,
-                        name: "Bed mattess and blankets full set",
+                        name: "Roscoe Baseballs",
                         price: "$59.99",
                         avgRating: 4.5,
                         numRatings: 123
                     },
                     {
-                        productId: "1",
+                        productId: "671c474a368a9fb6fe7f7d66",
                         image: jeans,
-                        name: "Apple-bottom jeans",
+                        name: "Unisex-Adult Soccer Cleats Lightweight Futsal Training Football Shoes",
                         price: "$89.99",
                         avgRating: 4.9,
                         numRatings: 143500
                     },
                     {
-                        productId: "2",
+                        productId: "671c49cb368a9fb6fe7f7d69",
                         image: jeans,
-                        name: "Apple-bottom jeans2",
+                        name: "27' Pro Tennis Rackets (2-Pack), Lightweight, Durable Strings, Ideal",
                         price: "$89.99",
                         avgRating: 3.8,
                         numRatings: 143500
-                    },
-                    {
-                        productId: "3",
-                        image: jeans,
-                        name: "Apple-bottom jeans3",
-                        price: "$89.99",
-                        avgRating: 1,
-                        numRatings: 14350
-                    },
-                    {
-                        productId: "4",
-                        image: bedding,
-                        name: "Bedding2",
-                        price: "$89.99",
-                        avgRating: 0,
-                        numRatings: 0
-                    },
+                    }
                 ]
             }
         },
 
         methods: {
             async addItemToCart(itemInfo) {
-                //make API-request to add item to cart
-                itemInfo.id = Math.floor(Math.random() * 5010) + 150;
+                const response = await fetch(`http://localhost:8022/getOptionsOfProduct/${itemInfo.productId}`);
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+                const optionsOfProduct = await response.json();
+                const defaultOptionsOfItem = {};
+                for(let option of Object.keys(optionsOfProduct)) {
+                    defaultOptionsOfItem[option] = 0;
+                }
+
+                const escapedDefaultOptions = JSON.stringify(defaultOptionsOfItem).replace(/"/g, '\\"');
+
+                const response1 = await fetch("http://localhost:8029/graphql", {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        query: `mutation {
+                            addShoppingCartItem(username: "${this.authenticatedUsername}", productId: "${itemInfo.productId}", quantity: 1, options: "${escapedDefaultOptions}") {
+                                id
+                            }
+                        }`
+                    })
+                });
+                if(!response1.ok) {
+                    throw new Error('Network response not ok');
+                }
+                let newlyAddedShoppingCartItemId = await response1.json();
+                newlyAddedShoppingCartItemId = newlyAddedShoppingCartItemId.data.addShoppingCartItem.id;
+                itemInfo.id = newlyAddedShoppingCartItemId;
+                
+                for(let option of Object.keys(optionsOfProduct)) {
+                    defaultOptionsOfItem[option] = optionsOfProduct[option][0];
+                }
+                itemInfo.options = defaultOptionsOfItem;
                 this.itemsToPairWithCart = this.itemsToPairWithCart.filter(
                     x=> {
                         return x.productId!==itemInfo.productId;

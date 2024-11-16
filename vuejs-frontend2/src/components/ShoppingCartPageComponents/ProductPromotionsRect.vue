@@ -18,7 +18,7 @@
             </div>
 
             <SingleProductPromotion v-for="(div1Product, index) in div1Products.slice(currPageDiv1*6-6, currPageDiv1*6)" :key="index" :productId="div1Product.productId" :productName="div1Product.productName"
-            :productImage="div1Product.productImage" :productPrice="div1Product.productPrice" :productPricePerOption="div1Product.productPricePerOption" :getItAsSoonAs="div1Product.getItAsSoonAs"
+            :productImage="div1Product.productImage" :productPrice="div1Product.productPrice" :productPricePerUnit="div1Product.productPricePerUnit" :getItAsSoonAs="div1Product.getItAsSoonAs"
             :megagramsChoiceCategory="div1Product.megagramsChoiceCategory" :bestsellerCategory="div1Product.bestsellerCategory" :avgRating="div1Product.avgRating" :numRatings="div1Product.numRatings"
             :hasPremium="hasPremium"
             />
@@ -43,7 +43,7 @@
             </div>
 
             <SingleProductPromotion v-for="(div2Product, index) in div2Products.slice(currPageDiv2*6-6, currPageDiv2*6)" :key="index" :productId="div2Product.productId" :productName="div2Product.productName"
-            :productImage="div2Product.productImage" :productPrice="div2Product.productPrice" :productPricePerOption="div2Product.productPricePerOption" :getItAsSoonAs="div2Product.getItAsSoonAs"
+            :productImage="div2Product.productImage" :productPrice="div2Product.productPrice" :productPricePerUnit="div2Product.productPricePerUnit" :getItAsSoonAs="div2Product.getItAsSoonAs"
             :megagramsChoiceCategory="div2Product.megagramsChoiceCategory" :bestsellerCategory="div2Product.bestsellerCategory" :avgRating="div2Product.avgRating" :numRatings="div2Product.numRatings"
             :hasPremium="hasPremium"
             />
@@ -124,7 +124,7 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
                     avgRating: 4.8,
                     numRatings: 1223,
                     productPrice: "$7.49",
-                    productPricePerOption: "$1/Cookie"
+                    productPricePerUnit: "$1/Cookie"
                 },
                 {
                     productId: "div1Product1",
@@ -136,7 +136,7 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
                     avgRating: 4.8,
                     numRatings: 1223,
                     productPrice: "$7.49",
-                    productPricePerOption: "$1/Cookie"
+                    productPricePerUnit: "$1/Cookie"
                 },
                 {
                     productId: "div1Product2",
@@ -148,7 +148,7 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
                     avgRating: 4.8,
                     numRatings: 1223,
                     productPrice: "$7.49",
-                    productPricePerOption: "$1/Cookie"
+                    productPricePerUnit: "$1/Cookie"
                 },
                 {
                     productId: "div1Product3",
@@ -160,7 +160,7 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
                     avgRating: 4.8,
                     numRatings: 1223,
                     productPrice: "$7.49",
-                    productPricePerOption: "$1/Cookie"
+                    productPricePerUnit: "$1/Cookie"
                 },
                 {
                     productId: "div1Product4",
@@ -172,7 +172,7 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
                     avgRating: 4.8,
                     numRatings: 1223,
                     productPrice: "$7.49",
-                    productPricePerOption: "$1/Cookie"
+                    productPricePerUnit: "$1/Cookie"
                 },
                 {
                     productId: "div1Product5",
@@ -184,7 +184,7 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
                     avgRating: 4.8,
                     numRatings: 1223,
                     productPrice: "$7.49",
-                    productPricePerOption: "$1/Cookie"
+                    productPricePerUnit: "$1/Cookie"
                 },
                 {
                     productId: "div1Product6",
@@ -196,7 +196,7 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
                     avgRating: 3.6,
                     numRatings: 12230,
                     productPrice: "$40.49",
-                    productPricePerOption: "$0.02/Spray"
+                    productPricePerUnit: "$0.02/Spray"
                 },
                 {
                     productId: "div1Product7",
@@ -208,7 +208,7 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
                     avgRating: 3.6,
                     numRatings: 12230,
                     productPrice: "$40.49",
-                    productPricePerOption: "$0.02/Spray"
+                    productPricePerUnit: "$0.02/Spray"
                 }
             ];
 
@@ -231,7 +231,7 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
                     avgRating: 4.8,
                     numRatings: 1223,
                     productPrice: "$7.49",
-                    productPricePerOption: "$1/Cookie"
+                    productPricePerUnit: "$1/Cookie"
                 },
                 {
                     productId: "div2Product1",
@@ -243,7 +243,7 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
                     avgRating: 4.8,
                     numRatings: 1223,
                     productPrice: "$7.49",
-                    productPricePerOption: "$1/Cookie"
+                    productPricePerUnit: "$1/Cookie"
                 },
                 {
                     productId: "div2Product2",
@@ -255,7 +255,7 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
                     avgRating: 4.8,
                     numRatings: 1223,
                     productPrice: "$7.49",
-                    productPricePerOption: "$1/Cookie"
+                    productPricePerUnit: "$1/Cookie"
                 },
                 {
                     productId: "div2Product3",
@@ -267,7 +267,7 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
                     avgRating: 4.8,
                     numRatings: 1223,
                     productPrice: "$7.49",
-                    productPricePerOption: "$1/Cookie"
+                    productPricePerUnit: "$1/Cookie"
                 },
                 {
                     productId: "div2Product4",
@@ -279,7 +279,7 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
                     avgRating: 4.8,
                     numRatings: 1223,
                     productPrice: "$7.49",
-                    productPricePerOption: "$1/Cookie"
+                    productPricePerUnit: "$1/Cookie"
                 },
                 {
                     productId: "div2Product5",
@@ -291,7 +291,7 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
                     avgRating: 4.8,
                     numRatings: 1223,
                     productPrice: "$7.49",
-                    productPricePerOption: "$1/Cookie"
+                    productPricePerUnit: "$1/Cookie"
                 },
                 {
                     productId: "div2Product6",
@@ -303,7 +303,7 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
                     avgRating: 3.6,
                     numRatings: 12230,
                     productPrice: "$40.49",
-                    productPricePerOption: "$0.02/Spray"
+                    productPricePerUnit: "$0.02/Spray"
                 },
                 {
                     productId: "div2Product7",
@@ -315,7 +315,7 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
                     avgRating: 3.6,
                     numRatings: 12230,
                     productPrice: "$40.49",
-                    productPricePerOption: "$0.02/Spray"
+                    productPricePerUnit: "$0.02/Spray"
                 }
             ];
 
@@ -373,12 +373,12 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
                     currItemPrice*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
                     this.div1Products[i].productPrice = newCurrency+currItemPrice.toFixed(2);
 
-                    const indexOfPricePerOptionSeparator =  this.div1Products[i].productPricePerOption.indexOf("/");
-                    let currItemPricePerOption = this.div1Products[i].productPricePerOption.substring(0, indexOfPricePerOptionSeparator);
+                    const indexOfPricePerOptionSeparator =  this.div1Products[i].productPricePerUnit.indexOf("/");
+                    let currItemPricePerOption = this.div1Products[i].productPricePerUnit.substring(0, indexOfPricePerOptionSeparator);
                     currItemPricePerOption = parseFloat(currItemPricePerOption.substring(currentCurrency.length));
                     currItemPricePerOption/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
                     currItemPricePerOption*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
-                    this.div1Products[i].productPricePerOption =  newCurrency + currItemPricePerOption.toFixed(2) + this.div1Products[i].productPricePerOption.substring(indexOfPricePerOptionSeparator);
+                    this.div1Products[i].productPricePerUnit =  newCurrency + currItemPricePerOption.toFixed(2) + this.div1Products[i].productPricePerUnit.substring(indexOfPricePerOptionSeparator);
                 }
 
                 for(let i=0; i<this.div2Products.length; i++) {
@@ -388,12 +388,12 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
                     currItemPrice*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
                     this.div2Products[i].productPrice = newCurrency+currItemPrice.toFixed(2);
 
-                    const indexOfPricePerOptionSeparator =  this.div2Products[i].productPricePerOption.indexOf("/");
-                    let currItemPricePerOption = this.div2Products[i].productPricePerOption.substring(0, indexOfPricePerOptionSeparator);
+                    const indexOfPricePerOptionSeparator =  this.div2Products[i].productPricePerUnit.indexOf("/");
+                    let currItemPricePerOption = this.div2Products[i].productPricePerUnit.substring(0, indexOfPricePerOptionSeparator);
                     currItemPricePerOption = parseFloat(currItemPricePerOption.substring(currentCurrency.length));
                     currItemPricePerOption/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
                     currItemPricePerOption*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
-                    this.div2Products[i].productPricePerOption =  newCurrency + currItemPricePerOption.toFixed(2) + this.div2Products[i].productPricePerOption.substring(indexOfPricePerOptionSeparator);
+                    this.div2Products[i].productPricePerUnit =  newCurrency + currItemPricePerOption.toFixed(2) + this.div2Products[i].productPricePerUnit.substring(indexOfPricePerOptionSeparator);
 
 
                 }

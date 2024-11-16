@@ -3,15 +3,14 @@ using aspNetCoreBackend5.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors(options =>
+{
+        options.AddPolicy("AllowSpecificOrigin", policy =>
         {
-        options.AddPolicy("AllowSpecificOrigin",
-                builder =>
-                {
-                        builder.WithOrigins("http://localhost:8024")
-                                .AllowAnyHeader()
-                                .AllowAnyMethod();
-                });
+                policy.WithOrigins("http://localhost:8024", "http://localhost:8033")
+                .AllowAnyHeader()
+                .AllowAnyMethod();
         });
+});
 
 
 builder.Services.AddControllers();

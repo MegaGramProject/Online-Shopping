@@ -185,8 +185,8 @@ public class BackendController : ControllerBase
         if (productIds.Count() == 0) {
             return BadRequest(productIds);
         }
-        var idsOfInStockProducts =  await _mongoDBService.getNumProductsLeftForListOfProducts(productIds);
-        return Ok(idsOfInStockProducts);
+        var numProductsLeftForGivenProductIds =  await _mongoDBService.getNumProductsLeftForListOfProducts(productIds);
+        return Ok(numProductsLeftForGivenProductIds);
     }
 
     [HttpPatch("editNumProductsLeft")]

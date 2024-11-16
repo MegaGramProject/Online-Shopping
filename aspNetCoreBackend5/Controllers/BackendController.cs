@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using aspNetCoreBackend5.Services;
+using aspNetCoreBackend5.Models.RequestBodies;
 
 namespace aspNetCoreBackend5.Controllers;
 
@@ -102,8 +103,14 @@ public class BackendController : ControllerBase
     public IActionResult getMainProductImagesOfProducts([FromBody] string[] productIds)
     {
         
-        var getMainProductImagesOfProducts = _gcsService.getMainProductImagesOfProducts(productIds);
-        return Ok(getMainProductImagesOfProducts);
+        var mainProductImagesOfProducts = _gcsService.getMainProductImagesOfProducts(productIds);
+        return Ok(mainProductImagesOfProducts);
+    }
+
+    [HttpPost("getSpecificImagesOfProductOptionsForMany")]
+    public IActionResult getSpecificImagesOfProductOptionsForMany([FromBody] BodyForSpecificImagesOfProductOptionsForMany requestBody) {
+        var specificImagesOfProductOptionsForMany = _gcsService.getSpecificImagesOfProductOptionsForMany(requestBody.productIdToOptionsListMappingsAsJE, requestBody.productIdToImageOptionMappings);
+        return Ok(specificImagesOfProductOptionsForMany);
     }
 
 

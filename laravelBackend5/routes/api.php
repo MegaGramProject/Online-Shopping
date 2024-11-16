@@ -14,3 +14,4 @@ Route::delete('/deleteProductPageViewer/{product_id}/{username}', [BackendContro
 
 
 Route::post('/checkForMegagramProductChoicesAndGetNumViewsInPastMonth', [BackendController::class, 'checkForMegagramProductChoicesAndGetNumViewsInPastMonth']);
+Route::post('/checkForMegagramProductChoices', [BackendController::class, 'checkForMegagramProductChoices']);

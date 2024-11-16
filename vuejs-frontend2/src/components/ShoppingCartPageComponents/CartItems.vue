@@ -12,8 +12,8 @@
 
         <SingleItemInCart v-for="(item, index) in items" :key="index" :index="index" :id="item.id" :productId="item.productId" :productImage="item.productImage"
         :productName="item.productName" :inStock="item.inStock" :hasPremium="hasPremium" :options="item.options"
-        :getItAsSoonAs="item.getItAsSoonAs" :quantity="item.quantity" :productPrice="item.productPrice" :dealsAvailable="item.dealsAvailable"
-        :megagramChoiceCategory="item.megagramChoiceCategory" :numberOneBestSeller="item.numberOneBestSeller" @removeItem="removeItem"
+        :getItAsSoonAs="item.getItAsSoonAs" :quantity="item.quantity" :productPrice="item.productPrice" :productPricePerUnit="item.productPricePerUnit"
+        :dealsAvailable="item.dealsAvailable" :megagramChoiceCategory="item.megagramChoiceCategory" @removeItem="removeItem"
         @selectItem="selectItem" @unselectItem="unselectItem" @updateQuantity="updateQuantity"
         :isSelected="item.isSelected" :hasBeenRemoved="item.hasBeenRemoved" :hasBeenSavedForLater="item.hasBeenSavedForLater"
         @saveItemForLater="saveItemForLater"/>
@@ -69,7 +69,7 @@ import SingleItemInCart from './SingleItemInCart.vue';
             },
 
             removeItem(info) {
-                this.$emit("removeCartItem", info.index);
+                this.$emit("removeCartItem", info);
                 if(info.isSelected==true) {
                     this.selectedItems = this.selectedItems.filter(selectedItem=> {
                         return selectedItem.id!==info.id;
@@ -92,7 +92,7 @@ import SingleItemInCart from './SingleItemInCart.vue';
             },
 
             saveItemForLater(info) {
-                this.$emit("saveCartItemForLater", info.index);
+                this.$emit("saveCartItemForLater", info);
                 if(info.isSelected==true) {
                     this.selectedItems = this.selectedItems.filter(selectedItem=> {
                         return selectedItem.id!==info.id;

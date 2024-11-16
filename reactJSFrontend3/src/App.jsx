@@ -201,8 +201,8 @@ function App({params}) {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
-                zipcode: '53593',
-                country: 'the United States'
+                zipcode: deliveryZipcode,
+                country: deliveryAreaCountry
             })
         });
         if(!response5.ok) {

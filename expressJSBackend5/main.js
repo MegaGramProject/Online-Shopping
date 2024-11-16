@@ -9,7 +9,7 @@ const { Pool } = require('pg');
 
 const app = express();
 const port = 8030;
-const allowedOrigins = ['http://localhost:8030', 'http://localhost:8024'];
+const allowedOrigins = ['http://localhost:8030', 'http://localhost:8024', 'http://localhost:8033'];
 const corsOptions = {
 origin: function (origin, callback) {
     if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
@@ -275,18 +275,54 @@ app.post("/getProductIdsOfThoseInStock", (req, res) => {
     res.send(output);
 });
 
+app.post("/getPairsOfProductIdsAndOptionsOfThoseInStock", (req, res) => {
+    const numProductsLeftForListOfProducts = req.body.numProductsLeftForListOfProducts;
+    const productIdToOptionsListMappings = req.body.productIdToOptionsListMappings;
+
+    const output = {};
+    for(let elem of numProductsLeftForListOfProducts) {
+        const productId = elem.productId;
+        const givenProductOptionsForCurrentProduct = productIdToOptionsListMappings[productId];
+        output[productId] = [];
+        for(let givenProductOptions of givenProductOptionsForCurrentProduct) {
+            if(specificProductOptionsAreInStock(givenProductOptions, JSON.parse(elem.numForEachOption))) {
+                output[productId].push(givenProductOptions);
+            }
+        }
+    }
+    res.send(output);
+});
+
 //DFS
-function productIsInStock(partOfNumProductsLeftForListOfProducts) {
-    if(typeof partOfNumProductsLeftForListOfProducts === 'number') {
-        return partOfNumProductsLeftForListOfProducts>0;
+function productIsInStock(partOfNumProductsLeftForSpecificProduct) {
+    if(typeof partOfNumProductsLeftForSpecificProduct === 'number') {
+        return partOfNumProductsLeftForSpecificProduct>0;
     }
     //if it is not an int is a dict of type <string, object>
-    for(let key of Object.keys(partOfNumProductsLeftForListOfProducts)) {
-        if(productIsInStock(partOfNumProductsLeftForListOfProducts[key])) {
+    for(let key of Object.keys(partOfNumProductsLeftForSpecificProduct)) {
+        if(productIsInStock(partOfNumProductsLeftForSpecificProduct[key])) {
             return true;
         }
     }
     return false;
+}
+
+//Not-DFS
+function specificProductOptionsAreInStock(givenProductOptions, numProductsLeftForDifferentOptionsOfSpecificProduct) {
+    const optionsInCorrectOrderForDeterminingNumLeft = numProductsLeftForDifferentOptionsOfSpecificProduct[0];
+    //example of a value of optionsInCorrectOrderForDeterminingNumLeft would be something like ['Size', 'Color']
+    const providedProductOptionsInCorrectOrderForDeterminingNumLeft = optionsInCorrectOrderForDeterminingNumLeft.map(x=>(givenProductOptions[x]).toString());
+    //example of a value for above would be something like ['0', '3']
+
+    let currentDict = numProductsLeftForDifferentOptionsOfSpecificProduct[1];
+    for(let i=0; i<providedProductOptionsInCorrectOrderForDeterminingNumLeft.length; i++) {
+        currentDict = currentDict[providedProductOptionsInCorrectOrderForDeterminingNumLeft[i]];
+        if(typeof currentDict === 'number') {
+            return currentDict>0;
+        }
+    }
+
+    return currentDict>0;
 }
 
 app.post("/checkIfDealsAreAvailableForProducts", async (req, res) => {

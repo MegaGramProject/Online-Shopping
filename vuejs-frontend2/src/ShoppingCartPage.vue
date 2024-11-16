@@ -34,8 +34,8 @@
                 <div :style="{display: 'flex', flexDirection: 'column', alignItems: 'center', width: '17%', gap: '1em'}">
                     <SubtotalAndProceedToCheckout :numSelectedCartItems="numSelectedCartItems" :selectedCartItemsPriceSubtotal="selectedCartItemsPriceSubtotal"
                     :deliveryAreaCountry="deliveryAreaCountry"/>
-                    <PairWithCart :hasPremium="hasPremium" @addItemToCart="addItemToCart"
-                    :deliveryAreaCountry="deliveryAreaCountry"/>
+                    <PairWithCart :hasPremium="hasPremium" @addItemToCart="addPairWithCartItemToCart"
+                    :deliveryAreaCountry="deliveryAreaCountry" :authenticatedUsername="authenticatedUsername"/>
                 </div>
 
             </div>
@@ -64,22 +64,22 @@
 
 <script>
 import blackScreen from '@/assets/images/blackScreen.png';
-import LeftSidebar from './components/ShoppingCartPageComponents/LeftSidebar.vue';
-import TopMostSection from './components/ShoppingCartPageComponents/TopMostSection.vue';
-import SecondTopMostSection from './components/ShoppingCartPageComponents/SecondTopMostSection.vue';
-import ImportantMessages from './components/ShoppingCartPageComponents/ImportantMessages.vue';
-import CartItems from './components/ShoppingCartPageComponents/CartItems.vue';
-import SubtotalAndProceedToCheckout from './components/ShoppingCartPageComponents/Subtotal&ProceedToCheckout.vue';
-import PairWithCart from './components/ShoppingCartPageComponents/PairWithCart.vue';
-import toys from '@/assets/images/toys.jpg';
-import YourItems from './components/ShoppingCartPageComponents/YourItems.vue';
-import showerCurtains from '@/assets/images/showerCurtains.jpg';
-import ledLightStrips from '@/assets/images/ledLightStrips.jpg';
 import blueCologne from '@/assets/images/blueCologne.jpg';
+import ledLightStrips from '@/assets/images/ledLightStrips.jpg';
 import redCologne from '@/assets/images/redCologne.jpg';
-import ProductPromotionRect from './components/ShoppingCartPageComponents/ProductPromotionsRect.vue';
-import YourBrowsingHistory from './components/ShoppingCartPageComponents/YourBrowsingHistory.vue';
+import showerCurtains from '@/assets/images/showerCurtains.jpg';
+import toys from '@/assets/images/toys.jpg';
+import CartItems from './components/ShoppingCartPageComponents/CartItems.vue';
 import FooterSection from './components/ShoppingCartPageComponents/FooterSection.vue';
+import ImportantMessages from './components/ShoppingCartPageComponents/ImportantMessages.vue';
+import LeftSidebar from './components/ShoppingCartPageComponents/LeftSidebar.vue';
+import PairWithCart from './components/ShoppingCartPageComponents/PairWithCart.vue';
+import ProductPromotionRect from './components/ShoppingCartPageComponents/ProductPromotionsRect.vue';
+import SecondTopMostSection from './components/ShoppingCartPageComponents/SecondTopMostSection.vue';
+import SubtotalAndProceedToCheckout from './components/ShoppingCartPageComponents/Subtotal&ProceedToCheckout.vue';
+import TopMostSection from './components/ShoppingCartPageComponents/TopMostSection.vue';
+import YourBrowsingHistory from './components/ShoppingCartPageComponents/YourBrowsingHistory.vue';
+import YourItems from './components/ShoppingCartPageComponents/YourItems.vue';
 import './styles.css';
 
     export default {
@@ -212,7 +212,6 @@ import './styles.css';
             },
 
             showChooseYourLocationPopup() {
-                console.log("X!");
             },
             
             showDarkScreen1() {
@@ -255,21 +254,19 @@ import './styles.css';
                 this.deliveryZipcode = '53593';
                 this.deliveryAreaCountry = 'the United States';
                 this.hasPremium = true;
-                
-                
-                /*
+
                 const response1  = await fetch('http://localhost:8029/graphql',{
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         query: `query {
-                        getAllShoppingCartItemsOfUser(username:"${this.authenticatedUsername}") {
-                            username
-                            productId
-                            optionsChosen
-                        }
-                    }
-                    `
+                            getAllShoppingCartItemsOfUser(username:"${this.authenticatedUsername}") {
+                                id
+                                productId
+                                options
+                                quantity
+                            }
+                        }`
                     })
                 });
                 if(!response1.ok) {
@@ -277,59 +274,42 @@ import './styles.css';
                 }
                 let shoppingCartItemsOfUser = await response1.json();
                 shoppingCartItemsOfUser = shoppingCartItemsOfUser.data.getAllShoppingCartItemsOfUser;
-                */
-            
-                this.itemsOfCart = [
-                    {
-                        id: 0,
-                        productId: "0",
-                        productImage: toys,
-                        productName: "Gibelle Grey Marble Shower Curtain Set, Abstract Silver Marble Gold Stripes Fabric Shower Curtain, Modern Ink Art Decor Waterproof Shower Curtain for Bathroom Decor, 71x71",
-                        inStock: true,
-                        options: {
-                            Color: 'Grey',
-                            Size: '71W x 71L (Pack of 1)'
-                        },
-                        productPrice: "$19.99",
-                        getItAsSoonAs: "Wed, Nov 7",
-                        quantity: 2,
-                        dealsAvailable: true,
-                        megagramChoiceCategory: 'Everything',
-                        numberOneBestSeller: null,
-                        isSelected: false,
-                        hasBeenRemoved: false,
-                        hasBeenSavedForLater: false
+                
+                const cartItemsInfo = {}; //keys are cart-item-ids(not their productIds) and values are dicts that represent relevant info about the cartItem
+                let productIdsOfCartItems = new Set();
+                let numItemsInCart = 0;
+                const productIdToOptionsListMappings = {};
+                
+                for(let cartItem of shoppingCartItemsOfUser) {
+                    const id = cartItem.id;
+                    const productId = cartItem.productId;
+                    const options = JSON.parse(cartItem.options);
+                    const quantity = cartItem.quantity;
+                    productIdsOfCartItems.add(productId);
+                    numItemsInCart+=quantity;
+                    if(!(productId in productIdToOptionsListMappings)) {
+                        productIdToOptionsListMappings[productId] = [options]
                     }
-                ];
-                this.numItemsInCart = 2;
-                this.cartPriceSubtotal = '$39.98';
+                    else {
+                        productIdToOptionsListMappings[productId].push(options);
+                    }
+                    cartItemsInfo[id] = {
+                        productId: productId,
+                        options: options,
+                        quantity: quantity
+                    }
+                }
+
+                this.numItemsInCart = numItemsInCart;
+                productIdsOfCartItems = [...productIdsOfCartItems];
 
                 /*
-                const response2 = await fetch(`http://localhost:8025/getShopSearchesOfUser/${this.authenticatedUsername}`);
-                if(!response2.ok) {
-                    throw new Error('Network response not ok');
-                }
-                const fetchedPastSearches = await response2.json();
-                let pastSearcallPastSearchesOfUserhesOfUser = [];
-                for(let fetchedPastSearch of fetchedPastSearches) {
-                allPastSearchesOfUser.push([fetchedPastSearch.search, fetchedPastSearch.searchCategory]);
-                }
-                this.allPastSearchesOfUser = allPastSearchesOfUser;
-                */
-
-                this.allPastSearchesOfUser = [
-                    ["hot wheels", "Toys for Kids"],
-                    ["hotpockets", "Food"],
-                    ["walkie-talkie", ""]
-                ];
-
-                /*
-                const response3 = await fetch(`http://localhost:8026/getSelectedAddressOfUser/${this.authenticatedUsername}`);
-                if(!response3.ok){
+                const response1b = await fetch(`http://localhost:8026/getSelectedAddressOfUser/${this.authenticatedUsername}`);
+                if(!response1b.ok){
                     this.selectedAddressOfUser = "";
                 }
                 else {
-                    let selectedAddressOfUser = await response3.json();
+                    let selectedAddressOfUser = await response1b.json();
 
                     let newSelectedAddress = "";
                     if(selectedAddressOfUser.house_or_building_number!==null) {
@@ -353,8 +333,295 @@ import './styles.css';
                     this.selectedAddressOfUser = newSelectedAddress;
                 }
                 */
+            
+                this.selectedAddressOfUser = "(Fake Address) Placeholder";
 
-                this.selectedAddressOfUser = "";
+                if(numItemsInCart>0) {
+                    const response2 = await fetch('http://localhost:8022/getNamesAndSpecificPricesOfGivenProducts', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            productIdToOptionsListMappings: productIdToOptionsListMappings
+                        })
+                    });
+                    if(!response2.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const dictOfNamesAndPricesOfCartItems = await response2.json();
+                    /*
+                    above is a dict where keys are productIds of items in cart and
+                    values are lists of lists of 3 or 5 elements: first is the options of that product,
+                    second is the product-name, third is the price of the product with
+                    the given options, and fourth & fifth(these two are missing for certain products)
+                    are the price per unit of the product with the given options.
+
+                    an examples of a value of this dict is:
+                    [
+                        [{Size: 'L', Color: 'green'}, "Product-Name", "$35"],
+                        [{Brand: 'Pepsi', 'Sugar Level': 'high'}, "Product-Name", "$20", "$2" "oz"]
+                    ]
+                    */
+
+                    for(let cartItemIdNotProductId of Object.keys(cartItemsInfo)) {
+                        const currentCartItemProductId = cartItemsInfo[cartItemIdNotProductId].productId;
+                        const currentCartItemOptions = cartItemsInfo[cartItemIdNotProductId].options;
+                        const allNamesAndPricesOfCurrProductId = dictOfNamesAndPricesOfCartItems[currentCartItemProductId];
+                        let indexCorrespondingToCurrCartItemOptions = 0;
+                        for(let i=0; i<allNamesAndPricesOfCurrProductId.length; i++) {
+                            if(this.areDictsEqual(allNamesAndPricesOfCurrProductId[i][0],currentCartItemOptions)) {
+                                indexCorrespondingToCurrCartItemOptions = i;
+                                break;
+                            }
+                        }
+                        cartItemsInfo[cartItemIdNotProductId].productName = allNamesAndPricesOfCurrProductId[indexCorrespondingToCurrCartItemOptions][1];
+                        cartItemsInfo[cartItemIdNotProductId].productPrice =  allNamesAndPricesOfCurrProductId[indexCorrespondingToCurrCartItemOptions][2];
+                        if(allNamesAndPricesOfCurrProductId[indexCorrespondingToCurrCartItemOptions].length>3) {
+                            cartItemsInfo[cartItemIdNotProductId].productPricePerUnit = allNamesAndPricesOfCurrProductId[indexCorrespondingToCurrCartItemOptions][3]+"/"+allNamesAndPricesOfCurrProductId[indexCorrespondingToCurrCartItemOptions][4];
+                        }
+                        else {
+                            cartItemsInfo[cartItemIdNotProductId].productPricePerUnit = null;
+                        }
+
+                    }
+
+                    const response3 = await fetch('http://localhost:8029/getFastestDeliveryTimesForProducts', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            hasPremium: this.hasPremium,
+                            address: this.selectedAddressOfUser,
+                            productIds: productIdsOfCartItems
+                        })
+                    });
+                    if(!response3.ok){
+                        throw new Error('Network response not ok');
+                    }
+                    const deliveryTimesOfCartItems = await response3.json();
+                    /*
+                    above is a dict where keys are productIds of cart-item products, whereas values are the fastest
+                    delivery times of these products in hours.
+                    */
+
+                    for(let cartItemIdNotProductId of Object.keys(cartItemsInfo)) {
+                        const productId = cartItemsInfo[cartItemIdNotProductId].productId;
+                        const productDeliveryTimeInHours = deliveryTimesOfCartItems[productId];
+                        cartItemsInfo[cartItemIdNotProductId].getItAsSoonAs = this.formatDeliveryArrivalText(productDeliveryTimeInHours);
+                    }
+
+                    const response4 = await fetch('http://localhost:8032/api/checkForMegagramProductChoices', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            productIds: productIdsOfCartItems
+                        })
+                    });
+                    if(!response4.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const productIdToProductChoiceCategoryMappings = await response4.json();
+                    /*
+                    above is a dict where the keys are productIds in productIdsOfCartItems, whereas values
+                    are strings representing the category of the Megagram-Choice that the product is a part of.
+                    Only products in productIdsOfCartItems that are Megagram-Choices are in the dict.
+                    */
+
+                    for(let cartItemIdNotProductId of Object.keys(cartItemsInfo)) {
+                        const productId = cartItemsInfo[cartItemIdNotProductId].productId;
+                        cartItemsInfo[cartItemIdNotProductId].megagramChoiceCategory = productIdToProductChoiceCategoryMappings[productId] ?? null;
+                    }
+
+                    const response5 = await fetch('http://localhost:8026/getNumProductsLeftForListOfProducts', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(productIdsOfCartItems)
+                    });
+                    if(!response5.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const numProductsLeftForListOfProducts = await response5.json();
+
+                    const response6 = await fetch('http://localhost:8030/getPairsOfProductIdsAndOptionsOfThoseInStock', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            numProductsLeftForListOfProducts: numProductsLeftForListOfProducts,
+                            productIdToOptionsListMappings: productIdToOptionsListMappings
+                        })
+                    });
+                    if(!response6.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    let productIdToInStockOptionsMappings = await response6.json();
+                    /*
+                    above is a dict where keys are productIds of cart-items and values are
+                    lists of options of the product that are in the cart and in-stock.
+                    */
+
+                    for(let cartItemIdNotProductId of Object.keys(cartItemsInfo)) {
+                        const productId = cartItemsInfo[cartItemIdNotProductId].productId;
+                        const options = cartItemsInfo[cartItemIdNotProductId].options;
+                        cartItemsInfo[cartItemIdNotProductId].inStock = productIdToInStockOptionsMappings[productId].some(
+                            (opts) => this.areDictsEqual(opts, options)
+                        );
+                    }
+
+                    const response7 = await fetch('http://localhost:8030/checkIfDealsAreAvailableForProducts', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            productIds: productIdsOfCartItems,
+                            hasPremium: this.hasPremium
+                        })
+                    });
+                    if(!response7.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const productIdToDealAvailableMappings = await response7.json();
+                    /*
+                    above is a dict where the keys are productIds in productIdsOfCartItems, whereas values
+                    are booleans: true if product has deal available, false otherwise
+                    */
+                    for(let cartItemIdNotProductId of Object.keys(cartItemsInfo)) {
+                        const productId = cartItemsInfo[cartItemIdNotProductId].productId;
+                        cartItemsInfo[cartItemIdNotProductId].dealsAvailable = productIdToDealAvailableMappings[productId];
+                    }
+
+                    const response8a = await fetch("http://localhost:8022/forEachProductIdInListGetNamesOfTheOptionThatHasImages", {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            productIds: productIdsOfCartItems
+                        })
+                    });
+                    if(!response8a.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const productIdToImageOptionMappings = await response8a.json();
+                    /*
+                    above is a dict where keys are productIds of items in cart, whereas
+                    values are the option-names that have images.
+                    Each productId has either 1 option that has images, or 0(this is for the products
+                    who sellers didn't provide any options; i.e there is only 1 version of that product
+                    available to buy; these products still have images tho).
+
+                    An example of key-value pair in the dict: "dfe93de6-1eac-4ea7-ba9b-cec5528325a1"-> "Color"
+                    */
+
+                    const response8b = await fetch('http://localhost:8031/getSpecificImagesOfProductOptionsForMany', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            productIdToOptionsListMappingsAsJE: productIdToOptionsListMappings,
+                            productIdToImageOptionMappings: productIdToImageOptionMappings
+                        })
+                    });
+                    if(!response8b.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const specificImagesOfProductOptions = await response8b.json();
+                    /*
+                    above is a dict where each key is productId and each value a nested-list.
+                    each nested-list has two-elements: the first being the specific options of the product,
+                    and the second being the fetched base-64-string of the main-photo of those specific options of
+                    the product
+                    */
+
+                    for(let cartItemIdNotProductId of Object.keys(cartItemsInfo)) {
+                        const productId = cartItemsInfo[cartItemIdNotProductId].productId;
+                        const options = cartItemsInfo[cartItemIdNotProductId].options;
+                        const specificImagesOfCurrProduct = specificImagesOfProductOptions[productId];
+                        for(let i=0; i<specificImagesOfCurrProduct.length; i++) {
+                            if(this.areDictsEqual(options, specificImagesOfCurrProduct[i][0])) {
+                                cartItemsInfo[cartItemIdNotProductId].productImage =  `data:image/jpeg;base64,${specificImagesOfCurrProduct[i][1]}`;
+                                break;
+                            }
+                        }
+                    }
+
+                    const response9 = await fetch('http://localhost:8022/getOptionTextsForManyProducts', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            productIds: productIdsOfCartItems
+                        })
+                    });
+                    if(!response9.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const productIdToOptionTextsMappings = await response9.json();
+                    /*
+                        above is a dict where keys are productIds of cart-items and values are
+                        the option-texts available for that product.
+                        i.e: {
+                            "productId0": {
+                                "size": ["S", "M", "L", "XL"],
+                                "color": ["red", "green", "blue", true]
+                            },
+                            "productId1": {
+                                ...
+                            },
+                            ...
+                        }
+                        this dict is important because without it,
+                        the options field of cartItemsInfo will be remain as something like
+                        {"size": 1, "color": 0} and the user will be confused as to what the options
+                        of the product actually are.
+                        1 and 0 in this example refer to "M" and "red" respectively
+                        (these numbers represent indices, and aren't the texts themselves)
+                    */
+                
+                    for(let cartItemIdNotProductId of Object.keys(cartItemsInfo)) {
+                        const productId = cartItemsInfo[cartItemIdNotProductId].productId;
+                        const options = cartItemsInfo[cartItemIdNotProductId].options;
+                        const optionsForProduct = productIdToOptionTextsMappings[productId];
+                        
+                        const newOptions = {};
+                        for(let option of Object.keys(options)) {
+                            newOptions[option] = optionsForProduct[option][options[option]];
+                        }
+                        cartItemsInfo[cartItemIdNotProductId].options = newOptions;
+                    }
+
+                    for(let cartItemIdNotProductId of Object.keys(cartItemsInfo)) {
+                        const infoOnCurrentCartItem = cartItemsInfo[cartItemIdNotProductId];
+                        this.itemsOfCart.push({
+                            id: parseInt(cartItemIdNotProductId),
+                            productId: infoOnCurrentCartItem.productId,
+                            productImage: infoOnCurrentCartItem.productImage,
+                            productName: infoOnCurrentCartItem.productName,
+                            inStock: infoOnCurrentCartItem.inStock,
+                            options: infoOnCurrentCartItem.options,
+                            productPrice: infoOnCurrentCartItem.productPrice,
+                            productPricePerUnit: infoOnCurrentCartItem.productPricePerUnit,
+                            getItAsSoonAs: infoOnCurrentCartItem.getItAsSoonAs,
+                            quantity: infoOnCurrentCartItem.quantity,
+                            dealsAvailable: infoOnCurrentCartItem.dealsAvailable,
+                            megagramChoiceCategory: infoOnCurrentCartItem.megagramChoiceCategory,
+                            isSelected: false,
+                            hasBeenRemoved: false,
+                            hasBeenSavedForLater: false
+                        });
+                    }
+                }
+
+                /*
+                const response2 = await fetch(`http://localhost:8025/getShopSearchesOfUser/${this.authenticatedUsername}`);
+                if(!response2.ok) {
+                    throw new Error('Network response not ok');
+                }
+                const fetchedPastSearches = await response2.json();
+                let pastSearcallPastSearchesOfUserhesOfUser = [];
+                for(let fetchedPastSearch of fetchedPastSearches) {
+                allPastSearchesOfUser.push([fetchedPastSearch.search, fetchedPastSearch.searchCategory]);
+                }
+                this.allPastSearchesOfUser = allPastSearchesOfUser;
+                */
+
+                this.allPastSearchesOfUser = [
+                    ["hot wheels", "Toys for Kids"],
+                    ["hotpockets", "Food"],
+                    ["walkie-talkie", ""]
+                ];
 
                 //fetch items saved for later
                 this.itemsSavedForLater = [
@@ -413,41 +680,75 @@ import './styles.css';
 
             },
 
+            areDictsEqual(dict1, dict2) {
+                const keys1 = Object.keys(dict1);
+                const keys2 = Object.keys(dict2);
+
+                if (keys1.length !== keys2.length) {
+                    return false;
+                }
+
+                for (const key of keys1) {
+                    if (dict1[key] !== dict2[key]) {
+                    return false;
+                    }
+                }
+
+                return true;
+            },
+
+            formatDeliveryArrivalText(numHours) {
+                const now = new Date();
+                const deliveryDate = new Date(now.getTime() + numHours * 60 * 60 * 1000);
+            
+                const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                const months = ["January", "February", "March", "April", "May", "June",
+                                "July", "August", "September", "October", "November", "December"];
+            
+                if (deliveryDate.toDateString() === now.toDateString()) {
+                    return `Today, in ${numHours} hours`;
+                }
+            
+                const tomorrow = new Date(now);
+                tomorrow.setDate(now.getDate() + 1);
+                if (deliveryDate.toDateString() === tomorrow.toDateString()) {
+                    return `Tomorrow, ${months[deliveryDate.getMonth()]} ${deliveryDate.getDate()}`;
+                }
+            
+                const dayOfWeek = daysOfWeek[deliveryDate.getDay()];
+                const month = months[deliveryDate.getMonth()];
+                const day = deliveryDate.getDate();
+            
+                return `${dayOfWeek}, ${month} ${day}`;
+            },
+
             toggleLeftSidebar() {
                 this.displayLeftSidebar = !this.displayLeftSidebar;
             },
 
-            addItemToCart(itemInfo) {
+            addPairWithCartItemToCart(itemInfo) {
+                const getItAsSoonAs = "";
+                const dealsAvailable = false;
+                const megagramChoiceCategory = null;
+                
                 this.numItemsInCart++;
-                this.cartPriceSubtotal = this.getNewCartPriceSubtotal(itemInfo.productPrice);
                 this.itemsOfCart.push({
                     id: itemInfo.id,
                     productId: itemInfo.productId,
                     productImage: itemInfo.productImage,
                     productName: itemInfo.productName,
                     inStock: true,
-                    options: { //later use API to fetch
-                        Color: 'Grey',
-                        Size: '71W x 71L (Pack of 1)'
-                    },
+                    options: itemInfo.options,
                     productPrice: itemInfo.productPrice,
-                    getItAsSoonAs: "Wed, Nov 22", //later use API to fetch
+                    getItAsSoonAs: getItAsSoonAs,
                     quantity: 1,
-                    dealsAvailable: false, //later use API to fetch
-                    megagramChoiceCategory: null, //later use API to fetch
-                    numberOneBestSeller: null, //later use API to fetch
+                    dealsAvailable: dealsAvailable,
+                    megagramChoiceCategory: megagramChoiceCategory,
                     isSelected: false,
                     hasBeenRemoved: false,
                     hasBeenSavedForLater: false
                 });
 
-            },
-
-            getNewCartPriceSubtotal(priceOfNewlyAddedItem) {
-                const currentCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
-                return currentCurrency +
-                ( parseFloat(this.cartPriceSubtotal.substring(currentCurrency.length)) + parseFloat(priceOfNewlyAddedItem.substring(currentCurrency.length)) )
-                .toFixed(2);
             },
 
             updateSelectedCartItems(newSelectedItems) {
@@ -487,17 +788,60 @@ import './styles.css';
                 this.itemsOfCart[indexOfCartItemToUnselect].isSelected = false;
             },
 
-            removeCartItem(indexOfCartItemToRemove) {
-                this.itemsOfCart[indexOfCartItemToRemove].hasBeenRemoved = true;
+            async removeCartItem(info) {
+                const response = await fetch("http://localhost:8029/graphql", {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        query: `mutation {
+                            deleteShoppingCartItem(id:${info.id})
+                        }`
+                    })
+                });
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+                this.numItemsInCart-=this.itemsOfCart[info.index].quantity;
+                this.itemsOfCart[info.index].hasBeenRemoved = true;
             },
 
-            updateCartItemQuantity(info) {
+            async updateCartItemQuantity(info) {
+                const response = await fetch("http://localhost:8029/graphql", {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        query: `mutation {
+                            editShoppingCartItem(id:${info.id}, newQuantity:${info.newQuantity}) {
+                                quantity
+                            }
+                        }`
+                    })
+                });
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+                this.numItemsInCart+=info.newQuantity-this.itemsOfCart[info.index].quantity;
                 this.itemsOfCart[info.index].quantity = info.newQuantity;
             },
 
-            saveCartItemForLater(indexOfCartItemToSaveForLater) {
-                const cartItemToSaveForLater = this.itemsOfCart[indexOfCartItemToSaveForLater];
-                this.itemsOfCart[indexOfCartItemToSaveForLater].hasBeenSavedForLater = true;
+            async saveCartItemForLater(info) {
+                const response = await fetch("http://localhost:8029/graphql", {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        query: `mutation {
+                            deleteShoppingCartItem(id:${info.id})
+                        }`
+                    })
+                });
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+
+                const cartItemToSaveForLater = this.itemsOfCart[info.index];
+                this.numItemsInCart-=cartItemToSaveForLater.quantity;
+                cartItemToSaveForLater.hasBeenSavedForLater = true;
+
                 this.itemsSavedForLater = [...this.itemsSavedForLater, {
                         id: Math.floor(Math.random()*5000)+140, //later fetch the id of the newly created saved-for-later-item
                         productId: cartItemToSaveForLater.productId,
@@ -549,7 +893,6 @@ import './styles.css';
                             quantity: 1,
                             dealsAvailable: true, //later fetch
                             megagramChoiceCategory: null, //later fetch
-                            numberOneBestSeller: 'Everything', //later fetch
                             isSelected: false,
                             hasBeenRemoved: false,
                             hasBeenSavedForLater: false
@@ -578,15 +921,39 @@ import './styles.css';
                     quantity: 1,
                     dealsAvailable: true, //later fetch
                     megagramChoiceCategory: null, //later fetch
-                    numberOneBestSeller: 'Everything', //later fetch
                     isSelected: false,
                     hasBeenRemoved: false,
                     hasBeenSavedForLater: false
                 });
             },
 
-            updateDeliveryAreaCountry(newDeliveryAreaCountry) {
-                this.deliveryAreaCountry = newDeliveryAreaCountry;
+            async updateDeliveryAreaCountry(newDeliveryAreaCountry) {
+                const response = await fetch(`http://localhost:8022/editBasicUserInfo/${this.authenticatedUsername}`, {
+                    method: 'PATCH',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        hasPremium: this.hasPremium,
+                        deliveryAreaCountry: newDeliveryAreaCountry,
+                        townOrCity: null,
+                        zipCode: null
+                    })
+                });
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+                this.deliveryArea = null;
+                this.deliveryZipcode = null;
+                this.deliveryAreaCountry = newDeliveryAreaCountry
+
+                if(this.selectedAddressOfUser!=="") {
+                    const response1 = await fetch(`http://localhost:8026/unselectSelectedAddressOfUser/${this.authenticatedUsernameauthenticatedUsername}`, {
+                        method: 'PATCH'
+                    });
+                    if(!response1.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    this.selectedAddressOfUser = "";
+                }
             }
         },
 
@@ -599,9 +966,8 @@ import './styles.css';
                         return;
                     }
                     if(typeof newParams.username !== 'undefined') {
-                    await this.authenticateUser(newParams.username);
-                    this.fetchRelevantDataAtStart();
-
+                        await this.authenticateUser(newParams.username);
+                        this.fetchRelevantDataAtStart();
                     }
                     else if(localStorage.getItem('defaultUsername')) {
                         await this.authenticateUser(localStorage.getItem('defaultUsername'));

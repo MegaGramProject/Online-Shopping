@@ -1,5 +1,5 @@
-using System.Reflection;
 using Google.Cloud.Storage.V1;
+using System.Text.Json;
 
 namespace aspNetCoreBackend5.Services;
 
@@ -220,8 +220,76 @@ public class GoogleCloudStorageService
         }
     }
 
+    public Dictionary<string, List<List<object>>> getSpecificImagesOfProductOptionsForMany(JsonElement productIdToOptionsListMappingsAsJE, Dictionary<string, string> productIdToImageOptionMappings)
+    {
+        string bucketName = "shopping-product-images";
+        HashSet<string> setOfProductIds = new HashSet<string>();
+        Dictionary<string, List<Dictionary<string, int>>> productIdToOptionsListMappings = new Dictionary<string, List<Dictionary<string, int>>>();
 
+        foreach (JsonProperty property in productIdToOptionsListMappingsAsJE.EnumerateObject())
+        {
+            string productId = property.Name;
+            List<Dictionary<string, int>> options = JsonSerializer.Deserialize<List<Dictionary<string, int>>>(property.Value.ToString())!;
+
+            setOfProductIds.Add(productId);
+            productIdToOptionsListMappings[productId] = options;
+        }
+
+        try
+        {
+            var objects = _storageClient.ListObjects(bucketName)
+                .Where(o => setOfProductIds.Contains(o.Name.Substring(0, 24)) && o.Name.EndsWith("-0.jpg"))
+                .ToList();
+
+            Dictionary<string, List<List<object>>> output = new Dictionary<string, List<List<object>>>();
+            foreach (var obj in objects)
+            {
+                string productId = obj.Name.Substring(0, 24);
+
+                int optionValueOfObject = 0;
+                int firstHyphenIndex = obj.Name.IndexOf('-');
+                int secondHyphenIndex = obj.Name.IndexOf('-', firstHyphenIndex + 1);
+
+                string valueBetweenHyphens = obj.Name.Substring(firstHyphenIndex + 1, secondHyphenIndex - firstHyphenIndex - 1);
+
+                if (!int.TryParse(valueBetweenHyphens, out optionValueOfObject))
+                {
+                    continue;
+                }
+
+                string nameOfOptionWithImages = productIdToImageOptionMappings[productId];
+                List<Dictionary<string, int>> listOfGivenOptionsForProduct = productIdToOptionsListMappings[productId];
+
+                foreach (Dictionary<string, int> givenProductOptions in listOfGivenOptionsForProduct)
+                {
+                    if (nameOfOptionWithImages != null)
+                    {
+                        int optionValue = givenProductOptions[nameOfOptionWithImages];
+                        if (optionValue != optionValueOfObject)
+                        {
+                            continue;
+                        }
+                    }
+
+                    using (var memoryStream = new MemoryStream())
+                    {
+                        _storageClient.DownloadObject(bucketName, obj.Name, memoryStream);
+
+                        if (output.ContainsKey(productId)==false)
+                        {
+                            output[productId] = new List<List<object>>();
+                        }
+                        output[productId].Add(new List<object> { givenProductOptions, memoryStream.ToArray() });
+                    }
+                }
+            }
+            return output;
+        }
+        catch (Google.GoogleApiException e) when (e.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return new Dictionary<string, List<List<object>>>();
+        }
+    }
 
     
-
 }
