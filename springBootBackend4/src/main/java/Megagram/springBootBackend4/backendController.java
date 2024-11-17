@@ -46,7 +46,7 @@ public class backendController {
     private ShopSearchRepository shopSearchRepository;
 
     @GetMapping("/getAllPSTsAsDict")
-    @CrossOrigin({"http://localhost:8024"})
+    @CrossOrigin({"http://localhost:8024", "http://localhost:8033"})
     public ResponseEntity<HashMap<String, String[]>> getAllPSTsAsDict() {
         List<ProductSearchTag> allPSTDocuments = productSearchTagRepository.findAll();
         HashMap<String, String[]> output = new HashMap<String, String[]>();

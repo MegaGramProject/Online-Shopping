@@ -36,14 +36,19 @@
                     <SubtotalAndProceedToCheckout :numSelectedCartItems="numSelectedCartItems" :selectedCartItemsPriceSubtotal="selectedCartItemsPriceSubtotal"
                     :deliveryAreaCountry="deliveryAreaCountry"/>
                     <PairWithCart :hasPremium="hasPremium" @addItemToCart="addPairWithCartItemToCart"
-                    :deliveryAreaCountry="deliveryAreaCountry" :authenticatedUsername="authenticatedUsername"/>
+                    :deliveryAreaCountry="deliveryAreaCountry" :authenticatedUsername="authenticatedUsername"
+                    :idsOfProductsAvailableToUser="idsOfProductsAvailableToUser" :idsOfUserBoughtProducts="idsOfUserBoughtProducts"
+                    :productIdsOfCartItems="productIdsOfCartItems"/>
                 </div>
 
             </div>
 
-            <ProductPromotionRect :deliveryAreaCountry="deliveryAreaCountry" :hasPremium="hasPremium"/>
+            <ProductPromotionRect :deliveryAreaCountry="deliveryAreaCountry" :hasPremium="hasPremium"
+            :idsOfProductsAvailableToUser="idsOfProductsAvailableToUser" :idsOfUserBoughtProducts="idsOfUserBoughtProducts"
+            :browsingHistoryOfUser="browsingHistoryOfUser"/>
 
-            <YourBrowsingHistory :authenticatedUsername="authenticatedUsername"/>
+            <YourBrowsingHistory :authenticatedUsername="authenticatedUsername" :browsingHistoryOfUser="browsingHistoryOfUser"
+            @removeProductFromBrowsingHistory="removeProductFromBrowsingHistory"/>
 
             <FooterSection @updateDeliveryAreaCountry="updateDeliveryAreaCountry"/>
 
@@ -130,7 +135,11 @@ import './styles.css';
             allPastSearchesOfUser: null,
             selectedAddressOfUser: null,
             itemsOfCart: [],
-            itemsSavedForLater: []
+            itemsSavedForLater: [],
+            idsOfProductsAvailableToUser: null,
+            idsOfUserBoughtProducts: null,
+            productIdsOfCartItems: null,
+            browsingHistoryOfUser: null
             };
         },
 
@@ -303,6 +312,7 @@ import './styles.css';
 
                 this.numItemsInCart = numItemsInCart;
                 productIdsOfCartItems = [...productIdsOfCartItems];
+                this.productIdsOfCartItems = productIdsOfCartItems;
 
                 /*
                 const response1b = await fetch(`http://localhost:8026/getSelectedAddressOfUser/${this.authenticatedUsername}`);
@@ -606,11 +616,11 @@ import './styles.css';
                 }
 
                 /*
-                const response2 = await fetch(`http://localhost:8025/getShopSearchesOfUser/${this.authenticatedUsername}`);
-                if(!response2.ok) {
+                const response10 = await fetch(`http://localhost:8025/getShopSearchesOfUser/${this.authenticatedUsername}`);
+                if(!response10.ok) {
                     throw new Error('Network response not ok');
                 }
-                const fetchedPastSearches = await response2.json();
+                const fetchedPastSearches = await response10.json();
                 let pastSearcallPastSearchesOfUserhesOfUser = [];
                 for(let fetchedPastSearch of fetchedPastSearches) {
                 allPastSearchesOfUser.push([fetchedPastSearch.search, fetchedPastSearch.searchCategory]);
@@ -623,6 +633,50 @@ import './styles.css';
                     ["hotpockets", "Food"],
                     ["walkie-talkie", ""]
                 ];
+
+                const response11 = await fetch('http://localhost:8027/api/getProductsThatDeliverToLocation', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        zipcode: this.deliveryZipcode,
+                        country: this.deliveryAreaCountry
+                    })
+                });
+                if(!response11.ok) {
+                 //   throw new Error('Network response not ok');
+                }
+                let idsOfProductsAvailableToUser = await response11.json();
+                idsOfProductsAvailableToUser = idsOfProductsAvailableToUser.map(x=>x.productId);
+                
+                const response12 = await fetch('http://localhost:8026/getNumProductsLeftForListOfProducts', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(idsOfProductsAvailableToUser)
+                });
+                if(!response12.ok) {
+                    throw new Error('Network response not ok');
+                }
+                const numProductsLeftForListOfProducts = await response12.json();
+
+                const response13 = await fetch('http://localhost:8030/getProductIdsOfThoseInStock', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        numProductsLeftForListOfProducts: numProductsLeftForListOfProducts
+                    })
+                });
+                if(!response13.ok) {
+                    throw new Error('Network response not ok');
+                }
+
+                idsOfProductsAvailableToUser = await response13.json();
+                this.idsOfProductsAvailableToUser = idsOfProductsAvailableToUser;
+
+                const response14 = await fetch(`http://localhost:8028/getProductIdsPurchasedByUser/${this.authenticatedUsername}`);
+                if(!response14.ok) {
+                    throw new Error('Network response not ok');
+                }
+                this.idsOfUserBoughtProducts = await response14.json();
 
                 //fetch items saved for later
                 this.itemsSavedForLater = [
@@ -679,6 +733,30 @@ import './styles.css';
                     },
                 ];
 
+                const response15 = await fetch(`http://localhost:8034/getBrowsingHistoryOfUserInChronOrder/${this.authenticatedUsername}`);
+                if(!response15.ok) {
+                    throw new Error('Network response not ok');
+                }
+                let browsingHistoryOfUser = await response15.json();
+
+                const response16 = await fetch('http://localhost:8031/getMainProductImagesOfProducts', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(browsingHistoryOfUser.map(x=>x.product_id))
+                });
+                if(!response16.ok) {
+                    throw new Error('Network response not ok');
+                }
+                const mainImagesOfProductsToPairWithCart = await response16.json();
+
+                browsingHistoryOfUser = browsingHistoryOfUser.map(x=>{
+                    x.productId = x.product_id;
+                    x.productImage = `data:image/jpeg;base64,${mainImagesOfProductsToPairWithCart[x.product_id]}`;
+                    delete x.product_id;
+                    return x;
+                });
+                
+                this.browsingHistoryOfUser = browsingHistoryOfUser;
             },
 
             areDictsEqual(dict1, dict2) {
@@ -992,6 +1070,16 @@ import './styles.css';
                     }
                     this.selectedAddressOfUser = "";
                 }
+            },
+
+            async removeProductFromBrowsingHistory(idToRemove) {
+                const response = await fetch(`http://localhost:8034/deleteProductPageViewer/${idToRemove}`, {
+                    method: 'DELETE'
+                });
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+                this.browsingHistoryOfUser = this.browsingHistoryOfUser.filter(x=>x.id!==idToRemove);
             }
         },
 

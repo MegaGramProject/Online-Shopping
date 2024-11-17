@@ -289,6 +289,9 @@ import SingleItemSavedForLater from './SingleItemSavedForLater.vue';
         
         watch: {
             itemsSavedForLater(newVal) {
+                if(newVal==null) {
+                    return;
+                }
                 const countsPerCategoryOfSavedItems = {};
                 this.indicesOfRowStartsOfSavedItems = [];
                 for(let i=0; i<newVal.length; i++) {

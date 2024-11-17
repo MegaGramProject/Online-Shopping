@@ -11,20 +11,21 @@
 
         <div :style="{display: 'flex', alignItems: 'center', height: '10em', marginTop:'-0.8em',
         width: '98%', gap: '1.6em'}">
-            <div @click="goToPrevPage" :style="{height: '2em', width: '2em', borderRadius: '0.75em',
+            <div v-if="maxPage>1" @click="goToPrevPage" :style="{height: '2em', width: '2em', borderRadius: '0.75em',
             cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', borderStyle: 'solid', borderWidth: '0.03em',
             marginRight:'2em'}">
                 <img :src="leftArrow" :style="{height: '1.2em', width: '1.2em'}"/>
             </div>
 
-            <div v-for="(item, index) in browsingHistory.slice(currPage*8-8,currPage*8)" :key="index" @mouseenter="updateCurrentlyHoveredImage(index)" @mouseleave="updateCurrentlyHoveredImage(index)" :style="{position: 'relative', height: '80%', width: '10em'}">
-                <img :src="item.productImage" :style="{height: '100%', width: '100%', cursor: 'pointer'}"/>
-                <img v-if="currentlyHoveredImage==index" :src="xInCircle" class="iconToBeAdjustedForDarkMode" @click="removeProductFromBrowsingHistory(item.productId)" :style="{height: '1.1em', width: '1.2em', cursor: 'pointer', position: 'absolute',
-                top: '-10%', left:'98%'}"/>
-            </div>
-            
+            <template v-if="browsingHistoryOfUser!==null">
+                <div v-for="(item, index) in browsingHistoryOfUser.slice(currPage*8-8,currPage*8)" :key="index" @mouseenter="updateCurrentlyHoveredImage(index)" @mouseleave="updateCurrentlyHoveredImage(index)" :style="{position: 'relative', height: '80%', width: '10em'}">
+                    <img :src="item.productImage" :style="{height: '100%', width: '100%', cursor: 'pointer', objectFit: 'contain'}"/>
+                    <img v-if="currentlyHoveredImage==index" :src="xInCircle" class="iconToBeAdjustedForDarkMode" @click="removeProductFromBrowsingHistory(item.id)" :style="{height: '1.1em', width: '1.2em', cursor: 'pointer', position: 'absolute',
+                    top: '-10%', left:'98%'}"/>
+                </div>
+            </template>
 
-            <div @click="goToNextPage" :style="{height: '2em', width: '2em', borderRadius: '0.75em',
+            <div v-if="maxPage>1" @click="goToNextPage" :style="{height: '2em', width: '2em', borderRadius: '0.75em',
             cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', borderStyle: 'solid', borderWidth: '0.03em'}">
                 <img :src="leftArrow" :style="{height: '1.2em', width: '1.2em', transform: 'scaleX(-1)'}"/>
             </div>
@@ -44,7 +45,8 @@ import xInCircle from '@/assets/images/x-circle-1.svg';
     export default {
 
         props: {
-            authenticatedUsername: String
+            authenticatedUsername: String,
+            browsingHistoryOfUser: Array
         },
 
         data() {
@@ -54,71 +56,9 @@ import xInCircle from '@/assets/images/x-circle-1.svg';
                 socks,
                 xInCircle,
                 ledLightStrips,
-                browsingHistory: [],
                 currentlyHoveredImage: -1,
                 currPage: 1,
-                maxPage: 4
-            }
-        },
-
-        mounted() {
-            this.browsingHistory = [
-                {
-                    productId: "browsing0",
-                    productImage: redCologne
-                },
-                {
-                    productId: "browsing1",
-                    productImage: socks
-                },
-                {
-                    productId: "browsing2",
-                    productImage: ledLightStrips
-                },
-                {
-                    productId: "browsing3",
-                    productImage: redCologne
-                },
-                {
-                    productId: "browsing4",
-                    productImage: socks
-                },
-                {
-                    productId: "browsing5",
-                    productImage: ledLightStrips
-                },
-                {
-                    productId: "browsing6",
-                    productImage: redCologne
-                },
-                {
-                    productId: "browsing7",
-                    productImage: socks
-                },
-                {
-                    productId: "browsing8",
-                    productImage: ledLightStrips
-                },
-                {
-                    productId: "browsing9",
-                    productImage: redCologne
-                },
-                {
-                    productId: "browsing10",
-                    productImage: socks
-                },
-                {
-                    productId: "browsing11",
-                    productImage: ledLightStrips
-                },
-            ];
-
-            const numBrowsingHistoryProducts = this.browsingHistory.length;
-            if((numBrowsingHistoryProducts/8)%1>0) {
-                this.maxPage = Math.floor(numBrowsingHistoryProducts/8)+1;
-            }
-            else {
-                this.maxPage = numBrowsingHistoryProducts/8;
+                maxPage: 1
             }
         },
 
@@ -150,9 +90,23 @@ import xInCircle from '@/assets/images/x-circle-1.svg';
                 }
             },
 
-            async removeProductFromBrowsingHistory(productIdToRemoveFromBrowsingHistory) {
-                //make API-request later
-                this.browsingHistory = this.browsingHistory.filter(x=>x.productId!==productIdToRemoveFromBrowsingHistory);
+            removeProductFromBrowsingHistory(idToRemove) {
+                this.$emit("removeProductFromBrowsingHistory", idToRemove);
+            }
+        },
+
+        watch: {
+            browsingHistoryOfUser(newVal) {
+                if(newVal==null) {
+                    return;
+                }
+                const numBrowsingHistoryProducts = this.browsingHistoryOfUser.length;
+                if((numBrowsingHistoryProducts/8)%1>0) {
+                    this.maxPage = Math.floor(numBrowsingHistoryProducts/8)+1;
+                }
+                else {
+                    this.maxPage = numBrowsingHistoryProducts/8;
+                }
             }
         }
     };

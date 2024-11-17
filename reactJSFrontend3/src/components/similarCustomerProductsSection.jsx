@@ -173,7 +173,7 @@ function SimilarCustomerProductsSection({authenticatedUsername, deliveryAreaCoun
         }
         const allProductIdToSearchTagMappings = await response4a.json();
         /*
-        above is a dict where keys are productIds of very product, and
+        above is a dict where keys are productIds of every product, and
         values are the list of search tags for the product.
         */
 
