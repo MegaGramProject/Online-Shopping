@@ -69,7 +69,6 @@ def getAllUpdatesOfCartsAndSavedItemsOfUser(request, username):
     allUpdatesOfCartsAndSavedItemsOfUser = (
         UpdatesOfCartsAndSavedItems.objects
             .filter(username=username)
-            .values('product_id', 'options', 'productName', 'prices', 'inCart')
     )
     allUpdatesOfCartsAndSavedItemsOfUser = UpdatesOfCartsAndSavedItemsSerializer(allUpdatesOfCartsAndSavedItemsOfUser, many=True)
     return Response(allUpdatesOfCartsAndSavedItemsOfUser.data, status=status.HTTP_200_OK)
@@ -77,7 +76,7 @@ def getAllUpdatesOfCartsAndSavedItemsOfUser(request, username):
 
 @api_view(['POST'])
 def addUpdateToCartAndSavedItems(request):
-    candidatesForEdit = (
+    candidatesForDeletion = (
         UpdatesOfCartsAndSavedItems.objects
         .filter(
         username=request.data['username'],
@@ -86,24 +85,15 @@ def addUpdateToCartAndSavedItems(request):
     )
 
     newPrices = request.data['prices']
-    editsHaveBeenMade = False
-    for candidate in candidatesForEdit:
-        if candidate.options==request.data['options']:
-            if newPrices[0] =='removed-from-seller':
-                if candidate.prices[0] == 'out-of-stock':
-                    candidate.prices[0] = 'removed-from-seller'
-                else:
-                    candidate.delete()
-            elif len(newPrices)==2:
-                if candidate.prices[0] == 'out-of-stock':
-                    candidate.delete()
-                elif len(candidate.prices)==2:
-                    candidate.prices[1] = newPrices[1]
-                candidate.save()
-            editsHaveBeenMade = True
 
-    if(editsHaveBeenMade):
-        return Response(True, status=status.HTTP_200_OK)
+    for candidate in candidatesForDeletion:
+        if candidate.options==request.data['options']:
+            if newPrices[0] == 'removed-from-seller':
+                candidate.delete()
+            elif len(newPrices)==2:
+                if len(candidate.prices)==2:
+                    newPrices[0] = candidate.prices[0]
+                    candidate.delete()
 
     
     newUpdateToCartAndSavedItems = UpdatesOfCartsAndSavedItemsSerializer(data=request.data)

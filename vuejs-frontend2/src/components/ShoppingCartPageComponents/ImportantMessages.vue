@@ -2,7 +2,7 @@
     <div v-if="shoppingCartPriceDecreases.length>0 || shoppingCartPriceIncreases.length>0 || savedItemsPriceDecreases.length>0 ||
     savedItemsPriceIncreases.length>0 || unavailableProducts.length>0"
     :style="{borderStyle: 'solid', borderColor: 'orange', width: '75%', padding: '1em 1em', backgroundColor: 'white',
-    display: 'flex', flexDirection: 'column', fontSize: '0.83em', display: 'none'}">
+    display: 'flex', flexDirection: 'column', fontSize: '0.83em'}">
 
         <div :style="{display: 'flex', alignItems: 'center', gap: '0.4em', pointerEvents: 'none',
         marginBottom: '1.5em'}">
@@ -76,7 +76,8 @@ import warningSign from '@/assets/images/warningSign.png';
 
     export default {
         props: {
-            deliveryAreaCountry: String
+            deliveryAreaCountry: String,
+            authenticatedUsername: String
         },
 
         data() {
@@ -104,81 +105,11 @@ import warningSign from '@/assets/images/warningSign.png';
                     "MX$": 19.86,      // MXN - Mexican Peso (for Mexico)
                     "£": 0.7709          // GBP - British Pound (for United Kingdom)
                 },
-                shoppingCartPriceDecreases: [
-                    {
-                        productId: "0",
-                        productName: "Takis",
-                        options: {
-                            Size: 'small',
-                            Color: 'blue'
-                        },
-                        prices: ['$6', '$4']
-                    },
-                    {
-                        productId: "1",
-                        productName: "Engraved Hydroflask",
-                        options: {},
-                        prices: ['$60', '$55']
-                    }
-                ],
-                shoppingCartPriceIncreases: [
-                    {
-                        productId: "2",
-                        productName: "Takis",
-                        options: {
-                            Size: 'large',
-                            Color: 'blue'
-                        },
-                        prices: ['$4', '$6']
-                    }
-                ],
-                savedItemsPriceDecreases: [
-                    {
-                        productId: "3",
-                        productName: "Apollo Shirt",
-                        options: {
-                            Size: 'medium',
-                        },
-                        prices: ['$6', '$4']
-                    },
-                    {
-                        productId: "4",
-                        productName: "Watergun",
-                        options: {},
-                        prices: ['$60', '$55']
-                    }
-                ],
-                savedItemsPriceIncreases: [
-                    {
-                        productId: "5",
-                        productName: "Bose Headphones",
-                        options: {},
-                        prices: ['$400', '$600']
-                    }
-                ],
-                unavailableProducts: [
-                    {
-                        productId: "6",
-                        productName: "Beats by Dre",
-                        options: {},
-                        status: 'removed-from-seller'
-                    },
-                    {
-                        productId: "7",
-                        productName: "Apple Airpods",
-                        options: {
-                            Color: 'pink',
-                            'Battery-Life': '24h'
-                        },
-                        status: 'removed-from-seller'
-                    },
-                    {
-                        productId: "8",
-                        productName: "Winter Tires",
-                        options: {},
-                        status: 'out-of-stock'
-                    }
-                ]
+                shoppingCartPriceDecreases: [],
+                shoppingCartPriceIncreases: [],
+                savedItemsPriceDecreases: [],
+                savedItemsPriceIncreases: [],
+                unavailableProducts: []
             }
         },
 
@@ -247,6 +178,85 @@ import warningSign from '@/assets/images/warningSign.png';
 
                     this.savedItemsPriceIncreases[i].prices = [newCurrency+currItemPrice0, newCurrency+currItemPrice1];
                 }
+            },
+
+            async fetchUpdatesToShoppingCartAndSavedItems() {
+                const response = await fetch(`http://localhost:8034/getAllUpdatesOfCartsAndSavedItemsOfUser/${this.authenticatedUsername}`);
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+                let updatesToCartAndSavedItems = await response.json();
+
+                const shoppingCartPriceDecreases = [];
+                const shoppingCartPriceIncreases = [];
+                const savedItemsPriceDecreases = [];
+                const savedItemsPriceIncreases = [];
+                const unavailableProducts = [];
+
+                for(let update of updatesToCartAndSavedItems) {
+                    const newElem =  {
+                        productId: update.productId,
+                        productName: update.productName,
+                        options: update.options,
+                    };
+
+                    if(update.prices.length==1) {
+                        newElem.status = update.prices[0];
+                        unavailableProducts.push(newElem);
+                    }
+                    else {
+                        newElem.prices = ['$'+update.prices[0], '$'+update.prices[1]];
+                        if(update.inCart==true) {
+                            if(update.prices[1]>update.prices[0]) {
+                                shoppingCartPriceIncreases.push(newElem);
+                            }
+                            else {
+                                shoppingCartPriceDecreases.push(newElem);
+                            }
+                        }
+                        else {
+                            if(update.prices[1]>update.prices[0]) {
+                                savedItemsPriceIncreases.push(newElem);
+                            }
+                            else {
+                                savedItemsPriceDecreases.push(newElem);
+                            }
+                        }
+                    }
+                }
+
+                this.shoppingCartPriceDecreases = [...shoppingCartPriceDecreases];
+                this.shoppingCartPriceIncreases = [...shoppingCartPriceIncreases];
+                this.savedItemsPriceDecreases = [...savedItemsPriceDecreases];
+                this.savedItemsPriceIncreases = [...savedItemsPriceIncreases];
+                this.unavailableProducts = [...unavailableProducts];
+
+                setTimeout(this.listenForVisibilityChange, 2000);
+            },
+
+            listenForVisibilityChange() {
+                if (!document.hidden) {
+                    this.deleteAllUpdatesToCartAndSavedItemsForUser();
+                }
+                else {
+                    document.addEventListener('visibilitychange', this.handleVisibilityChange);
+                }
+            },
+
+            async deleteAllUpdatesToCartAndSavedItemsForUser() {
+                const response = await fetch(`http://localhost:8034/deleteAllUpdatesToCartAndSavedItemsForUser/${this.authenticatedUsername}`, {
+                    method: 'DELETE'
+                });
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+            },
+
+            handleVisibilityChange() {
+                if (!document.hidden) {
+                    this.deleteAllUpdatesToCartAndSavedItemsForUser();
+                    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+                }
             }
         },
 
@@ -285,6 +295,12 @@ import warningSign from '@/assets/images/warningSign.png';
                 const newCurrency = this.countryCurrencyMap[newVal];
                 if(currentCurrency!==newCurrency) {
                     this.updateCurrencies(currentCurrency, newCurrency);
+                }
+            },
+
+            authenticatedUsername(newVal) {
+                if(newVal.length>0) {
+                    this.fetchUpdatesToShoppingCartAndSavedItems();
                 }
             }
         }

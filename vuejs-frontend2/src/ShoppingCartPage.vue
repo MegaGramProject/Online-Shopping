@@ -12,7 +12,7 @@
 
         <div :style="{display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', height: '100%',
         position: 'relative', paddingTop: '2em'}">
-            <ImportantMessages :deliveryAreaCountry="deliveryAreaCountry"/>
+            <ImportantMessages :deliveryAreaCountry="deliveryAreaCountry" :authenticatedUsername="authenticatedUsername"/>
 
             <div :style="{display: 'flex', justifyContent: 'center', alignItems: 'start', width: '100%', gap: '7em',
             marginTop: '2em'}">
