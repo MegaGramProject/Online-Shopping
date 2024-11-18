@@ -43,9 +43,9 @@
 
             </div>
 
-            <ProductPromotionRect :deliveryAreaCountry="deliveryAreaCountry" :hasPremium="hasPremium"
+            <ProductPromotionRect :deliveryAreaCountry="deliveryAreaCountry" :hasPremium="hasPremium" :authenticatedUsername="authenticatedUsername"
             :idsOfProductsAvailableToUser="idsOfProductsAvailableToUser" :idsOfUserBoughtProducts="idsOfUserBoughtProducts"
-            :browsingHistoryOfUser="browsingHistoryOfUser"/>
+            :browsingHistoryOfUser="browsingHistoryOfUser" :selectedAddressOfUser="selectedAddressOfUser"/>
 
             <YourBrowsingHistory :authenticatedUsername="authenticatedUsername" :browsingHistoryOfUser="browsingHistoryOfUser"
             @removeProductFromBrowsingHistory="removeProductFromBrowsingHistory"/>

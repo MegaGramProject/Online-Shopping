@@ -5,6 +5,7 @@ from .models import Product_Page_Viewer, UpdatesOfCartsAndSavedItems
 from .serializers import Product_Page_Viewer_Serializer, UpdatesOfCartsAndSavedItemsSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from django.db.models import Count
 
 
 @api_view(['GET'])
@@ -58,6 +59,40 @@ def deleteProductPageViewer(request, id):
     return Response(status=status.HTTP_204_NO_CONTENT)
     
 
+@api_view(['POST'])
+def getIdsOfProductsMostViewedByCustomersWhoAlsoViewed(request, username):
+    try:
+        idsToInclude = set(request.data.get('idsToInclude'))
+        idsToExclude = set(request.data.get('idsToExclude'))
+        productIdsViewed = set(request.data.get('productIdsViewed'))
+
+        customersWhoViewedAProductOrMoreInProductIdsViewed = set(
+            Product_Page_Viewer.objects
+            .filter(product_id__in=productIdsViewed)
+            .values_list('username', flat=True)
+        )
+
+        customersWhoViewedAProductOrMoreInProductIdsViewed.remove(username)
+
+        productsMostViewedBySaidCustomers = Product_Page_Viewer.objects.filter(
+            product_id__in=idsToInclude,
+            username__in=customersWhoViewedAProductOrMoreInProductIdsViewed
+        ).exclude(
+            product_id__in=idsToExclude | productIdsViewed
+        ).values('product_id').annotate(
+            count=Count('product_id')
+        ).order_by('-count')
+
+        idsOfProductsMostViewedBySaidCustomers = [
+            elem['product_id'] for elem in productsMostViewedBySaidCustomers
+        ]
+
+    except Exception as e:
+        return Response(str(e), status=400)
+    
+    return Response(idsOfProductsMostViewedBySaidCustomers, status=200)
+
+
 @api_view(['GET'])
 def getAllUpdatesOfCartsAndSavedItems(request):
     allUpdatesOfCartsAndSavedItems = UpdatesOfCartsAndSavedItems.objects.all()
@@ -101,7 +136,6 @@ def addUpdateToCartAndSavedItems(request):
         newUpdateToCartAndSavedItems.save()
         return Response(newUpdateToCartAndSavedItems.data, status=status.HTTP_201_CREATED)
     return Response(newUpdateToCartAndSavedItems.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 @api_view(['DELETE'])

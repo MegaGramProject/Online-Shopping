@@ -71,7 +71,9 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
             hasPremium: Boolean,
             idsOfProductsAvailableToUser: Array,
             idsOfUserBoughtProducts: Array,
-            browsingHistoryOfUser: Array
+            browsingHistoryOfUser: Array,
+            selectedAddressOfUser: String,
+            authenticatedUsername: String
         },
 
         components: {
@@ -111,7 +113,6 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
                 maxPageDiv2: 1,
                 div1Products: [],
                 div2Products: [],
-                productsWereFetched: false
             }
         },
 
@@ -160,6 +161,9 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
                     currItemPrice*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
                     this.div1Products[i].productPrice = newCurrency+currItemPrice.toFixed(2);
 
+                    if(this.div1Products[i].productPricePerUnit==null) {
+                        continue;
+                    }
                     const indexOfPricePerOptionSeparator =  this.div1Products[i].productPricePerUnit.indexOf("/");
                     let currItemPricePerOption = this.div1Products[i].productPricePerUnit.substring(0, indexOfPricePerOptionSeparator);
                     currItemPricePerOption = parseFloat(currItemPricePerOption.substring(currentCurrency.length));
@@ -175,6 +179,9 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
                     currItemPrice*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
                     this.div2Products[i].productPrice = newCurrency+currItemPrice.toFixed(2);
 
+                    if(this.div2Products[i].productPricePerUnit==null) {
+                        continue;
+                    }
                     const indexOfPricePerOptionSeparator =  this.div2Products[i].productPricePerUnit.indexOf("/");
                     let currItemPricePerOption = this.div2Products[i].productPricePerUnit.substring(0, indexOfPricePerOptionSeparator);
                     currItemPricePerOption = parseFloat(currItemPricePerOption.substring(currentCurrency.length));
@@ -185,75 +192,449 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
 
                 }
             },
+            
+            formatDeliveryArrivalText(numHours) {
+                const now = new Date();
+                const deliveryDate = new Date(now.getTime() + numHours * 60 * 60 * 1000);
+            
+                const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                const months = ["January", "February", "March", "April", "May", "June",
+                                "July", "August", "September", "October", "November", "December"];
+            
+                if (deliveryDate.toDateString() === now.toDateString()) {
+                    return `Today, in ${numHours} hours`;
+                }
+            
+                const tomorrow = new Date(now);
+                tomorrow.setDate(now.getDate() + 1);
+                if (deliveryDate.toDateString() === tomorrow.toDateString()) {
+                    return `Tomorrow, ${months[deliveryDate.getMonth()]} ${deliveryDate.getDate()}`;
+                }
+            
+                const dayOfWeek = daysOfWeek[deliveryDate.getDay()];
+                const month = months[deliveryDate.getMonth()];
+                const day = deliveryDate.getDate();
+            
+                return `${dayOfWeek}, ${month} ${day}`;
+            },
+    
+
+            getDictForAvgAndNumRatingsOfProducts(listOfAvgRatingsAndNumRatingsOfProducts) {
+                const output = {};
+                for (let productRatingInfo of listOfAvgRatingsAndNumRatingsOfProducts) {
+                    output[productRatingInfo.product_id] = [productRatingInfo.avgRating, productRatingInfo.numRatings];
+                }
+                return output;
+            },
+
+            getBayesianAverageRatings(listOfAvgRatingsAndNumRatingsOfProducts) {
+                const output = {}; // dict where each key is productId and value is Bayesian avg rating of product
+                let totalWeightedRating = 0;
+                let totalNumberOfRatingsAcrossAllProducts = 0;
+
+                for (let productRatingInfo of listOfAvgRatingsAndNumRatingsOfProducts) {
+                    totalWeightedRating += productRatingInfo.avgRating * productRatingInfo.numRatings;
+                    totalNumberOfRatingsAcrossAllProducts += productRatingInfo.numRatings;
+                }
+
+                let globalAvgRatingAcrossProducts = totalWeightedRating / totalNumberOfRatingsAcrossAllProducts;
+                let avgNumberOfRatingsAcrossAllProducts = totalNumberOfRatingsAcrossAllProducts / listOfAvgRatingsAndNumRatingsOfProducts.length;
+
+                for (let productRatingInfo of listOfAvgRatingsAndNumRatingsOfProducts) {
+                    output[productRatingInfo.product_id] =
+                        (productRatingInfo.avgRating * productRatingInfo.numRatings +
+                        globalAvgRatingAcrossProducts * avgNumberOfRatingsAcrossAllProducts) /
+                        (productRatingInfo.numRatings + avgNumberOfRatingsAcrossAllProducts);
+                }
+
+
+                let totalBayesianAvgRatingAcrossAllProducts = 0;
+                for (let productId of Object.keys(output)) {
+                    totalBayesianAvgRatingAcrossAllProducts += output[productId];
+                }
+
+                output['avgBayesianAvgRatingAcrossAllProducts'] = totalBayesianAvgRatingAcrossAllProducts / listOfAvgRatingsAndNumRatingsOfProducts.length;
+
+                return output;
+            },
+
+            computeScoreForProduct(productInfo) {
+                let score = 1;
+                score*=productInfo.bayesianAvgRating;
+                if(productInfo.megagramsChoice) {
+                    score*=2;
+                }
+                score*=productInfo.numViewersInPastMonth;
+                score/=productInfo.fastestDeliveryTimeInHours;
+                if(productInfo.discountsAvailable) {
+                    score*=1.5;
+                }
+                return score;
+            },
 
             //Recommended based on your Shopping Trends & Browsing History
             async fetchDiv1Products() {
+                const response = await fetch(`http://localhost:8028/getPurchasesOfUserWithNoOr4PlusRating/${this.authenticatedUsername}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        idsOfUserBoughtProducts: this.idsOfUserBoughtProducts
+                    })
+                });
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+                const idsOfUserBoughtProductsWithNoOr4PlusRating = await response.json();
+
+                const idsOfProductsInBrowsingHistoryOfUser = this.browsingHistoryOfUser.map(x=>x.productId);
+
+                let idsOfProductsToFindSimilarOnesOf = [...idsOfUserBoughtProductsWithNoOr4PlusRating, ...idsOfProductsInBrowsingHistoryOfUser]
+                idsOfProductsToFindSimilarOnesOf = new Set(idsOfProductsToFindSimilarOnesOf);
+                idsOfProductsToFindSimilarOnesOf = [...idsOfProductsToFindSimilarOnesOf];
+
+                
+                const response1 = await fetch('http://localhost:8025/getAllPSTsAsDict');
+                if(!response1.ok) {
+                    throw new Error('Network response not ok');
+                }
+                const allProductIdToSearchTagMappings = await response1.json();
                 /*
-                STEPS:
-                    1) find similar products to purchases made by user with no or 4+ ratings (excluding idsOfProductsAlreadyBought and including idsOfProductsAvailableToUser)
-                    2) find similar products to browsing-history of user (excluding idsOfProductsAlreadyBought and including idsOfProductsAvailableToUser and idsOfSimilarProductsToThoseWithNoOr4+Ratings)
-                    3) fetch the dealsAvailable, ratings, getItAsSoonAs, and megagramsChoiceCategory for each of these products
-                    4) use the products at the top 24
-                    5) fetch the productImages and productNames and productPrices
+                above is a dict where keys are productIds of every product, and
+                values are the list of search tags for the product.
                 */
 
-                const x=4;
-                if(x==4) {
-                    return;
+                const response2 = await fetch('http://localhost:8022/findSimilarProducts', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json',
+                    body: JSON.stringify({
+                        idsToInclude: this.idsOfProductsAvailableToUser,
+                        idsToExclude: this.idsOfUserBoughtProducts,
+                        allProductIdToSearchTagMappings: allProductIdToSearchTagMappings,
+                        productIds: idsOfProductsToFindSimilarOnesOf
+                    })}
+                });
+                if(!response2.ok) {
+                    throw new Error('Network response not ok');
                 }
+                const idsOfPotentialDiv1Products = await response2.json();
+
+                if(idsOfPotentialDiv1Products.length>0) {
+                    const response3 = await fetch('http://localhost:8028/avgAndNumRatingsOfProductsInList', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            country: 'all',
+                            productIds: idsOfPotentialDiv1Products
+                        })
+                    });
+                    if(!response3.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const listOfAvgRatingsAndNumRatingsOfProducts = await response3.json();
+                    const dictOfAvgRatingsAndNumRatingsOfProducts = this.getDictForAvgAndNumRatingsOfProducts(listOfAvgRatingsAndNumRatingsOfProducts);
+                    /*
+                    above is a dict where each key is a productId from idsOfPotentialDiv1Products, and each value
+                    is a list of two elems: the avgRating and numRatings of that product in that order.
+                    */
+                    const bayesianAvgRatings = this.getBayesianAverageRatings(listOfAvgRatingsAndNumRatingsOfProducts);
+                    /*
+                    above is a dict where each key is a productId from idsOfPotentialDiv1Products, and value is bayesian avg rating of product.
+                    one of the keys, however, one of the keys is the avgBayesianAvgRatingOfAllProducts, which will be used for those
+                    products who have no ratings
+                    */
+
+                    const response4 = await fetch('http://localhost:8029/getFastestDeliveryTimesForProducts', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            hasPremium: this.hasPremium,
+                            address: this.selectedAddressOfUser,
+                            productIds: idsOfPotentialDiv1Products
+                        })
+                    });
+                    if(!response4.ok){
+                        throw new Error('Network response not ok');
+                    }
+                    const deliveryTimesOfPotentialDiv1Products = await response4.json();
+                    /*
+                    above is a dict where keys are productIds in idsOfPotentialDiv1Products, whereas values are the fastest
+                    delivery times of these products in hours.
+                    */
+
+                    const response5 = await fetch('http://localhost:8030/checkIfDealsAreAvailableForProducts', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            productIds: idsOfPotentialDiv1Products,
+                            hasPremium: this.hasPremium
+                        })
+                    });
+                    if(!response5.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const productIdToDealAvailableMappings = await response5.json();
+                    /*
+                    above is a dict where the keys are productIds in idsOfPotentialDiv1Products, whereas values
+                    are booleans: true if product has deal available, false otherwise
+                    */
+
+                    const response6 = await fetch('http://localhost:8032/api/checkForMegagramProductChoicesAndGetNumViewsInPastMonth', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            productIds: idsOfPotentialDiv1Products
+                        })
+                    });
+                    if(!response6.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const productIdToProductChoiceAndNumViewsInPastMonthMappings = await response6.json();
+                    /*
+                    above is a dict where the keys are productIds in idsOfPotentialDiv1Products, whereas values
+                    are lists with two elems: the first being a string of the choiceCategory of the product if it is a Megagram-Product-Choice, null
+                    otherwise. the second one is an integer representing the number of views the product-page has received
+                    in the past month
+                    */
+
+                    let scoresOfPotentialDiv1Products = [];
+                    for(let productId of idsOfPotentialDiv1Products) {
+                        const productInfo = {
+                            bayesianAvgRating: bayesianAvgRatings[productId] ?? bayesianAvgRatings['avgBayesianAvgRatingAcrossAllProducts'],
+                            megagramsChoice: productIdToProductChoiceAndNumViewsInPastMonthMappings[productId][0]!==null,
+                            numViewersInPastMonth: productIdToProductChoiceAndNumViewsInPastMonthMappings[productId][1],
+                            fastestDeliveryTimeInHours: deliveryTimesOfPotentialDiv1Products[productId],
+                            discountsAvailable: productIdToDealAvailableMappings[productId]
+                        };
+                        const scoreOfProduct = this.computeScoreForProduct(productInfo); //the higher the score, the more left it will be placed in div1.
+                        //the products whose scores are in the top 24 will be selected in div1Products
+                        scoresOfPotentialDiv1Products.push({
+                            id: productId,
+                            score: scoreOfProduct
+                        });
+                    }
+
+                    scoresOfPotentialDiv1Products.sort((a,b) => b.score - a.score);
+                    scoresOfPotentialDiv1Products = scoresOfPotentialDiv1Products.slice(0, 24);
+
+                    const newDiv1Products = scoresOfPotentialDiv1Products.map(x=>x.id);
+                    const numDiv1Products = newDiv1Products.length;
+                    if((numDiv1Products/6)%1>0) {
+                        this.maxPageDiv1 = Math.floor(numDiv1Products/6)+1;
+                    }
+                    else {
+                        this.maxPageDiv1 = numDiv1Products/6;
+                    }
+
+                    const response9 = await fetch('http://localhost:8022/getNamesAndPricesOfListOfProducts', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            productIds: newDiv1Products
+                        })
+                    });
+                    if(!response9.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const dictOfNamesAndPricesOfNewDiv1Products = await response9.json();
+                    /*
+                    above is a dict where keys are productIds in newDiv1Products and
+                    values are lists of 2 or 4 elements: first is the product-name,
+                    second is the price of the product with all the default options,
+                    and third and fourth(these two are missing for certain products)
+                    is the price per unit of the product with all default options.
+
+                    an example of a value of this dict is below.
+                    ["Product-Name", "$20", "$2" "oz"]
+                    */
+
+                    const response10 = await fetch('http://localhost:8031/getMainProductImagesOfProducts', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(newDiv1Products)
+                    });
+                    if(!response10.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const mainImagesOfProducts = await response10.json();
+                    /*
+                    above is a dict where each key is productId and each value is the
+                    fetched base-64-string of the main photo of product
+                    */
                 
-                this.div1Products = [
-                    {
-                        /*
-                        productId: "div1Product0",
-                        productImage: milano,
-                        productName: "Pepperidge Farm Milano Cookies, Mint, 10 Packs, 2 Cookies per Pack",
-                        getItAsSoonAs: "Sat, Nov 16",
-                        megagramsChoiceCategory: null,
-                        avgRating: 4.8,
-                        numRatings: 1223,
-                        productPrice: "$7.49",
-                        productPricePerUnit: "$1/Cookie"
-                        */
-                    },
-                ];
-                const numDiv1Products = this.div1Products.length;
-                if((numDiv1Products/6)%1>0) {
-                    this.maxPageDiv1 = Math.floor(numDiv1Products/6)+1;
+                    for(let i=0; i<newDiv1Products.length; i++) {
+                        const currProductId = newDiv1Products[i];
+                        const currProductName = dictOfNamesAndPricesOfNewDiv1Products[currProductId][0];
+                        let currProductPricePerUnit = null;
+                        if(dictOfNamesAndPricesOfNewDiv1Products[currProductId].length==4) {
+                            currProductPricePerUnit = `${dictOfNamesAndPricesOfNewDiv1Products[currProductId][2]}/${dictOfNamesAndPricesOfNewDiv1Products[currProductId][3]}`
+                        }
+                        newDiv1Products[i] = {
+                            productId: currProductId,
+                            productName: currProductName,
+                            avgRating: currProductId in dictOfAvgRatingsAndNumRatingsOfProducts ? dictOfAvgRatingsAndNumRatingsOfProducts[currProductId][0] : 0,
+                            numRatings: currProductId in dictOfAvgRatingsAndNumRatingsOfProducts ? dictOfAvgRatingsAndNumRatingsOfProducts[currProductId][1] : 0,
+                            productImage: `data:image/jpeg;base64,${mainImagesOfProducts[currProductId]}`,
+                            megagramsChoiceCategory: productIdToProductChoiceAndNumViewsInPastMonthMappings[currProductId][0],
+                            getItAsSoonAs: this.formatDeliveryArrivalText(deliveryTimesOfPotentialDiv1Products[currProductId]),
+                            productPrice: dictOfNamesAndPricesOfNewDiv1Products[currProductId][1],
+                            productPricePerUnit: currProductPricePerUnit
+                        };
+                    }
+
+                    this.div1Products = [...newDiv1Products];
                 }
                 else {
-                    this.maxPageDiv1 = numDiv1Products/6;
+                    this.currPageDiv1 = 0;
+                    this.maxPageDiv1 = 0;
                 }
+                
             },
 
             //Customers who viewed items in your browsing history also viewed
             async fetchDiv2Products() {
-                const x=4;
-                if(x==4) {
-                    return;
+                const response = await fetch(`http://localhost:8034/getIdsOfProductsMostViewedByCustomersWhoAlsoViewed/${this.authenticatedUsername}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        idsToInclude: this.idsOfProductsAvailableToUser,
+                    //    idsToExclude: this.idsOfUserBoughtProducts,
+                        //productIdsViewed: this.browsingHistoryOfUser.map(x=>x.productId)
+                        idsToExclude: [],
+                        productIdsViewed: this.idsOfProductsAvailableToUser.slice(0,5)
+                    })
+                });
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
                 }
-            
-                this.div2Products = [
-                    {
-                        /*
-                        productId: "div2Product0",
-                        productImage: milano,
-                        productName: "Pepperidge Farm Milano Cookies, Mint, 10 Packs, 2 Cookies per Pack",
-                        getItAsSoonAs: "Sat, Nov 16",
-                        megagramsChoiceCategory: null,
-                        avgRating: 4.8,
-                        numRatings: 1223,
-                        productPrice: "$7.49",
-                        productPricePerUnit: "$1/Cookie"
-                        */
-                    },
-                ];
-                const numDiv2Products = this.div2Products.length;
-                if((numDiv2Products/6)%1>0) {
-                    this.maxPageDiv2 = Math.floor(numDiv2Products/6)+1;
+                let idsOfDiv2Products = await response.json();
+
+                if(idsOfDiv2Products.length>0) {
+                    idsOfDiv2Products = idsOfDiv2Products.slice(0, 24);
+
+                    const newDiv2Products = idsOfDiv2Products
+                    const numDiv2Products = newDiv2Products.length;
+                    if((numDiv2Products/6)%1>0) {
+                        this.maxPageDiv2 = Math.floor(numDiv2Products/6)+1;
+                    }
+                    else {
+                        this.maxPageDiv2 = numDiv2Products/6;
+                    }
+
+                    const response1 = await fetch('http://localhost:8028/avgAndNumRatingsOfProductsInList', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            country: 'all',
+                            productIds: newDiv2Products
+                        })
+                    });
+                    if(!response1.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const listOfAvgRatingsAndNumRatingsOfProducts = await response1.json();
+                    const dictOfAvgRatingsAndNumRatingsOfProducts = this.getDictForAvgAndNumRatingsOfProducts(listOfAvgRatingsAndNumRatingsOfProducts);
+                    /*
+                    above is a dict where each key is a productId from newDiv2Products, and each value
+                    is a list of two elems: the avgRating and numRatings of that product in that order.
+                    */
+
+                    const response2 = await fetch('http://localhost:8029/getFastestDeliveryTimesForProducts', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            hasPremium: this.hasPremium,
+                            address: this.selectedAddressOfUser,
+                            productIds: newDiv2Products
+                        })
+                    });
+                    if(!response2.ok){
+                        throw new Error('Network response not ok');
+                    }
+                    const deliveryTimesOfPotentialDiv2Products = await response2.json();
+                    /*
+                    above is a dict where keys are productIds in newDiv2Products, whereas values are the fastest
+                    delivery times of these products in hours.
+                    */
+
+                    const response3 = await fetch('http://localhost:8032/api/checkForMegagramProductChoicesAndGetNumViewsInPastMonth', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            productIds: newDiv2Products
+                        })
+                    });
+                    if(!response3.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const productIdToProductChoiceAndNumViewsInPastMonthMappings = await response3.json();
+                    /*
+                    above is a dict where the keys are productIds in newDiv2Products, whereas values
+                    are lists with two elems: the first being a string of the choiceCategory of the product if it is a Megagram-Product-Choice, null
+                    otherwise. the second one is an integer representing the number of views the product-page has received
+                    in the past month
+                    */
+
+                    const response4 = await fetch('http://localhost:8022/getNamesAndPricesOfListOfProducts', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            productIds: newDiv2Products
+                        })
+                    });
+                    if(!response4.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const dictOfNamesAndPricesOfNewDiv2Products = await response4.json();
+                    /*
+                    above is a dict where keys are productIds in newDiv2Products and
+                    values are lists of 2 or 4 elements: first is the product-name,
+                    second is the price of the product with all the default options,
+                    and third and fourth(these two are missing for certain products)
+                    is the price per unit of the product with all default options.
+
+                    an example of a value of this dict is below.
+                    ["Product-Name", "$20", "$2" "oz"]
+                    */
+
+                    const response5 = await fetch('http://localhost:8031/getMainProductImagesOfProducts', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(newDiv2Products)
+                    });
+                    if(!response5.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const mainImagesOfProducts = await response5.json();
+                    /*
+                    above is a dict where each key is productId and each value is the
+                    fetched base-64-string of the main photo of product
+                    */
+                
+                    for(let i=0; i<newDiv2Products.length; i++) {
+                        const currProductId = newDiv2Products[i];
+                        const currProductName = dictOfNamesAndPricesOfNewDiv2Products[currProductId][0];
+                        let currProductPricePerUnit = null;
+                        if(dictOfNamesAndPricesOfNewDiv2Products[currProductId].length==4) {
+                            currProductPricePerUnit = `${dictOfNamesAndPricesOfNewDiv2Products[currProductId][2]}/${dictOfNamesAndPricesOfNewDiv2Products[currProductId][3]}`
+                        }
+                        newDiv2Products[i] = {
+                            productId: currProductId,
+                            productName: currProductName,
+                            avgRating: currProductId in dictOfAvgRatingsAndNumRatingsOfProducts ? dictOfAvgRatingsAndNumRatingsOfProducts[currProductId][0] : 0,
+                            numRatings: currProductId in dictOfAvgRatingsAndNumRatingsOfProducts ? dictOfAvgRatingsAndNumRatingsOfProducts[currProductId][1] : 0,
+                            productImage: `data:image/jpeg;base64,${mainImagesOfProducts[currProductId]}`,
+                            megagramsChoiceCategory: productIdToProductChoiceAndNumViewsInPastMonthMappings[currProductId][0],
+                            getItAsSoonAs: this.formatDeliveryArrivalText(deliveryTimesOfPotentialDiv2Products[currProductId]),
+                            productPrice: dictOfNamesAndPricesOfNewDiv2Products[currProductId][1],
+                            productPricePerUnit: currProductPricePerUnit
+                        };
+                    }
+
+                    this.div2Products = [...newDiv2Products];
                 }
                 else {
-                    this.maxPageDiv2 = numDiv2Products/6;
+                    this.currPageDiv2 = 0;
+                    this.maxPageDiv2 = 0;
                 }
             },
 
@@ -343,28 +724,10 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
                     this.updateCurrencies(currentCurrency, newCurrency);
                 }
             },
-
-            idsOfProductsAvailableToUser(newVal) {
-                if(newVal!==null && this.idsOfUserBoughtProducts!==null && this.browsingHistoryOfUser!==null) {
-                    this.fetchDiv1Products();
-                    this.fetchDiv2Products();
-                    this.productsWereFetched = true;
-                }
-            },
-
-            idsOfUserBoughtProducts(newVal) {
-                if(newVal!==null && this.idsOfProductsAvailableToUser!==null && this.browsingHistoryOfUser!==null) {
-                    this.fetchDiv1Products();
-                    this.fetchDiv2Products();
-                    this.productsWereFetched = true;
-                }
-            },
-
             browsingHistoryOfUser(newVal) {
-                if(!this.productsWereFetched && newVal!==null && this.idsOfProductsAvailableToUser!==null & this.idsOfUserBoughtProducts!==null) {
+                if(newVal!==null) {
                     this.fetchDiv1Products();
                     this.fetchDiv2Products();
-                    this.productsWereFetched = true;
                 }
             }
         }

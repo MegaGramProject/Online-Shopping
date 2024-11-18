@@ -13,10 +13,6 @@
         maxWidth:'90%', lineHeight:'1.5'}">
             <span :style="{padding: '0.2em 0.6em', color: 'white', backgroundColor: 'navy', marginRight:'0.3em', fontSize: '1.1em',  clipPath: 'polygon(0 0, 90% 0, 100% 50%, 90% 100%, 0 100%)'}">Megagram's <span :style="{color:'orange'}">Choice</span></span> in {{ megagramsChoiceCategory }}
         </p>
-        <p v-if="bestsellerCategory!==null" :style="{fontSize: '0.8em', color: 'gray', marginBottom:'0em',
-        maxWidth:'90%', lineHeight:'1.5'}">
-            <b :style="{padding: '0.2em 0.6em', color: 'white', backgroundColor: '#d96404', marginRight:'0.3em', fontSize: '1.1em'}">#1 Best Seller</b> in {{ bestsellerCategory }}
-        </p>
         <p :style="{marginTop: '0.5em'}"><b>{{ productPrice }}</b> <small :style="{color: 'gray'}">{{ productPricePerUnit }}</small></p>
         <div v-if="hasPremium" :style="{display: 'flex', alignItems: 'center', marginTop:'-0.5em'}">
             <img :src="checkmark" :style="{height: '1em', width: '1em', objectFit: 'contain', pointerEvents: 'none'}">
@@ -51,8 +47,7 @@ import checkmark from '@/assets/images/checkmark.png';
             productPricePerUnit: String,
             avgRating: Number,
             numRatings: Number,
-            megagramsChoiceCategory: String,
-            bestsellerCategory: String
+            megagramsChoiceCategory: String
         },
 
         data() {

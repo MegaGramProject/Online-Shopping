@@ -155,7 +155,6 @@ function SimilarCustomerProductsSection({authenticatedUsername, deliveryAreaCoun
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
-                idsToInclude: idsOfProductsAvailableToUser,
                 idsOfUserBoughtProducts: idsOfUserBoughtProducts
             })
         });
