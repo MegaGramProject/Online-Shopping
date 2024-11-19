@@ -51,7 +51,7 @@
         methods: {
             takeUserToCheckoutPage() {
                 if(this.numSelectedCartItems>0) {
-                    window.location.href = "http://localhost:8033/shoppingCheckout";
+                    window.location.href = "http://localhost:8033/checkout";
                 }
             },
 

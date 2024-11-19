@@ -75,18 +75,18 @@ import ledLightStrips from '@/assets/images/ledLightStrips.jpg';
 import redCologne from '@/assets/images/redCologne.jpg';
 import showerCurtains from '@/assets/images/showerCurtains.jpg';
 import toys from '@/assets/images/toys.jpg';
-import CartItems from './components/ShoppingCartPageComponents/CartItems.vue';
-import FooterSection from './components/ShoppingCartPageComponents/FooterSection.vue';
-import ImportantMessages from './components/ShoppingCartPageComponents/ImportantMessages.vue';
-import LeftSidebar from './components/ShoppingCartPageComponents/LeftSidebar.vue';
-import PairWithCart from './components/ShoppingCartPageComponents/PairWithCart.vue';
-import ProductPromotionRect from './components/ShoppingCartPageComponents/ProductPromotionsRect.vue';
-import SecondTopMostSection from './components/ShoppingCartPageComponents/SecondTopMostSection.vue';
-import SubtotalAndProceedToCheckout from './components/ShoppingCartPageComponents/Subtotal&ProceedToCheckout.vue';
-import TopMostSection from './components/ShoppingCartPageComponents/TopMostSection.vue';
-import YourBrowsingHistory from './components/ShoppingCartPageComponents/YourBrowsingHistory.vue';
-import YourItems from './components/ShoppingCartPageComponents/YourItems.vue';
-import './styles.css';
+import CartItems from '../components/ShoppingCartPageComponents/CartItems.vue';
+import FooterSection from '../components/ShoppingCartPageComponents/FooterSection.vue';
+import ImportantMessages from '../components/ShoppingCartPageComponents/ImportantMessages.vue';
+import LeftSidebar from '../components/ShoppingCartPageComponents/LeftSidebar.vue';
+import PairWithCart from '../components/ShoppingCartPageComponents/PairWithCart.vue';
+import ProductPromotionRect from '../components/ShoppingCartPageComponents/ProductPromotionsRect.vue';
+import SecondTopMostSection from '../components/ShoppingCartPageComponents/SecondTopMostSection.vue';
+import SubtotalAndProceedToCheckout from '../components/ShoppingCartPageComponents/Subtotal&ProceedToCheckout.vue';
+import TopMostSection from '../components/ShoppingCartPageComponents/TopMostSection.vue';
+import YourBrowsingHistory from '../components/ShoppingCartPageComponents/YourBrowsingHistory.vue';
+import YourItems from '../components/ShoppingCartPageComponents/YourItems.vue';
+import '../styles.css';
 
     export default {
         data() {
@@ -289,6 +289,7 @@ import './styles.css';
                 let productIdsOfCartItems = new Set();
                 let numItemsInCart = 0;
                 let productIdToOptionsListMappings = {};
+                localStorage.setItem("selectedCartItems", "[]");
                 
                 for(let cartItem of shoppingCartItemsOfUser) {
                     const id = cartItem.id;
@@ -1082,6 +1083,7 @@ import './styles.css';
                 this.numSelectedCartItems = numSelectedCartItems;
                 this.selectedCartItemsPriceSubtotal =
                 currentCurrency + selectedCartItemsPriceSubtotal.toFixed(2).toLocaleString();
+                localStorage.setItem("selectedCartItems", JSON.stringify(newSelectedItems));
             },
 
             selectAllCartItems() {

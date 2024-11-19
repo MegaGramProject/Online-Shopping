@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import NotFoundPage from './NotFoundPage.vue';
-import ShoppingCartPage from './ShoppingCartPage.vue';
+import NotFoundPage from './views/NotFoundPage.vue';
+import ShoppingCartPage from './views/ShoppingCartPage.vue';
+import CheckoutPage from './views/CheckoutPage.vue';
 
 const router = createRouter({
     history: createWebHistory("/"),
@@ -14,6 +15,16 @@ const router = createRouter({
             path: '/onlineShoppingCart/:username',
             name: 'ShoppingCartPage',
             component: ShoppingCartPage
+        },
+        {
+            path: '/checkout',
+            name: 'CheckoutPage(WithoutUsername)',
+            component: CheckoutPage
+        },
+        {
+            path: '/checkout/:username',
+            name: 'CheckoutPage',
+            component: CheckoutPage
         },
         {
             path: '/:pathMatch(.*)*',

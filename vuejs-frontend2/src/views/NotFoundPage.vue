@@ -7,7 +7,7 @@
 
 
 <script>
-import './styles.css';
+import '../styles.css';
 
     export default {
         mounted() {
