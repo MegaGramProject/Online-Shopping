@@ -1,10 +1,10 @@
 <template>
-    <div :style="{background: 'linear-gradient(to right, #0d3d35, #008255)', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    marginLeft:'-0.5em', height: '4em', color: 'white', paddingTop: '0.35em', paddingLeft: '1.6em', paddingRight: '1.6m', marginTop:'-0.5em', paddingBottom:'0.5em'}">
+    <div id="topSection" :style="{background: 'linear-gradient(to right, #0d3d35, #008255)', width: '99.42%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    marginLeft:'-0.5em', height: '3.5em', color: 'white', paddingTop: '0.35em', paddingLeft: '1.6em', paddingRight: '1.6m', marginTop:'-0.5em', paddingBottom:'0.5em'}">
         
         <div @click="takeUserToShoppingMainPage" @mouseenter="toggleIsHoveringOnMegagramDiv" @mouseleave="toggleIsHoveringOnMegagramDiv"
         :style="{ display: 'flex', flexDirection: 'column', alignItems: 'start',
-        cursor: 'pointer', marginBottom:'-0.5em', borderStyle: isHoveringOnMegagramDiv ? 'solid' : '', padding: '0em 0.5em'}">
+        cursor: 'pointer', marginBottom:'-1em', borderStyle: isHoveringOnMegagramDiv ? 'solid' : '', padding: '0em 0.5em'}">
             <b :style="{ fontFamily: 'Billabong', color: 'white', fontSize: '1.88em' }">Megagram</b>
             <div v-if="hasPremium" :style="{ display: 'flex', alignItems: 'center', marginLeft: '-1em', marginTop: '-0.4em' }">
                 <img :src="smileyArrow" :style="{ height: '2.7em', width: '6.9em', pointerEvents: 'none' }" />
@@ -14,13 +14,13 @@
         </div>
 
         <div :style="{display: 'flex', position: 'relative', alignItems: 'center',gap: '0.5em'}">
-            <p @click="toggleSecureCheckoutMiniPopup" :style="{fontSize:'1.8em', cursor: 'pointer'}">Secure Checkout</p>
+            <p @click="toggleSecureCheckoutMiniPopup" :style="{fontSize:'1.7em', cursor: 'pointer'}">Secure Checkout</p>
             <img :src="downwardTriangle" @click="toggleSecureCheckoutMiniPopup" :style="{height: '1.2em', width: '1.2em', cursor: 'pointer'}"/>
             <div v-if="showSecureCheckoutMiniPopup" :style="{backgroundColor: 'white', color: 'black', position: 'absolute',
-            top: '98%', left: '-50%', padding: '1em 1.5em', width: '28em', borderRadius: '0.7em', boxShadow: 'rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px'}">
-                <p :style="{maxWidth:'86%'}">We secure your payment and personal information when you share or save it with us. We don't share payment details with third-party sellers. We don't sell your information to others.</p>
+            top: '98%', left: '-50%', padding: '1em 1.5em', width: '26em', borderRadius: '0.7em', boxShadow: 'rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px'}">
+                <p :style="{maxWidth:'88%'}">We secure your payment and personal information when you share or save it with us. We don't share payment details with third-party sellers. We don't sell your information to others.</p>
             </div>
-            <img v-if="showSecureCheckoutMiniPopup" @click="toggleSecureCheckoutMiniPopup" :src="thinGrayXIcon" :style="{height: '1em', width: '1em', cursor: 'pointer', position: 'absolute', top: '110%', left: '138%'}"/>
+            <img v-if="showSecureCheckoutMiniPopup" @click="toggleSecureCheckoutMiniPopup" :src="thinGrayXIcon" :style="{height: '1em', width: '1em', cursor: 'pointer', position: 'absolute', top: '110%', left: '135%'}"/>
         </div>
 
         <div @click="takeUserToCartPage"  @mouseenter="toggleIsHoveringOnCartDiv" @mouseleave="toggleIsHoveringOnCartDiv"
