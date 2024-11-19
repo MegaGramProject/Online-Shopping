@@ -288,7 +288,7 @@ import './styles.css';
                 const cartItemsInfo = {}; //keys are cart-item-ids(not their productIds) and values are dicts that represent relevant info about the cartItem
                 let productIdsOfCartItems = new Set();
                 let numItemsInCart = 0;
-                const productIdToOptionsListMappings = {};
+                let productIdToOptionsListMappings = {};
                 
                 for(let cartItem of shoppingCartItemsOfUser) {
                     const id = cartItem.id;
@@ -368,8 +368,8 @@ import './styles.css';
 
                     an examples of a value of this dict is:
                     [
-                        [{Size: 'L', Color: 'green'}, "Product-Name", "$35"],
-                        [{Brand: 'Pepsi', 'Sugar Level': 'high'}, "Product-Name", "$20", "$2" "oz"]
+                        [{Size: 0, Color: 2}, "Product-Name", "$35"],
+                        [{Size: 1, 'Color': 0}, "Product-Name", "$20", "$2" "oz"]
                     ]
                     */
 
@@ -590,7 +590,7 @@ import './styles.css';
                         for(let option of Object.keys(options)) {
                             newOptions[option] = optionsForProduct[option][options[option]];
                         }
-                        cartItemsInfo[cartItemIdNotProductId].options = newOptions;
+                        cartItemsInfo[cartItemIdNotProductId].textOptions = newOptions;
                     }
 
                     for(let cartItemIdNotProductId of Object.keys(cartItemsInfo)) {
@@ -601,7 +601,8 @@ import './styles.css';
                             productImage: infoOnCurrentCartItem.productImage,
                             productName: infoOnCurrentCartItem.productName,
                             inStock: infoOnCurrentCartItem.inStock,
-                            options: infoOnCurrentCartItem.options,
+                            options: infoOnCurrentCartItem.textOptions,
+                            optionsWithoutText: infoOnCurrentCartItem.options,
                             productPrice: infoOnCurrentCartItem.productPrice,
                             productPricePerUnit: infoOnCurrentCartItem.productPricePerUnit,
                             getItAsSoonAs: infoOnCurrentCartItem.getItAsSoonAs,
@@ -643,7 +644,7 @@ import './styles.css';
                     })
                 });
                 if(!response11.ok) {
-                 //   throw new Error('Network response not ok');
+                    throw new Error('Network response not ok');
                 }
                 let idsOfProductsAvailableToUser = await response11.json();
                 idsOfProductsAvailableToUser = idsOfProductsAvailableToUser.map(x=>x.productId);
@@ -677,77 +678,316 @@ import './styles.css';
                     throw new Error('Network response not ok');
                 }
                 this.idsOfUserBoughtProducts = await response14.json();
-
-                //fetch items saved for later
-                this.itemsSavedForLater = [
-                    {
-                        id: 0,
-                        productId: "a",
-                        productImage: showerCurtains,
-                        productName: "Gibelle Grey Marble Shower Curtain Set, Abstract Silver…",
-                        category: "Shower curtains",
-                        productPrice: "$23.99",
-                        numBuyersInPastMonth: 55,
-                        inStock: true,
-                        options: {
-                            Color: 'Grey',
-                            Size: '71"W x 71"L (Pack of 1)'
-                        }
-                    },
-                    {
-                        id: 1,
-                        productId: "b",
-                        productImage: ledLightStrips,
-                        productName: "Tenmiro 50ft LED Strip Lights, RGB LED Smart Music Sync…",
-                        category: "LED strip lights",
-                        productPrice: "$14.99",
-                        numBuyersInPastMonth: 1024,
-                        inStock: true,
-                        options: {
-                            Size: '50FT',
-                        }
-                    },
-                    {
-                        id: 2,
-                        productId: "c",
-                        productImage: blueCologne,
-                        productName: "Davidoff Cool Water Edt Spray for Men, 4.2 oz",
-                        category: "Men's cologne",
-                        productPrice: "$44.99",
-                        numBuyersInPastMonth: 0,
-                        inStock: false,
-                        options: {}
-                    },
-                    {
-                        id: 3,
-                        productId: "d",
-                        productImage: redCologne,
-                        productName: "RawChemistry For Him, Pheromone Infused Cologne...",
-                        category: "Men's cologne",
-                        productPrice: "$31.50",
-                        numBuyersInPastMonth: 5350,
-                        inStock: true,
-                        options: {
-                            Size: '1 Fl Oz (Pack of 1)'
-                        }
-                    },
-                ];
-
-                const response15 = await fetch(`http://localhost:8034/getBrowsingHistoryOfUserInChronOrder/${this.authenticatedUsername}`);
+                
+                const response15 = await fetch(`http://localhost:8035/getAllItemsSavedForLaterOfUser/${this.authenticatedUsername}`);
                 if(!response15.ok) {
                     throw new Error('Network response not ok');
                 }
-                let browsingHistoryOfUser = await response15.json();
+                let itemsSavedForLaterByUser = await response15.json();
 
-                const response16 = await fetch('http://localhost:8031/getMainProductImagesOfProducts', {
+                const savedItemsInfo = {};
+                let productIdsOfSavedItems = new Set();
+                productIdToOptionsListMappings = {};
+                
+                for(let savedItem of itemsSavedForLaterByUser) {
+                    const id = savedItem.id;
+                    const productId = savedItem.productId;
+                    const options = savedItem.options;
+        
+                    productIdsOfSavedItems.add(productId);
+
+                    if(!(productId in productIdToOptionsListMappings)) {
+                        productIdToOptionsListMappings[productId] = [options]
+                    }
+                    else {
+                        productIdToOptionsListMappings[productId].push(options);
+                    }
+
+                    savedItemsInfo[id] = {
+                        productId: productId,
+                        options: options
+                    }
+                }
+                productIdsOfSavedItems = [...productIdsOfSavedItems];
+
+                if(itemsSavedForLaterByUser.length>0) {
+                    const response16 = await fetch('http://localhost:8022/getNamesAndSpecificPricesOfGivenProducts', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            productIdToOptionsListMappings: productIdToOptionsListMappings
+                        })
+                    });
+                    if(!response16.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const dictOfNamesAndPricesOfSavedItems = await response16.json();
+                    /*
+                    above is a dict where keys are productIds of itemsSavedForLater and
+                    values are lists of lists of 3 or 5 elements: first is the options of that product,
+                    second is the product-name, third is the price of the product with
+                    the given options, and fourth & fifth(these two are missing for certain products)
+                    are the price per unit of the product with the given options.
+
+                    an examples of a value of this dict is:
+                    [
+                        [{Size: 0, Color: 2}, "Product-Name", "$35"],
+                        [{Size: 1, 'Color': 0}, "Product-Name", "$20", "$2" "oz"]
+                    ]
+                    */
+
+                    for(let savedItemIdNotProductId of Object.keys(savedItemsInfo)) {
+                        const productId = savedItemsInfo[savedItemIdNotProductId].productId;
+                        const options = savedItemsInfo[savedItemIdNotProductId].options;
+                        const allNamesAndPricesOfCurrProductId = dictOfNamesAndPricesOfSavedItems[productId];
+                        let indexCorrespondingToCurrSavedItemOptions = 0;
+                        for(let i=0; i<allNamesAndPricesOfCurrProductId.length; i++) {
+                            if(this.areDictsEqual(allNamesAndPricesOfCurrProductId[i][0],options)) {
+                                indexCorrespondingToCurrSavedItemOptions = i;
+                                break;
+                            }
+                        }
+                        savedItemsInfo[savedItemIdNotProductId].productName = allNamesAndPricesOfCurrProductId[indexCorrespondingToCurrSavedItemOptions][1];
+                        savedItemsInfo[savedItemIdNotProductId].productPrice =  allNamesAndPricesOfCurrProductId[indexCorrespondingToCurrSavedItemOptions][2];
+                        if(allNamesAndPricesOfCurrProductId[indexCorrespondingToCurrSavedItemOptions].length>3) {
+                            savedItemsInfo[savedItemIdNotProductId].productPricePerUnit = allNamesAndPricesOfCurrProductId[indexCorrespondingToCurrSavedItemOptions][3]+"/"+allNamesAndPricesOfCurrProductId[indexCorrespondingToCurrSavedItemOptions][4];
+                        }
+                        else {
+                            savedItemsInfo[savedItemIdNotProductId].productPricePerUnit = null;
+                        }
+                    }
+
+                    const response17 = await fetch('http://localhost:8026/getNumProductsLeftForListOfProducts', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(productIdsOfSavedItems)
+                    });
+                    if(!response17.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const numProductsLeftForSavedItems = await response17.json();
+
+                    const response18 = await fetch('http://localhost:8030/getPairsOfProductIdsAndOptionsOfThoseInStock', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            numProductsLeftForListOfProducts: numProductsLeftForSavedItems,
+                            productIdToOptionsListMappings: productIdToOptionsListMappings
+                        })
+                    });
+                    if(!response18.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    let productIdToInStockOptionsMappings = await response18.json();
+                    /*
+                    above is a dict where keys are productIds of saved-items and values are
+                    lists of options of the product that are in the saved-items and in-stock.
+                    */
+
+                    for(let savedItemIdNotProductId of Object.keys(savedItemsInfo)) {
+                        const productId = savedItemsInfo[savedItemIdNotProductId].productId;
+                        const options = savedItemsInfo[savedItemIdNotProductId].options;
+                        savedItemsInfo[savedItemIdNotProductId].inStock = productIdToInStockOptionsMappings[productId].some(
+                            (opts) => this.areDictsEqual(opts, options)
+                        );
+                    }
+
+                    const response19 = await fetch("http://localhost:8022/getCategoriesOfManyProducts", {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            productIds: productIdsOfSavedItems
+                        })
+                    });
+                    if(!response19.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const productIdToCategoryMappings = await response19.json();
+
+                    for(let savedItemIdNotProductId of Object.keys(savedItemsInfo)) {
+                        const productId = savedItemsInfo[savedItemIdNotProductId].productId;
+                        savedItemsInfo[savedItemIdNotProductId].category = productIdToCategoryMappings[productId] ?? 'Couldn\'t Fetch Category';
+                    }
+
+                    const response20 = await fetch('http://localhost:8022/getOptionTextsForManyProducts', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            productIds: productIdsOfSavedItems
+                        })
+                    });
+                    if(!response20.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const productIdToOptionTextsMappings = await response20.json();
+                    /*
+                        above is a dict where keys are productIds of saved-items and values are
+                        the option-texts available for that product.
+                        i.e: {
+                            "productId0": {
+                                "size": ["S", "M", "L", "XL"],
+                                "color": ["red", "green", "blue", true]
+                            },
+                            "productId1": {
+                                ...
+                            },
+                            ...
+                        }
+                        this dict is important because without it,
+                        the options field of savedItemsInfo will be remain as something like
+                        {"size": 1, "color": 0} and the user will be confused as to what the options
+                        of the product actually are.
+                        1 and 0 in this example refer to "M" and "red" respectively
+                        (these numbers represent indices, and aren't the texts themselves)
+                    */
+
+                    const productIdToTextOptionsListMappings = {};
+                    for(let savedItemIdNotProductId of Object.keys(savedItemsInfo)) {
+                        const productId = savedItemsInfo[savedItemIdNotProductId].productId;
+                        const options = savedItemsInfo[savedItemIdNotProductId].options;
+                        const optionsForProduct = productIdToOptionTextsMappings[productId];
+                        
+                        const textOptions = {};
+                        for(let option of Object.keys(options)) {
+                            textOptions[option] = optionsForProduct[option][options[option]];
+                        }
+                        savedItemsInfo[savedItemIdNotProductId].textOptions = textOptions;
+
+                        if(productId in productIdToTextOptionsListMappings) {
+                            productIdToTextOptionsListMappings[productId].push(textOptions);
+                        }
+                        else {
+                            productIdToTextOptionsListMappings[productId] = [textOptions];
+                        }
+                    }
+
+                    const response21 = await fetch("http://localhost:8028/getNumBuyersInPastMonthForSpecificOptionsOfManyProducts", {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            productIdToTextOptionsListMappings: productIdToTextOptionsListMappings
+                        })
+                    });
+                    if(!response21.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const numBuyersInPastMonthForSavedItems = await response21.json();
+                    /*
+                    above is a dict where keys are productIds of items in savedItemsForLater
+                    and values are nested lists, each with 2 elems.
+                    The first elem is the specific text-options of the product and the second is the num buyers in past month of that specific
+                    text-options of the product. Product-Ids/options that have no buyers in the past month are not included
+                    */
+
+                    for(let savedItemIdNotProductId of Object.keys(savedItemsInfo)) {
+                        const productId = savedItemsInfo[savedItemIdNotProductId].productId;
+                        const textOptions = savedItemsInfo[savedItemIdNotProductId].textOptions;
+                        const numBuyersInPastMonthForCurrProductId = numBuyersInPastMonthForSavedItems[productId] ?? null;
+                        if(numBuyersInPastMonthForCurrProductId==null) {
+                            savedItemsInfo[savedItemIdNotProductId].numBuyersInPastMonth = 0;
+                        }
+                        else {
+                            let hasNumBuyersBeenFound = false;
+                            for(let i=0; i<numBuyersInPastMonthForCurrProductId.length; i++) {
+                                if(this.areDictsEqual(textOptions, numBuyersInPastMonthForCurrProductId[i][0])) {
+                                    savedItemsInfo[savedItemIdNotProductId].numBuyersInPastMonth = numBuyersInPastMonthForCurrProductId[i][1];
+                                    hasNumBuyersBeenFound = true;
+                                    break;
+                                }
+                            }
+                            if(!hasNumBuyersBeenFound) {
+                                savedItemsInfo[savedItemIdNotProductId].numBuyersInPastMonth = 0;
+                            }
+                        }
+                    }
+
+                    const response22a = await fetch("http://localhost:8022/forEachProductIdInListGetNamesOfTheOptionThatHasImages", {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            productIds: productIdsOfSavedItems
+                        })
+                    });
+                    if(!response22a.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const productIdToImageOptionMappings = await response22a.json();
+                    /*
+                    above is a dict where keys are productIds of itemsSavedForLater, whereas
+                    values are the option-names that have images.
+                    Each productId has either 1 option that has images, or 0(this is for the products
+                    who sellers didn't provide any options; i.e there is only 1 version of that product
+                    available to buy; these products still have images tho).
+
+                    An example of key-value pair in the dict: "dfe93de6-1eac-4ea7-ba9b-cec5528325a1"-> "Color"
+                    */
+
+                    const response22b = await fetch('http://localhost:8031/getSpecificImagesOfProductOptionsForMany', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            productIdToOptionsListMappingsAsJE: productIdToOptionsListMappings,
+                            productIdToImageOptionMappings: productIdToImageOptionMappings
+                        })
+                    });
+                    if(!response22b.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const specificImagesOfProductOptions = await response22b.json();
+                    /*
+                    above is a dict where each key is productId and each value a nested-list.
+                    each nested-list has two-elements: the first being the specific options of the product,
+                    and the second being the fetched base-64-string of the main-photo of those specific options of
+                    the product
+                    */
+
+                    for(let savedItemIdNotProductId of Object.keys(savedItemsInfo)) {
+                        const productId = savedItemsInfo[savedItemIdNotProductId].productId;
+                        const options =  savedItemsInfo[savedItemIdNotProductId].options;
+                        const specificImagesOfCurrProductId = specificImagesOfProductOptions[productId];
+                        for(let i=0; i<specificImagesOfCurrProductId.length; i++) {
+                            if(this.areDictsEqual(options, specificImagesOfCurrProductId[i][0])) {
+                                savedItemsInfo[savedItemIdNotProductId].productImage = `data:image/jpeg;base64,${specificImagesOfCurrProductId[i][1]}`;
+                                break;
+                            }
+                        }
+                    }
+
+                    itemsSavedForLaterByUser = [];
+                    for(let savedItemIdNotProductId of Object.keys(savedItemsInfo)) {
+                        const currSavedItem = savedItemsInfo[savedItemIdNotProductId];
+                        itemsSavedForLaterByUser.push({
+                            id: savedItemIdNotProductId,
+                            productId: currSavedItem.productId,
+                            productImage: currSavedItem.productImage,
+                            productName: currSavedItem.productName,
+                            category: currSavedItem.category,
+                            productPrice: currSavedItem.productPrice,
+                            productPricePerUnit: currSavedItem.productPricePerUnit,
+                            numBuyersInPastMonth: currSavedItem.numBuyersInPastMonth,
+                            inStock: currSavedItem.inStock,
+                            options: currSavedItem.textOptions,
+                            optionsWithoutText: currSavedItem.options,
+                        });
+                    }
+                    this.itemsSavedForLater = [...itemsSavedForLaterByUser];
+                }
+
+                const response23 = await fetch(`http://localhost:8034/getBrowsingHistoryOfUserInChronOrder/${this.authenticatedUsername}`);
+                if(!response23.ok) {
+                    throw new Error('Network response not ok');
+                }
+                let browsingHistoryOfUser = await response23.json();
+
+                const response24 = await fetch('http://localhost:8031/getMainProductImagesOfProducts', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(browsingHistoryOfUser.map(x=>x.product_id))
                 });
-                if(!response16.ok) {
+                if(!response24.ok) {
                     throw new Error('Network response not ok');
                 }
-                const mainImagesOfProductsToPairWithCart = await response16.json();
+                const mainImagesOfProductsToPairWithCart = await response24.json();
 
                 browsingHistoryOfUser = browsingHistoryOfUser.map(x=>{
                     x.productId = x.product_id;
@@ -818,6 +1058,7 @@ import './styles.css';
                     productName: itemInfo.productName,
                     inStock: true,
                     options: itemInfo.options,
+                    optionsWithoutText: itemInfo.optionsWithoutText,
                     productPrice: itemInfo.productPrice,
                     getItAsSoonAs: getItAsSoonAs,
                     quantity: 1,
@@ -916,22 +1157,37 @@ import './styles.css';
                 if(!response.ok) {
                     throw new Error('Network response not ok');
                 }
-
                 const cartItemToSaveForLater = this.itemsOfCart[info.index];
                 this.numItemsInCart-=cartItemToSaveForLater.quantity;
-                cartItemToSaveForLater.hasBeenSavedForLater = true;
+
+                const response1 = await fetch('http://localhost:8035/addItemSavedForLater', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        username: this.authenticatedUsername,
+                        productId: cartItemToSaveForLater.productId,
+                        options: cartItemToSaveForLater.optionsWithoutText
+                    })
+                });
+                if(!response1.ok) {
+                    throw new Error('Network response not ok');
+                }
+                let newItemSavedForLaterId = await response1.json();
+                newItemSavedForLaterId = newItemSavedForLaterId.id;
 
                 this.itemsSavedForLater = [...this.itemsSavedForLater, {
-                        id: Math.floor(Math.random()*5000)+140, //later fetch the id of the newly created saved-for-later-item
+                        id: newItemSavedForLaterId,
                         productId: cartItemToSaveForLater.productId,
                         productImage: cartItemToSaveForLater.productImage,
                         productName: cartItemToSaveForLater.productName,
-                        category: "Random category", //later fetch
+                        category: "Newly Saved for Later",
                         productPrice: cartItemToSaveForLater.productPrice,
-                        numBuyersInPastMonth: 550, //later fetch
+                        numBuyersInPastMonth: -100,
                         inStock: cartItemToSaveForLater.inStock,
-                        options: cartItemToSaveForLater.options
+                        options: cartItemToSaveForLater.options,
+                        optionsWithoutText: cartItemToSaveForLater.optionsWithoutText
                     }];
+                cartItemToSaveForLater.hasBeenSavedForLater = true;
 
             },
 
@@ -953,32 +1209,67 @@ import './styles.css';
                 }
             },
 
-            deleteSavedItem(idOfSavedItemToDelete) {
+            async deleteSavedItem(idOfSavedItemToDelete) {
+                const response = await fetch(`http://localhost:8035/deleteItemSavedForLater/${idOfSavedItemToDelete}`, {
+                    method: 'DELETE'
+                });
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
                 this.itemsSavedForLater = this.itemsSavedForLater.filter(x=> x.id!==idOfSavedItemToDelete);
             },
 
-            moveSavedItemToCart(idOfSavedItemToMoveToCart) {
+            async moveSavedItemToCart(idOfSavedItemToMoveToCart) {
+                const response = await fetch(`http://localhost:8035/deleteItemSavedForLater/${idOfSavedItemToMoveToCart}`, {
+                    method: 'DELETE'
+                });
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+                let savedItemToMoveToCart = {};
                 this.itemsSavedForLater = this.itemsSavedForLater.filter(savedItem=> {
-                    if(savedItem.id==idOfSavedItemToMoveToCart) {
-                        this.itemsOfCart.push({
-                            id: Math.floor(Math.random()*5000)+140, //later fetch the id of the newly created shopping-cart-item
-                            productId: savedItem.productId,
-                            productImage: savedItem.productImage,
-                            productName: savedItem.productName,
-                            inStock: savedItem.inStock,
-                            options: savedItem.options,
-                            productPrice: savedItem.productPrice,
-                            getItAsSoonAs: "Wed, Nov 12", //later fetch
-                            quantity: 1,
-                            dealsAvailable: true, //later fetch
-                            megagramChoiceCategory: null, //later fetch
-                            isSelected: false,
-                            hasBeenRemoved: false,
-                            hasBeenSavedForLater: false
-                        });
+                    if(savedItem.id===idOfSavedItemToMoveToCart) {
+                        savedItemToMoveToCart = savedItem;
                         return false;
                     }
                     return true;
+                });
+                console.log(savedItemToMoveToCart);
+                const escapedOptions = JSON.stringify(savedItemToMoveToCart.optionsWithoutText).replace(/"/g, '\\"');
+
+                const response1 = await fetch("http://localhost:8029/graphql", {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        query: `mutation {
+                            addShoppingCartItem(username: "${this.authenticatedUsername}", productId: "${savedItemToMoveToCart.productId}", quantity: 1, options: "${escapedOptions}") {
+                                id
+                            }
+                        }`
+                    })
+                });
+                if(!response1.ok) {
+                    throw new Error('Network response not ok');
+                }
+                let newlyAddedShoppingCartItemId = await response1.json();
+                newlyAddedShoppingCartItemId = newlyAddedShoppingCartItemId.data.addShoppingCartItem.id;
+
+                this.itemsOfCart.push({
+                    id: newlyAddedShoppingCartItemId,
+                    productId: savedItemToMoveToCart.productId,
+                    productImage: savedItemToMoveToCart.productImage,
+                    productName: savedItemToMoveToCart.productName,
+                    inStock: savedItemToMoveToCart.inStock,
+                    options: savedItemToMoveToCart.options,
+                    optionsWithoutText: savedItemToMoveToCart.optionsWithoutText,
+                    productPrice: savedItemToMoveToCart.productPrice,
+                    getItAsSoonAs: "",
+                    quantity: 1,
+                    dealsAvailable: false,
+                    megagramChoiceCategory: null,
+                    isSelected: false,
+                    hasBeenRemoved: false,
+                    hasBeenSavedForLater: false
                 });
             },
 
@@ -1019,10 +1310,12 @@ import './styles.css';
                 newlyAddedShoppingCartItemId = newlyAddedShoppingCartItemId.data.addShoppingCartItem.id;
                 itemInfo.id = newlyAddedShoppingCartItemId;
 
+                const defaultOptionsOfItemWithText = {};
                 for(let option of Object.keys(optionsOfProduct)) {
-                    defaultOptionsOfItem[option] = optionsOfProduct[option][0];
+                    defaultOptionsOfItemWithText[option] = optionsOfProduct[option][0];
                 }
-                itemInfo.options = defaultOptionsOfItem;
+                itemInfo.options = defaultOptionsOfItemWithText;
+                itemInfo.optionsWithoutText = defaultOptionsOfItem;
 
                 this.itemsOfCart.push({
                     id: itemInfo.id,
@@ -1031,6 +1324,7 @@ import './styles.css';
                     productName: itemInfo.productName,
                     inStock: itemInfo.inStock,
                     options: itemInfo.options,
+                    optionsWithoutText: itemInfo.optionsWithoutText,
                     productPrice: itemInfo.productPrice,
                     getItAsSoonAs: null,
                     quantity: 1,

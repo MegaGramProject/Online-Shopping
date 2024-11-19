@@ -256,7 +256,7 @@ public class GoogleCloudStorageService
                 {
                     continue;
                 }
-
+                
                 string nameOfOptionWithImages = productIdToImageOptionMappings[productId];
                 List<Dictionary<string, int>> listOfGivenOptionsForProduct = productIdToOptionsListMappings[productId];
 

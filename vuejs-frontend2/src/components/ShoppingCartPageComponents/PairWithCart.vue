@@ -91,10 +91,13 @@ import SingleItemToPairWithCart from './SingleItemToPairWithCart.vue';
                 newlyAddedShoppingCartItemId = newlyAddedShoppingCartItemId.data.addShoppingCartItem.id;
                 itemInfo.id = newlyAddedShoppingCartItemId;
                 
+                const defaultOptionsOfItemWithText = {};
                 for(let option of Object.keys(optionsOfProduct)) {
-                    defaultOptionsOfItem[option] = optionsOfProduct[option][0];
+                    defaultOptionsOfItemWithText[option] = optionsOfProduct[option][0];
                 }
-                itemInfo.options = defaultOptionsOfItem;
+                itemInfo.options = defaultOptionsOfItemWithText;
+                itemInfo.optionsWithoutText = defaultOptionsOfItem;
+
                 this.itemsToPairWithCart = this.itemsToPairWithCart.filter(
                     x=> {
                         return x.productId!==itemInfo.productId;

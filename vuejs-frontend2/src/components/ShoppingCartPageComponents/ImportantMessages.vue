@@ -231,7 +231,7 @@ import warningSign from '@/assets/images/warningSign.png';
                 this.savedItemsPriceIncreases = [...savedItemsPriceIncreases];
                 this.unavailableProducts = [...unavailableProducts];
 
-                if(this.updatesToCartAndSavedItems.length>0) {
+                if(updatesToCartAndSavedItems.length>0) {
                     setTimeout(this.listenForVisibilityChange, 2000);
                 }
             },

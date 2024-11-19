@@ -9,13 +9,13 @@
             :style="{color: currentSection==='saved-items' ? '#3c8bb5' : '', cursor: 'pointer',
             fontWeight: currentSection==='saved-items' ? 'bold' : '', fontSize: currentSection==='saved-items' ? '0.93em' : '0.85em',
             textDecoration: currentSection==='saved-items' ? 'underline' : ''}">
-                Saved for later (4 items)
+                Saved for later ({{itemsSavedForLater.length}} items)
             </p>
             <p @click="showItemsToBuyAgain"
             :style="{color: currentSection==='buy-again' ? '#3c8bb5' : '', cursor: 'pointer',
             fontWeight: currentSection==='buy-again' ? 'bold' : '', fontSize: currentSection==='buy-again' ? '0.93em' : '0.85em',
             textDecoration: currentSection==='buy-again' ? 'underline' : ''}">
-                Buy Again (3 items)
+                Buy Again {{ numItemsToBuyAgainText }}
             </p>
         </div>
 
@@ -36,28 +36,28 @@
                     :productName="itemsSavedForLater[rowStartIndex].productName" :inStock="itemsSavedForLater[rowStartIndex].inStock"
                     :hasPremium="hasPremium" :options="itemsSavedForLater[rowStartIndex].options" :numBuyersInPastMonth="itemsSavedForLater[rowStartIndex].numBuyersInPastMonth"
                     :productPrice="itemsSavedForLater[rowStartIndex].productPrice" :id="itemsSavedForLater[rowStartIndex].id"
-                    @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart"
+                    @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart" :productPricePerUnit="itemsSavedForLater[rowStartIndex].productPricePerUnit"
                     />
                     <SingleItemSavedForLater v-if="rowStartIndex+1<itemsSavedForLater.length && (currentCategoryOfSavedItems.length==0 || itemsSavedForLater[rowStartIndex+1].category===currentCategoryOfSavedItems)"
                     :productId="itemsSavedForLater[rowStartIndex+1].productId" :productImage="itemsSavedForLater[rowStartIndex+1].productImage"
                     :productName="itemsSavedForLater[rowStartIndex+1].productName" :inStock="itemsSavedForLater[rowStartIndex+1].inStock"
                     :hasPremium="hasPremium" :options="itemsSavedForLater[rowStartIndex+1].options" :numBuyersInPastMonth="itemsSavedForLater[rowStartIndex+1].numBuyersInPastMonth"
                     :productPrice="itemsSavedForLater[rowStartIndex+1].productPrice" :id="itemsSavedForLater[rowStartIndex+1].id"
-                    @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart"
+                    @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart" :productPricePerUnit="itemsSavedForLater[rowStartIndex+1].productPricePerUnit"
                     />
                     <SingleItemSavedForLater v-if="rowStartIndex+2<itemsSavedForLater.length && (currentCategoryOfSavedItems.length==0 || itemsSavedForLater[rowStartIndex+2].category===currentCategoryOfSavedItems)"
                     :productId="itemsSavedForLater[rowStartIndex+2].productId" :productImage="itemsSavedForLater[rowStartIndex+2].productImage"
                     :productName="itemsSavedForLater[rowStartIndex+2].productName" :inStock="itemsSavedForLater[rowStartIndex+2].inStock"
                     :hasPremium="hasPremium" :options="itemsSavedForLater[rowStartIndex+2].options" :numBuyersInPastMonth="itemsSavedForLater[rowStartIndex+2].numBuyersInPastMonth"
                     :productPrice="itemsSavedForLater[rowStartIndex+2].productPrice" :id="itemsSavedForLater[rowStartIndex+2].id"
-                    @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart"
+                    @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart" :productPricePerUnit="itemsSavedForLater[rowStartIndex+2].productPricePerUnit"
                     />
                     <SingleItemSavedForLater v-if="rowStartIndex+3<itemsSavedForLater.length && (currentCategoryOfSavedItems.length==0 || itemsSavedForLater[rowStartIndex+3].category===currentCategoryOfSavedItems)"
                     :productId="itemsSavedForLater[rowStartIndex+3].productId" :productImage="itemsSavedForLater[rowStartIndex+3].productImage"
                     :productName="itemsSavedForLater[rowStartIndex+3].productName" :inStock="itemsSavedForLater[rowStartIndex+3].inStock"
                     :hasPremium="hasPremium" :options="itemsSavedForLater[rowStartIndex+3].options" :numBuyersInPastMonth="itemsSavedForLater[rowStartIndex+3].numBuyersInPastMonth"
                     :productPrice="itemsSavedForLater[rowStartIndex+3].productPrice" :id="itemsSavedForLater[rowStartIndex+3].id"
-                    @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart"
+                    @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart" :productPricePerUnit="itemsSavedForLater[rowStartIndex+3].productPricePerUnit"
                     />
                 </div>
 
@@ -69,28 +69,28 @@
                         :productName="itemsSavedForLater[rowStartIndex].productName" :inStock="itemsSavedForLater[rowStartIndex].inStock"
                         :hasPremium="hasPremium" :options="itemsSavedForLater[rowStartIndex].options" :numBuyersInPastMonth="itemsSavedForLater[rowStartIndex].numBuyersInPastMonth"
                         :productPrice="itemsSavedForLater[rowStartIndex].productPrice" :id="itemsSavedForLater[rowStartIndex].id"
-                        @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart"
+                        @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart" :productPricePerUnit="itemsSavedForLater[rowStartIndex].productPricePerUnit"
                         />
                         <SingleItemSavedForLater v-if="rowStartIndex+1<itemsSavedForLater.length && itemsSavedForLater[rowStartIndex+1].category!==currentCategoryOfSavedItems"
                         :productId="itemsSavedForLater[rowStartIndex+1].productId" :productImage="itemsSavedForLater[rowStartIndex+1].productImage"
                         :productName="itemsSavedForLater[rowStartIndex+1].productName" :inStock="itemsSavedForLater[rowStartIndex+1].inStock"
                         :hasPremium="hasPremium" :options="itemsSavedForLater[rowStartIndex+1].options" :numBuyersInPastMonth="itemsSavedForLater[rowStartIndex+1].numBuyersInPastMonth"
                         :productPrice="itemsSavedForLater[rowStartIndex+1].productPrice" :id="itemsSavedForLater[rowStartIndex+1].id"
-                        @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart"
+                        @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart" :productPricePerUnit="itemsSavedForLater[rowStartIndex+1].productPricePerUnit"
                         />
                         <SingleItemSavedForLater v-if="rowStartIndex+2<itemsSavedForLater.length && itemsSavedForLater[rowStartIndex+2].category!==currentCategoryOfSavedItems"
                         :productId="itemsSavedForLater[rowStartIndex+2].productId" :productImage="itemsSavedForLater[rowStartIndex+2].productImage"
                         :productName="itemsSavedForLater[rowStartIndex+2].productName" :inStock="itemsSavedForLater[rowStartIndex+2].inStock"
                         :hasPremium="hasPremium" :options="itemsSavedForLater[rowStartIndex+2].options" :numBuyersInPastMonth="itemsSavedForLater[rowStartIndex+2].numBuyersInPastMonth"
                         :productPrice="itemsSavedForLater[rowStartIndex+2].productPrice" :id="itemsSavedForLater[rowStartIndex+2].id"
-                        @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart"
+                        @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart" :productPricePerUnit="itemsSavedForLater[rowStartIndex+2].productPricePerUnit"
                         />
                         <SingleItemSavedForLater v-if="rowStartIndex+3<itemsSavedForLater.length && itemsSavedForLater[rowStartIndex+3].category!==currentCategoryOfSavedItems"
                         :productId="itemsSavedForLater[rowStartIndex+3].productId" :productImage="itemsSavedForLater[rowStartIndex+3].productImage"
                         :productName="itemsSavedForLater[rowStartIndex+3].productName" :inStock="itemsSavedForLater[rowStartIndex+3].inStock"
                         :hasPremium="hasPremium" :options="itemsSavedForLater[rowStartIndex+3].options" :numBuyersInPastMonth="itemsSavedForLater[rowStartIndex+3].numBuyersInPastMonth"
                         :productPrice="itemsSavedForLater[rowStartIndex+3].productPrice" :id="itemsSavedForLater[rowStartIndex+3].id"
-                        @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart"
+                        @deleteSavedItem="deleteSavedItem" @moveSavedItemToCart="moveSavedItemToCart" :productPricePerUnit="itemsSavedForLater[rowStartIndex+3].productPricePerUnit"
                         />
                     </div>
                 </template>
@@ -163,7 +163,8 @@ import SingleItemSavedForLater from './SingleItemSavedForLater.vue';
                 itemsAlreadyBought: [],
                 savedItemCountPerCategory: {},
                 indicesOfRowStartsOfSavedItems: [],
-                haveFetchedItemsAlreadyBought: false
+                haveFetchedItemsAlreadyBought: false,
+                numItemsToBuyAgainText: ""
             }
         },
 
@@ -175,7 +176,8 @@ import SingleItemSavedForLater from './SingleItemSavedForLater.vue';
             async showItemsToBuyAgain() {
                 this.currentSection = "buy-again";
                 if(!this.haveFetchedItemsAlreadyBought) {
-                    //fetch items already bought by user
+                    this.haveFetchedItemsAlreadyBought = true;
+
                     const response = await fetch(`http://localhost:8028/getProductIdsOfPastOrdersOfUserInOrder/${this.authenticatedUsername}`);
                     if(!response.ok) {
                         throw new Error('Network response not ok');
@@ -251,7 +253,15 @@ import SingleItemSavedForLater from './SingleItemSavedForLater.vue';
                         });
                     }
 
-                    this.haveFetchedItemsAlreadyBought = true;
+
+                    let numItemsToBuyAgainText = "(" + this.itemsAlreadyBought.length;
+                    if(this.itemsAlreadyBought.length==1) {
+                        numItemsToBuyAgainText+= " item)";
+                    }
+                    else {
+                        numItemsToBuyAgainText+= " items)";
+                    }
+                    this.numItemsToBuyAgainText = numItemsToBuyAgainText;
                 }
             },
 

@@ -4,12 +4,18 @@ import java.util.HashMap;
 
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+
 @Document(collection = "itemsSavedForLater")
+@CompoundIndex(name = "unique_user_product_options_combo", def = "{'username': 1, 'productId': 1, 'options': 1}", unique = true)
 public class ItemSavedForLater {
 
     @Id
+    @JsonSerialize(using = ToStringSerializer.class)
     private ObjectId id;
     private String username;
     private String productId;

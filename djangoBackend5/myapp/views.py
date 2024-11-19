@@ -6,7 +6,10 @@ from django.db.models import Count, Avg
 from .serializers import PastOrderSerializer, ProductRatingAndReviewSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-
+from datetime import datetime, timedelta
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from django.db.models import F
 
 
 @api_view(['GET'])
@@ -105,6 +108,59 @@ def getProductIdsOfPastOrdersOfUserInOrder(request, username):
     )
 
     return Response(productIdsOfPastOrdersOfUserInOrder, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def getNumBuyersInPastMonthForSpecificOptionsOfManyProducts(request):
+    try:
+        productIdToTextOptionsListMappings = request.data.get('productIdToTextOptionsListMappings')
+        if not productIdToTextOptionsListMappings:
+            return Response({"error": "Invalid input: Missing productIdToTextOptionsListMappings"}, status=400)
+        
+        oneMonthAgo = datetime.now() - timedelta(days=30)
+
+        pastOrdersOfGivenProductsInPastMonth = (
+            PastOrder.objects
+            .filter(
+                dateTimeOfPurchase__gte=oneMonthAgo,
+                productId__in=productIdToTextOptionsListMappings.keys()
+            )
+            .values('productId', 'optionsChosen', 'customerUsername')
+        )
+
+        output = {}
+        for elem in pastOrdersOfGivenProductsInPastMonth:
+            productId = elem['productId']
+            listOfOptionsChosen = elem['optionsChosen']
+            customerUsername = elem['customerUsername']
+
+            textOptionsListForProductId = productIdToTextOptionsListMappings.get(productId)
+
+            for optionsChosen in listOfOptionsChosen:
+                if optionsChosen in textOptionsListForProductId:
+                    if productId not in output:
+                        output[productId] = []
+                    
+                    optionsChosenFound = False
+                    for outputElem in output[productId]:
+                        if outputElem[0] == optionsChosen:
+                            outputElem[1].add(customerUsername)
+                            optionsChosenFound = True
+                            break
+                    
+                    if not optionsChosenFound:
+                        output[productId].append([optionsChosen, {customerUsername}])
+
+        for productId, optionsList in output.items():
+            for elem in optionsList:
+                elem[1] = len(elem[1])
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return Response({"error": str(e)}, status=400)
+
+    return Response(output, status=200)
+
 
 
 @api_view(['GET'])
