@@ -1,5 +1,5 @@
 <template>
-    <div :style="{width: '49em', padding: '1em 1em', backgroundColor: 'white', display: 'flex',
+    <div :style="{width: '49em', backgroundColor: 'white', display: 'flex',
     flexDirection: 'column', padding: '1.7em 1.5em'}">
 
         <template v-if="!isMinimized">
@@ -47,7 +47,7 @@
                 <h3 v-if="cardsOfUser.length==0 || cardsOfUser[0].isSelected==false">You haven't selected a payment-card yet</h3>
                 <a @click="toggleIsMinimized" :style="{color: '#2f6da3', cursor: 'pointer'}">Change</a>
             </div>
-            <a v-if="cardsOfUser.length>0 && cardsOfUser[0].isSelected==true" :style="{color: '#2f6da3', cursor: 'pointer'}">Use a promo-code</a>
+            <a @click="toggleIsMinimized" v-if="cardsOfUser.length>0 && cardsOfUser[0].isSelected==true" :style="{color: '#2f6da3', cursor: 'pointer'}">Use a promo-code</a>
         </template>
 
     </div>
@@ -73,7 +73,7 @@ import SelectCard from './SelectCard.vue';
                 plusIcon,
                 defaultPaymentCard,
                 cardsOfUser: [],
-                isMinimized: false
+                isMinimized: true
             }
         },
 

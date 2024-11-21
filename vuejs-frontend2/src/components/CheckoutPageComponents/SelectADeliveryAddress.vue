@@ -27,7 +27,7 @@
                 <a @click="toggleIsMinimized" :style="{color: '#2f6da3', cursor: 'pointer'}">Change</a>
             </div>
             <p v-if="addressesOfUser.length>0 && addressesOfUser[0].isSelected==true" :style="{fontSize:'1em', marginTop:'0.5em'}">{{ addressesOfUser[0].addressText }}</p>
-            <a v-if="addressesOfUser.length>0 && addressesOfUser[0].isSelected==true" :style="{color: '#2f6da3', cursor: 'pointer'}">Add delivery instructions</a>
+            <a @click="toggleIsMinimized" v-if="addressesOfUser.length>0 && addressesOfUser[0].isSelected==true" :style="{color: '#2f6da3', cursor: 'pointer'}">Add delivery instructions</a>
         </template>
     </div>
 

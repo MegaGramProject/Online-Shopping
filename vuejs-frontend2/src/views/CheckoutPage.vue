@@ -7,6 +7,11 @@
             <div :style="{display: 'flex', flexDirection: 'column', gap: '1em'}">
                 <SelectADeliveryAddress :authenticatedUsername="authenticatedUsername" @notifyParentOfSelectedDeliveryAddress="receiveSelectedDeliveryAddress"/>
                 <PaymentSection :authenticatedUsername="authenticatedUsername" @notifyParentOfSelectedCard="receiveSelectedPaymentCard"/>
+                <OrderArrivals v-for="(arrivalTextHeader) in arrivalTextHeaders"
+                    :key="arrivalTextHeader" :getItAsSoonAs="itemsToBeOrderedByUserAsDict[arrivalTextHeader][0].getItAsSoonAs"
+                    :arrivalTextHeader="arrivalTextHeader"
+                    :hasPremium="hasPremium" :products="itemsToBeOrderedByUserAsDict[arrivalTextHeader]"
+                />
                 <PlaceYourOrder :orderSubtotal="orderSubtotal" :selectedDeliveryAddress="selectedDeliveryAddress"
                 :selectedPaymentCard="selectedPaymentCard"/>
             </div>
@@ -22,21 +27,28 @@
 </template>
 
 <script>
+import blueCologne from '@/assets/images/blueCologne.jpg';
+import popcorn from '@/assets/images/popcorn.jpg';
+import showerCurtains from '@/assets/images/showerCurtains.jpg';
+import FooterSection from '@/components/CheckoutPageComponents/FooterSection.vue';
+import OrderArrivals from '@/components/CheckoutPageComponents/OrderArrivals.vue';
+import PaymentSection from '@/components/CheckoutPageComponents/PaymentSection.vue';
 import PlaceYourOrder from '@/components/CheckoutPageComponents/PlaceYourOrder.vue';
 import SelectADeliveryAddress from '@/components/CheckoutPageComponents/SelectADeliveryAddress.vue';
 import SubtotalAndPlaceOrder from '@/components/CheckoutPageComponents/SubtotalAndPlaceOrder.vue';
 import TopSection from '@/components/CheckoutPageComponents/TopSection.vue';
-import FooterSection from '@/components/CheckoutPageComponents/FooterSection.vue';
-import PaymentSection from '@/components/CheckoutPageComponents/PaymentSection.vue';
 import '../styles.css';
 
     export default {
 
         data() {
             return {
+                blueCologne,
+                showerCurtains,
+                popcorn,
                 numTimesRouteParamsWasWatched: 0,
                 authenticatedUsername: "",
-                hasPremium: true,
+                hasPremium: false,
                 itemsSubtotal: "$0.00",
                 shippingHandlingAndDeliverySubtotal: "$0.00",
                 taxSubtotal: "$0.00",
@@ -66,7 +78,9 @@ import '../styles.css';
                     "CN¥": 7.1198,   // CNY - Chinese Yuan (for China)
                     "MX$": 19.86,      // MXN - Mexican Peso (for Mexico)
                     "£": 0.7709          // GBP - British Pound (for United Kingdom)
-                }
+                },
+                itemsToBeOrderedByUserAsDict: {},
+                arrivalTextHeaders: []
             }
         },
 
@@ -76,7 +90,8 @@ import '../styles.css';
             SelectADeliveryAddress,
             PlaceYourOrder,
             FooterSection,
-            PaymentSection
+            PaymentSection,
+            OrderArrivals
         },
 
         methods: {
@@ -163,29 +178,163 @@ import '../styles.css';
                 this.deliveryAreaCountry = 'the United States';
                 this.hasPremium = true;
 
-                this.itemsSubtotal= "$16.99";
-                this.shippingHandlingAndDeliverySubtotal = "$0.00";
-                this.taxSubtotal = "$0.93";
-                this.orderSubtotal = this.getTotal(this.itemsSubtotal, this.shippingHandlingAndDeliverySubtotal, this.taxSubtotal);
+                //fetch selected cart items from localStorage(using JSON.parse()) as well as additional-data
+                //the list below is supposed to be ordered in ascending order of getItAsSoonAs
+                let itemsToBeOrderedByUser = [
+                    {
+                        id: 0,
+                        productId: "0",
+                        productImage: blueCologne,
+                        productName: "Blue Cologne for Men - Spice & Black Vanilla Mens Cologne - An Explosion of Vibrant Spices, Dark Woods and Black Vanilla, 3.4 Fl Oz",
+                        productPrice: "$22.96",
+                        productPricePerUnit: "$6.75/Fl Oz",
+                        productOptions: {Scent: 'Spice & Black Vanilla'},
+                        quantity: 1,
+                        getItAsSoonAs: 12,
+                        shippingAndHandlingPrice: "$4.40",
+                        tax: "$0.01"
+                    },
+                    {
+                        id: 1,
+                        productId: "1",
+                        productImage: showerCurtains,
+                        productName: "Gibelle Abstract Marble Shower Curtain, Blue Green Purple Jade Texture Gold Stripes Ombre Watercolor Paint, Modern Ink Art Decor Waterproof Fabric Shower Curtain for Bathroom Set with Hooks, 71x71",
+                        productPrice: "$16.99",
+                        productPricePerUnit: null,
+                        productOptions: {Color: 'Green', Size: '71"W x 71"L (Pack of 1)'},
+                        quantity: 2,
+                        getItAsSoonAs: 32,
+                        shippingAndHandlingPrice: "$5.40",
+                        tax: "$0.05"
+                    },
+                    {
+                        id: 2,
+                        productId: "2",
+                        productImage: popcorn,
+                        productName: "KUDO Protein Popcorn, Variety 6-Pack | 10g of Protein Per Bag | 100% Whole Grain & Non-GMO Healthy Snacks | Keto Friendly & Gluten Free Kettle Popcorn, 2 oz. Bags",
+                        productPrice: "$29.99",
+                        productPricePerUnit: "$2.50/Ounce",
+                        productOptions: {},
+                        quantity: 1,
+                        getItAsSoonAs: 38,
+                        shippingAndHandlingPrice: "$7.40",
+                        tax: "$0.036"
+                    }
+                ];
+
+                if(itemsToBeOrderedByUser.length>0) {
+                    const itemsToBeOrderedByUserAsDict = {};
+                    /* in the dict above, keys are the getItAsSoonAs(number of hours it takes for the fastest-delivery of the product),
+                    and values are lists of products with that delivery-time */
+
+                    let currentCurrency = itemsToBeOrderedByUser[0].productPrice[0];
+                    if(currentCurrency==="A") {
+                        currentCurrency+="$";
+                    }
+                    else if(currentCurrency==="M") {
+                        currentCurrency+="X$";
+                    }
+                    else if(currentCurrency==="C") {
+                        if(itemsToBeOrderedByUser[0].productPrice[1]==="$") {
+                            currentCurrency="C$";
+                        }
+                        else {
+                            currentCurrency="CN¥";
+                        }
+                    }
+
+                    let itemsSubtotal = 0;
+                    let shippingHandlingAndDeliverySubtotal = 0;
+                    let taxSubtotal = 0;
+                    let arrivalTextHeaders = [];
+
+                    for(let item of itemsToBeOrderedByUser) {
+                        const arrivalTextHeader = this.formatArrivalTextHeader(item.getItAsSoonAs);
+                        if(arrivalTextHeader in itemsToBeOrderedByUserAsDict) {
+                            itemsToBeOrderedByUserAsDict[arrivalTextHeader].push(item);
+                        }
+                        else {
+                            itemsToBeOrderedByUserAsDict[arrivalTextHeader] = [item];
+                            arrivalTextHeaders.push(arrivalTextHeader);
+                        }
+
+                        itemsSubtotal+=parseFloat(item.productPrice.substring(currentCurrency.length))*item.quantity;
+                        shippingHandlingAndDeliverySubtotal+=parseFloat(item.shippingAndHandlingPrice.substring(currentCurrency.length))*item.quantity;
+                        taxSubtotal+=parseFloat(item.tax.substring(currentCurrency.length))*item.quantity;
+                    }
+
+                    this.itemsToBeOrderedByUserAsDict = itemsToBeOrderedByUserAsDict;
+                    this.arrivalTextHeaders = arrivalTextHeaders;
+
+                    this.itemsSubtotal= currentCurrency+itemsSubtotal.toFixed(2);
+                    this.shippingHandlingAndDeliverySubtotal = currentCurrency+shippingHandlingAndDeliverySubtotal.toFixed(2);
+                    this.taxSubtotal = currentCurrency+taxSubtotal.toFixed(2);
+                    this.orderSubtotal = this.getTotal(this.itemsSubtotal, this.shippingHandlingAndDeliverySubtotal, this.taxSubtotal);
+                }
+            },
+
+            formatArrivalTextHeader(getItAsSoonAs) {
+                const currentDate = new Date();
+                
+                const arrivalDate = new Date(currentDate.getTime() + getItAsSoonAs * 60 * 60 * 1000);
+                
+                const options = { month: 'short', day: 'numeric', year: 'numeric' };
+                const formattedDate = arrivalDate.toLocaleDateString('en-US', options);
+                
+                return `Arriving ${formattedDate}`;
             },
 
             updateCurrencies(currentCurrency, newCurrency) {
+                for(let arrivalTextHeader of this.arrivalTextHeaders) {
+                    for(let product of this.itemsToBeOrderedByUserAsDict[arrivalTextHeader]) {
+                        let productPrice = parseFloat(product.productPrice.substring(currentCurrency.length));
+                        productPrice/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                        productPrice*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
+                        product.productPrice= newCurrency+productPrice.toFixed(2);
+
+                        let shippingAndHandlingPrice = parseFloat(product.shippingAndHandlingPrice.substring(currentCurrency.length));
+                        shippingAndHandlingPrice/=this.currencyToDollarMap[currentCurrency];
+                        shippingAndHandlingPrice*=this.currencyToDollarMap[newCurrency];
+                        product.shippingAndHandlingPrice= newCurrency+shippingAndHandlingPrice.toFixed(2);
+
+                        let tax = parseFloat(product.tax.substring(currentCurrency.length));
+                        tax/=this.currencyToDollarMap[currentCurrency];
+                        tax*=this.currencyToDollarMap[newCurrency];
+                        product.tax= newCurrency+tax.toFixed(2);
+
+                        if(product.productPricePerUnit!==null) {
+                            const indexOfSeparator = product.productPricePerUnit.indexOf("/");
+                            const perUnitSection = product.productPricePerUnit.substring(indexOfSeparator);
+                            let priceSection = product.productPricePerUnit.substring(0, indexOfSeparator);
+                            priceSection = parseFloat(priceSection.substring(currentCurrency.length));
+                            priceSection/=this.currencyToDollarMap[currentCurrency];
+                            priceSection*=this.currencyToDollarMap[newCurrency];
+                            product.productPricePerUnit= newCurrency+priceSection.toFixed(2)+perUnitSection;
+                        }
+                    }
+                }
+
                 let itemsSubtotal = parseFloat(this.itemsSubtotal.substring(currentCurrency.length));
-                itemsSubtotal/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
-                itemsSubtotal*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
+                itemsSubtotal/=this.currencyToDollarMap[currentCurrency];
+                itemsSubtotal*=this.currencyToDollarMap[newCurrency];
                 this.itemsSubtotal= newCurrency+itemsSubtotal.toFixed(2);
 
-                let shippingHandlingAndDeliverySubtotal =  parseFloat(this.shippingHandlingAndDeliverySubtotal.substring(currentCurrency.length));
-                shippingHandlingAndDeliverySubtotal/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
-                shippingHandlingAndDeliverySubtotal*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
+                let shippingHandlingAndDeliverySubtotal = parseFloat(this.shippingHandlingAndDeliverySubtotal.substring(currentCurrency.length));
+                shippingHandlingAndDeliverySubtotal/=this.currencyToDollarMap[currentCurrency];
+                shippingHandlingAndDeliverySubtotal*=this.currencyToDollarMap[newCurrency];
                 this.shippingHandlingAndDeliverySubtotal= newCurrency+shippingHandlingAndDeliverySubtotal.toFixed(2);
 
                 let taxSubtotal = parseFloat(this.taxSubtotal.substring(currentCurrency.length));
-                taxSubtotal/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
-                taxSubtotal*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
+                taxSubtotal/=this.currencyToDollarMap[currentCurrency];
+                taxSubtotal*=this.currencyToDollarMap[newCurrency];
                 this.taxSubtotal= newCurrency+taxSubtotal.toFixed(2);
 
                 this.orderSubtotal = this.getTotal(this.itemsSubtotal, this.shippingHandlingAndDeliverySubtotal, this.taxSubtotal);
+                
+                //in order to trigger UI-change for OrderArrivals-components
+                const arrivalTextHeaders = [...this.arrivalTextHeaders];
+                this.arrivalTextHeaders = [];
+                this.arrivalTextHeaders = [...arrivalTextHeaders];
             },
 
             receiveSelectedDeliveryAddress(selectedDeliveryAddress) {
@@ -242,7 +391,7 @@ import '../styles.css';
                         this.fetchRelevantDataAtStart();
                     }
                     else {
-                    //window.location.href = "http://location:8000/login";
+                        //window.location.href = "http://location:8000/login";
                     }
                 }
             },

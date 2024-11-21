@@ -1,6 +1,6 @@
 <template>
-    <div :style="{width: '100%', display: 'flex', flexDirection: 'column', marginLeft:'-1.05em',
-    position: 'absolute', top: '130%'}">
+    <div :style="{width: '100.7%', display: 'flex', flexDirection: 'column', marginLeft:'-1.05em',
+    marginTop:'5em'}">
         <div @click='scrollToTop' @mouseenter='toggleIsHoveringOnTopSectionOfFooter' @mouseleave='toggleIsHoveringOnTopSectionOfFooter'
         :style="{width: '100%', backgroundColor: '#2f3a4a', height: '2.5em', color: 'white', padding: '0.5em 0.5em', textAlign: 'center',
         opacity: isHoveringOnTopSectionOfFooter ? '0.8' : '1', cursor: 'pointer', marginTop: '3em'}">
