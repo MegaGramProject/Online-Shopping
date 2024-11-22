@@ -52,6 +52,12 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
             }
         },
 
+        mounted() {
+            if(this.authenticatedUsername.length>0) {
+                this.fetchAddressesOfUser();
+            }
+        },
+
         methods: {
             toggleIsMinimized() {
                 this.isMinimized = !this.isMinimized;

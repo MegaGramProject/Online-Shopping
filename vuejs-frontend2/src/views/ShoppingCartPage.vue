@@ -63,7 +63,7 @@
     </div>
 
     <img v-if="displayDarkScreen2" :src="blackScreen" :style="{position: 'absolute',
-    top: '0%', left: '0%', height: '100%', width: '100%', opacity: '0.7'}">
+    top: '0%', left: '0%', height: '100%', width: '100%', opacity: '0.7', objectFit: 'cover'}">
 
     
 </template>

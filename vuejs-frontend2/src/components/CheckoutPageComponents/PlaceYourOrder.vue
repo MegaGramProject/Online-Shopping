@@ -1,7 +1,7 @@
 <template>
     <div :style="{display: 'flex', alignItems: 'center', backgroundColor: 'white', padding: '1.5em 1em', gap: '1em'}">
-        <button @click="placeOrder" :style="{border: 'none', padding: '0.7em 1.2em', cursor: 'pointer', borderRadius: '2em',
-        backgroundColor:'#ffe359'}">Place your order</button>
+        <button @click="placeOrder" :style="{border: 'none', padding: '0.7em 1.2em', cursor: this.selectedDeliveryAddress==null || this.selectedPaymentCard==null ? 'auto' : 'pointer', borderRadius: '2em',
+        backgroundColor:'#ffe359', opacity: this.selectedDeliveryAddress==null || this.selectedPaymentCard==null ? '0.3' : '1'}">Place your order</button>
 
         <div :style="{display: 'flex', flexDirection: 'column'}">
             <b>Order total: {{ orderSubtotal }}</b>
@@ -22,10 +22,7 @@
         methods: {
             placeOrder() {
                 if(this.selectedDeliveryAddress!==null && this.selectedPaymentCard!==null) {
-                    console.log("Order placed");
-                }
-                else {
-                    console.log("FAILED");
+                    this.$emit("placeOrder");
                 }
             }
         }

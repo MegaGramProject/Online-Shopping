@@ -22,7 +22,7 @@ import discoverCard from '@/assets/images/discoverCard.avif';
             index: Number,
             cardCompany: String,
             cardType: String,
-            last4Digits: Number,
+            last4Digits: String,
             fullNameOnCard: String,
             cardExpiration: String,
             isSelected: Boolean

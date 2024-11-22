@@ -19,9 +19,9 @@
                 @toggleSelectCard="toggleSelectCard" :cardCompany="card.cardCompany"
                 />
                 <div :style="{display: 'flex', alignItems: 'center', paddingLeft: '1em', gap: '1em'}">
-                    <img :src="plusIcon" :style="{height: '1.2em', width: '1.2em', cursor: 'pointer'}">
+                    <img @click="showAddPaymentCardPopup" :src="plusIcon" :style="{height: '1.2em', width: '1.2em', cursor: 'pointer'}">
                     <img :src="defaultPaymentCard" :style="{height: '2.5em', width: '2.5em', objectFit: 'contain', cursor: 'pointer'}">
-                    <a :style="{cursor: 'pointer', color: '#2f6da3', fontSize: '0.9em'}">Add a credit or debit card</a>
+                    <a @click="showAddPaymentCardPopup" :style="{cursor: 'pointer', color: '#2f6da3', fontSize: '0.9em'}">Add a credit or debit card</a>
                     <small :style="{color: 'gray'}">Megagram accepts all major debit & credit cards</small>
                 </div>
 
@@ -61,7 +61,8 @@ import SelectCard from './SelectCard.vue';
 
     export default {
         props: {
-            authenticatedUsername: String
+            authenticatedUsername: String,
+            newCardOfUser: Object
         },
 
         components: {
@@ -77,6 +78,12 @@ import SelectCard from './SelectCard.vue';
             }
         },
 
+        mounted() {
+            if(this.authenticatedUsername.length>0) {
+                this.fetchCardsOfUser();
+            }
+        },
+
         methods: {
             async fetchCardsOfUser() {
                 //make API-request to get cards of user
@@ -85,7 +92,7 @@ import SelectCard from './SelectCard.vue';
                         id: 0,
                         cardCompany: "DasherDirect",
                         cardType: "Prepaid",
-                        last4Digits: 3506,
+                        last4Digits: "3506",
                         fullNameOnCard: "Rishav Ray",
                         cardExpiration: "05/2025",
                         isSelected: true
@@ -94,7 +101,7 @@ import SelectCard from './SelectCard.vue';
                         id: 1,
                         cardCompany: "Visa",
                         cardType: "Credit",
-                        last4Digits: 4800,
+                        last4Digits: "4800",
                         fullNameOnCard: "Rishav Ray",
                         cardExpiration: "07/2026"
                     },
@@ -102,7 +109,7 @@ import SelectCard from './SelectCard.vue';
                         id: 2,
                         cardCompany: "Discover",
                         cardType: "Debit",
-                        last4Digits: 1155,
+                        last4Digits: "1155",
                         fullNameOnCard: "Rishav Ray",
                         cardExpiration: "01/2026"
                     }
@@ -134,12 +141,22 @@ import SelectCard from './SelectCard.vue';
             toggleIsMinimized() {
                 this.isMinimized = !this.isMinimized;
             },
+
+            showAddPaymentCardPopup() {
+                this.$emit("showAddPaymentCardPopup");
+            }
         },
 
         watch: {
             authenticatedUsername(newVal) {
                 if(newVal.length>0) {
                     this.fetchCardsOfUser();
+                }
+            },
+
+            newCardOfUser(newVal) {
+                if(newVal!==null) {
+                    this.cardsOfUser = [...this.cardsOfUser, newVal];
                 }
             }
         }

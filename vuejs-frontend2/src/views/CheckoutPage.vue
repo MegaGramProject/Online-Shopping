@@ -3,40 +3,61 @@
     <div :style="{display: 'flex', flexDirection: 'column'}">
         <TopSection :authenticatedUsername="authenticatedUsername" :hasPremium="hasPremium"/>
 
-        <div :style="{display: 'flex', alignItems: 'start', justifyContent: 'center', gap: '1em', marginTop:'1em'}">
+        <div v-if="orderHasBeenPlaced" :style="{display: 'flex', alignItems: 'start', justifyContent: 'center', marginTop:'1em'}">
+            <OrderHasBeenPlaced v-if="orderHasBeenPlaced" @cancelPlacingOrder="toggleOrderHasBeenPlaced"
+            :selectedDeliveryAddress="selectedDeliveryAddress"   :selectedPaymentCard="selectedPaymentCard"
+            :shippingAndHandlingFeesSavedWithPremium="shippingAndHandlingFeesSavedWithPremium"
+            />
+        </div>
+
+        <div v-if="!orderHasBeenPlaced" :style="{display: 'flex', alignItems: 'start', justifyContent: 'center', gap: '1em', marginTop:'1em'}">
             <div :style="{display: 'flex', flexDirection: 'column', gap: '1em'}">
                 <SelectADeliveryAddress :authenticatedUsername="authenticatedUsername" @notifyParentOfSelectedDeliveryAddress="receiveSelectedDeliveryAddress"/>
-                <PaymentSection :authenticatedUsername="authenticatedUsername" @notifyParentOfSelectedCard="receiveSelectedPaymentCard"/>
+                <PaymentSection :authenticatedUsername="authenticatedUsername" @notifyParentOfSelectedCard="receiveSelectedPaymentCard"
+                @showAddPaymentCardPopup="toggleAddPaymentCardPopup" :newCardOfUser="newCardOfUser"/>
                 <OrderArrivals v-for="(arrivalTextHeader) in arrivalTextHeaders"
                     :key="arrivalTextHeader" :getItAsSoonAs="itemsToBeOrderedByUserAsDict[arrivalTextHeader][0].getItAsSoonAs"
                     :arrivalTextHeader="arrivalTextHeader"
                     :hasPremium="hasPremium" :products="itemsToBeOrderedByUserAsDict[arrivalTextHeader]"
+                    @updateItemQuantity="updateItemQuantity"
                 />
                 <PlaceYourOrder :orderSubtotal="orderSubtotal" :selectedDeliveryAddress="selectedDeliveryAddress"
-                :selectedPaymentCard="selectedPaymentCard"/>
+                :selectedPaymentCard="selectedPaymentCard" @placeOrder="toggleOrderHasBeenPlaced"/>
             </div>
             <SubtotalAndPlaceOrder :itemsSubtotal="itemsSubtotal" :shippingHandlingAndDeliverySubtotal="shippingHandlingAndDeliverySubtotal"
             :taxSubtotal="taxSubtotal" :orderSubtotal="orderSubtotal" :selectedDeliveryAddress="selectedDeliveryAddress"
-            :selectedPaymentCard="selectedPaymentCard"
+            :selectedPaymentCard="selectedPaymentCard" @placeOrder="toggleOrderHasBeenPlaced" :quantityTotal="quantityTotal"
             />
         </div>
 
-        <FooterSection @updateDeliveryAreaCountry="updateDeliveryAreaCountry"/>
+        <FooterSection v-if="!orderHasBeenPlaced" @updateDeliveryAreaCountry="updateDeliveryAreaCountry"/>
+
     </div>
+
+    <img v-if="displayDarkScreen" :src="blackScreen" :style="{opacity: '0.7',
+    position: 'absolute', top: '0%', left: '0%', height: '210%', width: '105%', objectFit: 'cover'}">
+
+    <AddPaymentCardPopup v-if="displayAddPaymentCardPopup" @closePopup="toggleAddPaymentCardPopup"
+    @addPaymentCard="addPaymentCard"/>
+
 
 </template>
 
 <script>
+import blackScreen from '@/assets/images/blackScreen.png';
 import blueCologne from '@/assets/images/blueCologne.jpg';
 import popcorn from '@/assets/images/popcorn.jpg';
 import showerCurtains from '@/assets/images/showerCurtains.jpg';
+import AddPaymentCardPopup from '@/components/CheckoutPageComponents/AddPaymentCardPopup.vue';
 import FooterSection from '@/components/CheckoutPageComponents/FooterSection.vue';
 import OrderArrivals from '@/components/CheckoutPageComponents/OrderArrivals.vue';
+import OrderHasBeenPlaced from '@/components/CheckoutPageComponents/OrderHasBeenPlaced.vue';
 import PaymentSection from '@/components/CheckoutPageComponents/PaymentSection.vue';
 import PlaceYourOrder from '@/components/CheckoutPageComponents/PlaceYourOrder.vue';
 import SelectADeliveryAddress from '@/components/CheckoutPageComponents/SelectADeliveryAddress.vue';
 import SubtotalAndPlaceOrder from '@/components/CheckoutPageComponents/SubtotalAndPlaceOrder.vue';
 import TopSection from '@/components/CheckoutPageComponents/TopSection.vue';
+
 import '../styles.css';
 
     export default {
@@ -46,6 +67,7 @@ import '../styles.css';
                 blueCologne,
                 showerCurtains,
                 popcorn,
+                blackScreen,
                 numTimesRouteParamsWasWatched: 0,
                 authenticatedUsername: "",
                 hasPremium: false,
@@ -53,6 +75,8 @@ import '../styles.css';
                 shippingHandlingAndDeliverySubtotal: "$0.00",
                 taxSubtotal: "$0.00",
                 orderSubtotal: "$0.00",
+                shippingAndHandlingFeesSavedWithPremium: "$0.00",
+                quantityTotal: 0,
                 deliveryAreaCountry: "",
                 deliveryZipcode: "",
                 selectedDeliveryAddress: null,
@@ -80,7 +104,11 @@ import '../styles.css';
                     "£": 0.7709          // GBP - British Pound (for United Kingdom)
                 },
                 itemsToBeOrderedByUserAsDict: {},
-                arrivalTextHeaders: []
+                arrivalTextHeaders: [],
+                orderHasBeenPlaced: false,
+                displayDarkScreen: false,
+                displayAddPaymentCardPopup: false,
+                newCardOfUser: null
             }
         },
 
@@ -91,7 +119,9 @@ import '../styles.css';
             PlaceYourOrder,
             FooterSection,
             PaymentSection,
-            OrderArrivals
+            OrderArrivals,
+            OrderHasBeenPlaced,
+            AddPaymentCardPopup
         },
 
         methods: {
@@ -192,7 +222,8 @@ import '../styles.css';
                         quantity: 1,
                         getItAsSoonAs: 12,
                         shippingAndHandlingPrice: "$4.40",
-                        tax: "$0.01"
+                        tax: "$0.01",
+                        sAndHPriceSavedWithPremium: "$0.40"
                     },
                     {
                         id: 1,
@@ -205,7 +236,8 @@ import '../styles.css';
                         quantity: 2,
                         getItAsSoonAs: 32,
                         shippingAndHandlingPrice: "$5.40",
-                        tax: "$0.05"
+                        tax: "$0.05",
+                        sAndHPriceSavedWithPremium: "$0.40"
                     },
                     {
                         id: 2,
@@ -218,7 +250,8 @@ import '../styles.css';
                         quantity: 1,
                         getItAsSoonAs: 38,
                         shippingAndHandlingPrice: "$7.40",
-                        tax: "$0.036"
+                        tax: "$0.036",
+                        sAndHPriceSavedWithPremium: "$0.40"
                     }
                 ];
 
@@ -246,6 +279,8 @@ import '../styles.css';
                     let itemsSubtotal = 0;
                     let shippingHandlingAndDeliverySubtotal = 0;
                     let taxSubtotal = 0;
+                    let shippingAndHandlingFeesSavedWithPremium = 0;
+                    let quantityTotal = 0;
                     let arrivalTextHeaders = [];
 
                     for(let item of itemsToBeOrderedByUser) {
@@ -258,16 +293,23 @@ import '../styles.css';
                             arrivalTextHeaders.push(arrivalTextHeader);
                         }
 
+                        quantityTotal+=item.quantity;
                         itemsSubtotal+=parseFloat(item.productPrice.substring(currentCurrency.length))*item.quantity;
                         shippingHandlingAndDeliverySubtotal+=parseFloat(item.shippingAndHandlingPrice.substring(currentCurrency.length))*item.quantity;
                         taxSubtotal+=parseFloat(item.tax.substring(currentCurrency.length))*item.quantity;
+
+                        if(this.hasPremium) {
+                            shippingAndHandlingFeesSavedWithPremium+=parseFloat(item.sAndHPriceSavedWithPremium.substring(currentCurrency.length))*item.quantity;
+                        }
                     }
 
                     this.itemsToBeOrderedByUserAsDict = itemsToBeOrderedByUserAsDict;
                     this.arrivalTextHeaders = arrivalTextHeaders;
 
+                    this.quantityTotal = quantityTotal;
                     this.itemsSubtotal= currentCurrency+itemsSubtotal.toFixed(2);
                     this.shippingHandlingAndDeliverySubtotal = currentCurrency+shippingHandlingAndDeliverySubtotal.toFixed(2);
+                    this.shippingAndHandlingFeesSavedWithPremium = currentCurrency+shippingAndHandlingFeesSavedWithPremium.toFixed(2);
                     this.taxSubtotal = currentCurrency+taxSubtotal.toFixed(2);
                     this.orderSubtotal = this.getTotal(this.itemsSubtotal, this.shippingHandlingAndDeliverySubtotal, this.taxSubtotal);
                 }
@@ -329,12 +371,13 @@ import '../styles.css';
                 taxSubtotal*=this.currencyToDollarMap[newCurrency];
                 this.taxSubtotal= newCurrency+taxSubtotal.toFixed(2);
 
+                let shippingAndHandlingFeesSavedWithPremium = parseFloat(this.shippingAndHandlingFeesSavedWithPremium.substring(currentCurrency.length));
+                shippingAndHandlingFeesSavedWithPremium/=this.currencyToDollarMap[currentCurrency];
+                shippingAndHandlingFeesSavedWithPremium*=this.currencyToDollarMap[newCurrency];
+                this.shippingAndHandlingFeesSavedWithPremium = newCurrency+shippingAndHandlingFeesSavedWithPremium.toFixed(2);
+
                 this.orderSubtotal = this.getTotal(this.itemsSubtotal, this.shippingHandlingAndDeliverySubtotal, this.taxSubtotal);
                 
-                //in order to trigger UI-change for OrderArrivals-components
-                const arrivalTextHeaders = [...this.arrivalTextHeaders];
-                this.arrivalTextHeaders = [];
-                this.arrivalTextHeaders = [...arrivalTextHeaders];
             },
 
             receiveSelectedDeliveryAddress(selectedDeliveryAddress) {
@@ -371,6 +414,93 @@ import '../styles.css';
             async updateDeliveryAreaCountry(newDeliveryAreaCountry) {
                 //make API-request to update delivery area country
                 this.deliveryAreaCountry = newDeliveryAreaCountry;
+            },
+
+            toggleOrderHasBeenPlaced() {
+                this.orderHasBeenPlaced = !this.orderHasBeenPlaced;
+            },
+
+            toggleDisplayDarkScreen() {
+                this.displayDarkScreen = !this.displayDarkScreen;
+            },
+
+            toggleAddPaymentCardPopup() {
+                this.displayAddPaymentCardPopup = !this.displayAddPaymentCardPopup;
+                if(this.displayAddPaymentCardPopup) {
+                    this.displayDarkScreen = true;
+                }
+                else {
+                    this.displayDarkScreen = false;
+                }
+            },
+
+            addPaymentCard(newCardOfUser) {
+                this.newCardOfUser = newCardOfUser;
+                this.displayAddPaymentCardPopup = false;
+                this.displayDarkScreen = false;
+            },
+
+            updateItemQuantity(info) {
+                const arrivalTextHeaderOfItem = info.arrivalTextHeader;
+                const idOfItem = info.id;
+                const newQuantityOfItem = info.newQuantity;
+
+                for(let i=0; i< this.itemsToBeOrderedByUserAsDict[arrivalTextHeaderOfItem].length; i++) {
+                    const product = this.itemsToBeOrderedByUserAsDict[arrivalTextHeaderOfItem][i];
+                    if(product.id==idOfItem) {
+                        const differenceInQuantities = newQuantityOfItem-product.quantity;
+                        if(differenceInQuantities==0) {
+                            return;
+                        }
+                        if (newQuantityOfItem==0) {
+                            this.itemsToBeOrderedByUserAsDict[arrivalTextHeaderOfItem].splice(i, 1);
+                            if(this.itemsToBeOrderedByUserAsDict[arrivalTextHeaderOfItem].length==0) {
+                                this.arrivalTextHeaders.splice(this.arrivalTextHeaders.indexOf(arrivalTextHeaderOfItem), 1);
+                            }
+                        }
+                        else {
+                            product.quantity = newQuantityOfItem;
+                        }
+
+                        let currentCurrency = product.productPrice[0];
+                        if(currentCurrency==="A") {
+                            currentCurrency+="$";
+                        }
+                        else if(currentCurrency==="M") {
+                            currentCurrency+="X$";
+                        }
+                        else if(currentCurrency==="C") {
+                            if(product.productPrice[1]==="$") {
+                                currentCurrency="C$";
+                            }
+                            else {
+                                currentCurrency="CN¥";
+                            }
+                        }
+
+                        this.quantityTotal+=differenceInQuantities;
+
+                        let itemsSubtotal = parseFloat(this.itemsSubtotal.substring(currentCurrency.length));
+                        itemsSubtotal+=differenceInQuantities*parseFloat(product.productPrice.substring(currentCurrency.length));
+                        this.itemsSubtotal = currentCurrency+itemsSubtotal.toFixed(2);
+
+                        let shippingHandlingAndDeliverySubtotal = parseFloat(this.shippingHandlingAndDeliverySubtotal.substring(currentCurrency.length));
+                        shippingHandlingAndDeliverySubtotal+=differenceInQuantities*parseFloat(product.shippingAndHandlingPrice.substring(currentCurrency.length));
+                        this.shippingHandlingAndDeliverySubtotal = currentCurrency+shippingHandlingAndDeliverySubtotal.toFixed(2);
+
+                        let taxSubtotal = parseFloat(this.taxSubtotal.substring(currentCurrency.length));
+                        taxSubtotal+=differenceInQuantities*parseFloat(product.tax.substring(currentCurrency.length));
+                        this.taxSubtotal = currentCurrency+taxSubtotal.toFixed(2);
+                        
+                        let shippingAndHandlingFeesSavedWithPremium = parseFloat(this.shippingAndHandlingFeesSavedWithPremium.substring(currentCurrency.length));
+                        shippingAndHandlingFeesSavedWithPremium+=differenceInQuantities*parseFloat(product.sAndHPriceSavedWithPremium.substring(currentCurrency.length));
+                        this.shippingAndHandlingFeesSavedWithPremium = currentCurrency+shippingAndHandlingFeesSavedWithPremium.toFixed(2);
+
+                        this.orderSubtotal = this.getTotal(this.itemsSubtotal, this.shippingHandlingAndDeliverySubtotal, this.taxSubtotal);
+                        return;
+                    }
+                }
+
             }
         },
 
