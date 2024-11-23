@@ -13,7 +13,7 @@
                 <p>{{ itemsSubtotal }}</p>
             </div>
             <div :style="{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
-            fontSize: '0.8em', marginBottom:'-1em'}">
+            fontSize: '0.8em', marginBottom:'0em'}">
                 <p>Shipping, handling, and delivery</p>
                 <p>{{ shippingHandlingAndDeliverySubtotal }}</p>
             </div>
@@ -23,11 +23,20 @@
                 <p>{{ taxSubtotal }}</p>
             </div>
             <div :style="{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
+            fontSize: '0.8em', marginBottom:'0em'}">
+                <p>S/H/D discounts</p>
+                <p>-{{ shippingAndHandlingFeesSavedWithPremium }}</p>
+            </div>
+            <div :style="{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
+            fontSize: '0.8em', marginBottom:'0em'}">
+                <p>Item discounts</p>
+                <p>-{{ totalItemDiscounts }}</p>
+            </div>
+            <div :style="{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
             fontSize: '1.2em'}">
                 <b>Order total:</b>
                 <b>{{ orderSubtotal }}</b>
             </div>
-
         </div>
 
     </div>
@@ -42,15 +51,11 @@
             shippingHandlingAndDeliverySubtotal: String,
             taxSubtotal: String,
             orderSubtotal: String,
+            shippingAndHandlingFeesSavedWithPremium: String,
+            totalItemDiscounts: String,
             selectedDeliveryAddress: Object,
             selectedPaymentCard: Object,
             quantityTotal: Number
-        },
-
-        data() {
-            return {
-
-            }
         },
 
         methods: {

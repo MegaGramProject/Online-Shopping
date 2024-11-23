@@ -29,10 +29,18 @@
                 <hr :style="{width: '100%', color: '#f0f1f2', marginTop: '-1.5em'}">
                 <b :style="{fontSize:'0.9em'}">Enter a valid promo-code</b>
                 <div :style="{display: 'flex', alignItems: 'center', gap: '1em'}">
-                    <textarea placeholder="Enter Code" :style="{fontFamily: 'Arial',
+                    <textarea v-model="promoCodeInput" spellcheck="false" placeholder="Enter Code" :style="{fontFamily: 'Arial',
                     resize: 'none', width: '40%', fontSize:'0.9em', paddingLeft:'0.5em', paddingTop:'0.5em'}"></textarea>
-                    <button :style="{borderStyle: 'solid', borderRadius: '2em', padding: '0.5em 1em', backgroundColor: 'white',
+                    <button @click="applyPromoCode" :style="{borderStyle: 'solid', borderRadius: '2em', padding: '0.5em 1em', backgroundColor: 'white',
                     cursor: 'pointer', borderWidth:'0.1em'}">Apply</button>
+                </div>
+                <p v-if="invalidPromoCode" :style="{color: 'maroon'}">**Invalid promo-code</p>
+
+                <small v-if="promoCodeMatches.length>0" :style="{color: 'darkgreen'}">Promo-codes successfully applied.</small>
+                <div v-for="(promoCodeMatch, index) in promoCodeMatches" :key="index"
+                :style="{display: 'flex', alignItems: 'center', gap:'1.45em'}">
+                    <p>{{ promoCodeMatch[1] }}:</p>
+                    <p>{{ promoCodeMatch[2] }}</p>
                 </div>
 
             </div>
@@ -62,7 +70,8 @@ import SelectCard from './SelectCard.vue';
     export default {
         props: {
             authenticatedUsername: String,
-            newCardOfUser: Object
+            newCardOfUser: Object,
+            promoCodes: Object
         },
 
         components: {
@@ -74,7 +83,11 @@ import SelectCard from './SelectCard.vue';
                 plusIcon,
                 defaultPaymentCard,
                 cardsOfUser: [],
-                isMinimized: true
+                isMinimized: false,
+                invalidPromoCode: false,
+                promoCodeInput: "",
+                promoCodeMatches: [],
+                promoCodesAlreadyApplied: new Set()
             }
         },
 
@@ -144,6 +157,21 @@ import SelectCard from './SelectCard.vue';
 
             showAddPaymentCardPopup() {
                 this.$emit("showAddPaymentCardPopup");
+            },
+
+            applyPromoCode() {
+                if(this.promoCodeInput in this.promoCodes) {
+                    this.promoCodeMatches = this.promoCodes[this.promoCodeInput];
+                    this.invalidPromoCode = false;
+                    if(!this.promoCodesAlreadyApplied.has(this.promoCodeInput)) {
+                        this.$emit("applyPromoCode", this.promoCodeInput);
+                    }
+                    this.promoCodesAlreadyApplied.add(this.promoCodeInput);
+                }
+                else {
+                    this.promoCodeMatches = [];
+                    this.invalidPromoCode = true;
+                }
             }
         },
 

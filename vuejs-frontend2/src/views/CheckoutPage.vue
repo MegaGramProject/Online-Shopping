@@ -5,8 +5,9 @@
 
         <div v-if="orderHasBeenPlaced" :style="{display: 'flex', alignItems: 'start', justifyContent: 'center', marginTop:'1em'}">
             <OrderHasBeenPlaced v-if="orderHasBeenPlaced" @cancelPlacingOrder="toggleOrderHasBeenPlaced"
-            :selectedDeliveryAddress="selectedDeliveryAddress"   :selectedPaymentCard="selectedPaymentCard"
+            :selectedDeliveryAddress="selectedDeliveryAddress" :selectedPaymentCard="selectedPaymentCard"
             :shippingAndHandlingFeesSavedWithPremium="shippingAndHandlingFeesSavedWithPremium"
+            :totalItemDiscounts="totalItemDiscounts"
             />
         </div>
 
@@ -14,12 +15,13 @@
             <div :style="{display: 'flex', flexDirection: 'column', gap: '1em'}">
                 <SelectADeliveryAddress :authenticatedUsername="authenticatedUsername" @notifyParentOfSelectedDeliveryAddress="receiveSelectedDeliveryAddress"/>
                 <PaymentSection :authenticatedUsername="authenticatedUsername" @notifyParentOfSelectedCard="receiveSelectedPaymentCard"
-                @showAddPaymentCardPopup="toggleAddPaymentCardPopup" :newCardOfUser="newCardOfUser"/>
+                @showAddPaymentCardPopup="toggleAddPaymentCardPopup" :newCardOfUser="newCardOfUser"
+                :promoCodes="promoCodes" @applyPromoCode="applyPromoCode"/>
                 <OrderArrivals v-for="(arrivalTextHeader) in arrivalTextHeaders"
                     :key="arrivalTextHeader" :getItAsSoonAs="itemsToBeOrderedByUserAsDict[arrivalTextHeader][0].getItAsSoonAs"
                     :arrivalTextHeader="arrivalTextHeader"
                     :hasPremium="hasPremium" :products="itemsToBeOrderedByUserAsDict[arrivalTextHeader]"
-                    @updateItemQuantity="updateItemQuantity"
+                    @updateItemQuantity="updateItemQuantity" @updateSelectedProductDeal="updateSelectedProductDeal"
                 />
                 <PlaceYourOrder :orderSubtotal="orderSubtotal" :selectedDeliveryAddress="selectedDeliveryAddress"
                 :selectedPaymentCard="selectedPaymentCard" @placeOrder="toggleOrderHasBeenPlaced"/>
@@ -27,6 +29,7 @@
             <SubtotalAndPlaceOrder :itemsSubtotal="itemsSubtotal" :shippingHandlingAndDeliverySubtotal="shippingHandlingAndDeliverySubtotal"
             :taxSubtotal="taxSubtotal" :orderSubtotal="orderSubtotal" :selectedDeliveryAddress="selectedDeliveryAddress"
             :selectedPaymentCard="selectedPaymentCard" @placeOrder="toggleOrderHasBeenPlaced" :quantityTotal="quantityTotal"
+            :shippingAndHandlingFeesSavedWithPremium="shippingAndHandlingFeesSavedWithPremium" :totalItemDiscounts="totalItemDiscounts"
             />
         </div>
 
@@ -76,6 +79,7 @@ import '../styles.css';
                 taxSubtotal: "$0.00",
                 orderSubtotal: "$0.00",
                 shippingAndHandlingFeesSavedWithPremium: "$0.00",
+                totalItemDiscounts: "$0.00",
                 quantityTotal: 0,
                 deliveryAreaCountry: "",
                 deliveryZipcode: "",
@@ -108,7 +112,8 @@ import '../styles.css';
                 orderHasBeenPlaced: false,
                 displayDarkScreen: false,
                 displayAddPaymentCardPopup: false,
-                newCardOfUser: null
+                newCardOfUser: null,
+                promoCodes: {}
             }
         },
 
@@ -210,6 +215,7 @@ import '../styles.css';
 
                 //fetch selected cart items from localStorage(using JSON.parse()) as well as additional-data
                 //the list below is supposed to be ordered in ascending order of getItAsSoonAs
+                //in the deals list, the first deal is always the selected one, and the selected-deal is always the best one(i.e the one that saves the most money)
                 let itemsToBeOrderedByUser = [
                     {
                         id: 0,
@@ -223,7 +229,20 @@ import '../styles.css';
                         getItAsSoonAs: 12,
                         shippingAndHandlingPrice: "$4.40",
                         tax: "$0.01",
-                        sAndHPriceSavedWithPremium: "$0.40"
+                        sAndHPriceSavedWithPremium: "$0.40",
+                        unDiscountedPrice: "$45.92",
+                        deals: [
+                            {
+                                discount: "50% off",
+                                prices: ["$45.92", "$22.96", "$22.96"],
+                                requirement: "PREMIUM"
+                            },
+                            {
+                                discount: "2 for 1",
+                                prices: [],
+                                requirement: "NONE"
+                            }
+                        ]
                     },
                     {
                         id: 1,
@@ -237,7 +256,9 @@ import '../styles.css';
                         getItAsSoonAs: 32,
                         shippingAndHandlingPrice: "$5.40",
                         tax: "$0.05",
-                        sAndHPriceSavedWithPremium: "$0.40"
+                        sAndHPriceSavedWithPremium: "$0.40",
+                        unDiscountedPrice: "$16.99",
+                        deals: []
                     },
                     {
                         id: 2,
@@ -247,11 +268,19 @@ import '../styles.css';
                         productPrice: "$29.99",
                         productPricePerUnit: "$2.50/Ounce",
                         productOptions: {},
-                        quantity: 1,
+                        quantity: 3,
                         getItAsSoonAs: 38,
                         shippingAndHandlingPrice: "$7.40",
                         tax: "$0.036",
-                        sAndHPriceSavedWithPremium: "$0.40"
+                        sAndHPriceSavedWithPremium: "$0.40",
+                        unDiscountedPrice: "$29.99",
+                        deals: [
+                            {
+                                discount: "3 for 1",
+                                prices: ["$89.97", "$29.99", "$59.98"],
+                                requirement: "NONE"
+                            }
+                        ]
                     }
                 ];
 
@@ -280,6 +309,7 @@ import '../styles.css';
                     let shippingHandlingAndDeliverySubtotal = 0;
                     let taxSubtotal = 0;
                     let shippingAndHandlingFeesSavedWithPremium = 0;
+                    let totalItemDiscounts = 0;
                     let quantityTotal = 0;
                     let arrivalTextHeaders = [];
 
@@ -294,24 +324,43 @@ import '../styles.css';
                         }
 
                         quantityTotal+=item.quantity;
-                        itemsSubtotal+=parseFloat(item.productPrice.substring(currentCurrency.length))*item.quantity;
+                        itemsSubtotal+=parseFloat(item.unDiscountedPrice.substring(currentCurrency.length))*item.quantity;
                         shippingHandlingAndDeliverySubtotal+=parseFloat(item.shippingAndHandlingPrice.substring(currentCurrency.length))*item.quantity;
                         taxSubtotal+=parseFloat(item.tax.substring(currentCurrency.length))*item.quantity;
 
                         if(this.hasPremium) {
                             shippingAndHandlingFeesSavedWithPremium+=parseFloat(item.sAndHPriceSavedWithPremium.substring(currentCurrency.length))*item.quantity;
                         }
+
+                        if(item.deals.length>0 && item.deals[0].prices.length==3) {
+                            totalItemDiscounts+=parseFloat(item.deals[0].prices[2].substring(currentCurrency.length));
+                        }
                     }
 
                     this.itemsToBeOrderedByUserAsDict = itemsToBeOrderedByUserAsDict;
                     this.arrivalTextHeaders = arrivalTextHeaders;
-
                     this.quantityTotal = quantityTotal;
+
                     this.itemsSubtotal= currentCurrency+itemsSubtotal.toFixed(2);
                     this.shippingHandlingAndDeliverySubtotal = currentCurrency+shippingHandlingAndDeliverySubtotal.toFixed(2);
                     this.shippingAndHandlingFeesSavedWithPremium = currentCurrency+shippingAndHandlingFeesSavedWithPremium.toFixed(2);
                     this.taxSubtotal = currentCurrency+taxSubtotal.toFixed(2);
-                    this.orderSubtotal = this.getTotal(this.itemsSubtotal, this.shippingHandlingAndDeliverySubtotal, this.taxSubtotal);
+                    this.totalItemDiscounts = currentCurrency+totalItemDiscounts.toFixed(2);
+                    this.orderSubtotal = this.getTotal(
+                        this.itemsSubtotal,
+                        this.shippingHandlingAndDeliverySubtotal,
+                        this.taxSubtotal,
+                        this.shippingAndHandlingFeesSavedWithPremium,
+                        this.totalItemDiscounts
+                    );
+
+                    let promoCodes = {
+                        "GetRichKwik": [["0", "Blue Cologne", "30% off"], ["1", "Shower Curtains", "2 for 1"], ["2", "Kudos Protein Popcorn", "28% off"]],
+                        "SAVEBIG": [["1", "Shower Curtains", "Buy 1, Get 2nd one 36% off"]],
+                        "goBigOrGoHome$$$": [["2", "Kudos Protein Popcorn", "Buy 10, Get 11th one 36% off"]]
+                    };
+                    this.promoCodes = promoCodes;
+
                 }
             },
 
@@ -343,6 +392,11 @@ import '../styles.css';
                         tax/=this.currencyToDollarMap[currentCurrency];
                         tax*=this.currencyToDollarMap[newCurrency];
                         product.tax= newCurrency+tax.toFixed(2);
+                        
+                        let unDiscountedPrice = parseFloat(product.unDiscountedPrice.substring(currentCurrency.length));
+                        unDiscountedPrice/=this.currencyToDollarMap[currentCurrency];
+                        unDiscountedPrice*=this.currencyToDollarMap[newCurrency];
+                        product.unDiscountedPrice= newCurrency+unDiscountedPrice.toFixed(2);
 
                         if(product.productPricePerUnit!==null) {
                             const indexOfSeparator = product.productPricePerUnit.indexOf("/");
@@ -352,6 +406,17 @@ import '../styles.css';
                             priceSection/=this.currencyToDollarMap[currentCurrency];
                             priceSection*=this.currencyToDollarMap[newCurrency];
                             product.productPricePerUnit= newCurrency+priceSection.toFixed(2)+perUnitSection;
+                        }
+
+                        for(let deal of product.deals) {
+                            const newPrices = [];
+                            for(let price of deal.prices) {
+                                let newPrice = parseFloat(price.substring(currentCurrency.length));
+                                newPrice/=this.currencyToDollarMap[currentCurrency];
+                                newPrice*=this.currencyToDollarMap[newCurrency];
+                                newPrices.push(newCurrency+newPrice.toFixed(2));
+                            }
+                            deal.prices = [...newPrices];
                         }
                     }
                 }
@@ -376,8 +441,15 @@ import '../styles.css';
                 shippingAndHandlingFeesSavedWithPremium*=this.currencyToDollarMap[newCurrency];
                 this.shippingAndHandlingFeesSavedWithPremium = newCurrency+shippingAndHandlingFeesSavedWithPremium.toFixed(2);
 
-                this.orderSubtotal = this.getTotal(this.itemsSubtotal, this.shippingHandlingAndDeliverySubtotal, this.taxSubtotal);
-                
+                let totalItemDiscounts = parseFloat(this.totalItemDiscounts.substring(currentCurrency.length));
+                totalItemDiscounts/=this.currencyToDollarMap[currentCurrency];
+                totalItemDiscounts*=this.currencyToDollarMap[newCurrency];
+                this.totalItemDiscounts = newCurrency+totalItemDiscounts.toFixed(2);
+
+                let orderSubtotal = parseFloat(this.orderSubtotal.substring(currentCurrency.length));
+                orderSubtotal/=this.currencyToDollarMap[currentCurrency];
+                orderSubtotal*=this.currencyToDollarMap[newCurrency];
+                this.orderSubtotal = newCurrency+orderSubtotal.toFixed(2);
             },
 
             receiveSelectedDeliveryAddress(selectedDeliveryAddress) {
@@ -388,7 +460,8 @@ import '../styles.css';
                 this.selectedPaymentCard = selectedPaymentCard;
             },
 
-            getTotal(itemsSubtotal, shippingHandlingAndDeliverySubtotal, taxSubtotal) {
+            getTotal(itemsSubtotal, shippingHandlingAndDeliverySubtotal, taxSubtotal,
+            shippingAndHandlingFeesSavedWithPremium, totalItemDiscounts) {
                 let currencySymbol = itemsSubtotal[0];
                 if(currencySymbol==="A") {
                     currencySymbol+="$";
@@ -408,6 +481,8 @@ import '../styles.css';
                 orderTotal+=parseFloat(itemsSubtotal.substring(currencySymbol.length));
                 orderTotal+=parseFloat(shippingHandlingAndDeliverySubtotal.substring(currencySymbol.length));
                 orderTotal+=parseFloat(taxSubtotal.substring(currencySymbol.length));
+                orderTotal-=parseFloat(shippingAndHandlingFeesSavedWithPremium.substring(currencySymbol.length));
+                orderTotal-=parseFloat(totalItemDiscounts.substring(currencySymbol.length));
                 return currencySymbol + orderTotal.toFixed(2);
             },
 
@@ -449,9 +524,6 @@ import '../styles.css';
                     const product = this.itemsToBeOrderedByUserAsDict[arrivalTextHeaderOfItem][i];
                     if(product.id==idOfItem) {
                         const differenceInQuantities = newQuantityOfItem-product.quantity;
-                        if(differenceInQuantities==0) {
-                            return;
-                        }
                         if (newQuantityOfItem==0) {
                             this.itemsToBeOrderedByUserAsDict[arrivalTextHeaderOfItem].splice(i, 1);
                             if(this.itemsToBeOrderedByUserAsDict[arrivalTextHeaderOfItem].length==0) {
@@ -479,6 +551,7 @@ import '../styles.css';
                         }
 
                         this.quantityTotal+=differenceInQuantities;
+                        //later, the biggest-product-deal will be the selected one and the totalItemDiscounts variable will be updated
 
                         let itemsSubtotal = parseFloat(this.itemsSubtotal.substring(currentCurrency.length));
                         itemsSubtotal+=differenceInQuantities*parseFloat(product.productPrice.substring(currentCurrency.length));
@@ -496,12 +569,84 @@ import '../styles.css';
                         shippingAndHandlingFeesSavedWithPremium+=differenceInQuantities*parseFloat(product.sAndHPriceSavedWithPremium.substring(currentCurrency.length));
                         this.shippingAndHandlingFeesSavedWithPremium = currentCurrency+shippingAndHandlingFeesSavedWithPremium.toFixed(2);
 
-                        this.orderSubtotal = this.getTotal(this.itemsSubtotal, this.shippingHandlingAndDeliverySubtotal, this.taxSubtotal);
+                        this.orderSubtotal = this.getTotal(
+                            this.itemsSubtotal,
+                            this.shippingHandlingAndDeliverySubtotal,
+                            this.taxSubtotal,
+                            this.shippingAndHandlingFeesSavedWithPremium,
+                            this.totalItemDiscounts
+                        );
+
                         return;
                     }
                 }
+            },
 
+            formatProductDealText(productDealInfo) {
+                if(productDealInfo.requirement==='NONE') {
+                    return `FOR EVERYBODY: ${productDealInfo.discount}`;
+                }
+                else if(productDealInfo.requirement==='PREMIUM') {
+                    return `PREMIUM ONLY: ${productDealInfo.discount}`;
+                }
+                else {
+                    return `FROM PROMO-CODE: ${productDealInfo.discount}`;
+                }
+            },
+
+            updateSelectedProductDeal(info) {
+                const arrivalTextHeaderOfItem = info.arrivalTextHeader;
+                const idOfItem = info.id;
+                const newlySelectedProductDeal = info.newlySelectedProductDeal;
+
+                for(let i=0; i<this.itemsToBeOrderedByUserAsDict[arrivalTextHeaderOfItem].length; i++) {
+                    const product = this.itemsToBeOrderedByUserAsDict[arrivalTextHeaderOfItem][i];
+                    if(product.id==idOfItem) {
+                        for(let j=1; j<product.deals.length; j++) {
+                            const currentProductDeal = product.deals[j];
+                            if(this.formatProductDealText(currentProductDeal)===newlySelectedProductDeal) {
+                                product.deals.splice(j,1);
+                                currentProductDeal.prices = [];
+                                product.deals.splice(0, 0, currentProductDeal);
+                                return;
+                            }
+                        }
+                    }
+                }
+            },
+
+            applyPromoCode(promoCode) {
+                const promoCodeMatches = this.promoCodes[promoCode];
+                const productIdToPromoCodeDiscountMappings = {};
+                for(let match of promoCodeMatches) {
+                    const productId = match[0];
+                    const promoCodeDiscount = match[2];
+                    if(productId in productIdToPromoCodeDiscountMappings) {
+                        productIdToPromoCodeDiscountMappings[productId].push(promoCodeDiscount)
+                    }
+                    else {
+                        productIdToPromoCodeDiscountMappings[productId] = [promoCodeDiscount]
+                    }
+                }
+
+                for(let arrivalTextHeader of Object.keys(this.itemsToBeOrderedByUserAsDict)) {
+                    for(let i=0; i<this.itemsToBeOrderedByUserAsDict[arrivalTextHeader].length; i++) {
+                        const product = this.itemsToBeOrderedByUserAsDict[arrivalTextHeader][i];
+                        if(product.productId in productIdToPromoCodeDiscountMappings) {
+                            for(let promoCodeDiscount of productIdToPromoCodeDiscountMappings[product.productId]) {
+                                product.deals.push({
+                                    discount: promoCodeDiscount,
+                                    prices: [],
+                                    requirement: `PROMO-CODE=${promoCode}`
+                                });
+                                //later, the biggest-product-deal will be the selected one instead of just adding
+                                //each new product-deal to the deals list of the product.
+                            }
+                        }
+                    }
+                }
             }
+
         },
 
         watch: {

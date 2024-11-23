@@ -12,6 +12,7 @@
         <p><b>Shipping to {{ selectedDeliveryAddress.fullName }}, </b>{{ selectedDeliveryAddress.addressText }}</p>
         <p>Paid via <b>{{ selectedPaymentCard.cardCompany + " (" + selectedPaymentCard.cardType + ") " + selectedPaymentCard.last4Digits }}</b></p>
         <p v-if="wasAnyShippingAndHandlingFeesSavedWithPremium()">You saved <b>{{ shippingAndHandlingFeesSavedWithPremium }}</b> in shipping and handling fees on this order with Premium.</p>
+        <p v-if="wasTotalItemDiscountsGreaterThan0()">In addition, you saved <b>{{ totalItemDiscounts }}</b> with discounts on items on this order.</p>
 
         <a :style="{cursor: 'pointer', color: '#2f6da3', marginTop:'1em'}">Review or edit your recent orders</a>
         <a @click="cancelPlacingOrder" :style="{cursor: 'pointer', color: '#2f6da3', marginTop:'0.5em'}">Cancel this order</a>
@@ -29,6 +30,7 @@ import checkmarkInGreenCircle from '@/assets/images/checkmarkInGreenCircle.webp'
             selectedDeliveryAddress: Object,
             selectedPaymentCard: Object,
             shippingAndHandlingFeesSavedWithPremium: String,
+            totalItemDiscounts: String
         },
 
         data() {
@@ -59,7 +61,25 @@ import checkmarkInGreenCircle from '@/assets/images/checkmarkInGreenCircle.webp'
                     }
                 }
                 return parseFloat(this.shippingAndHandlingFeesSavedWithPremium.substring(currentCurrency.length))>0
+            },
 
+            wasTotalItemDiscountsGreaterThan0() {
+                let currentCurrency = this.shippingAndHandlingFeesSavedWithPremium[0];
+                if(currentCurrency==="A") {
+                    currentCurrency+="$";
+                }
+                else if(currentCurrency==="M") {
+                    currentCurrency+="X$";
+                }
+                else if(currentCurrency==="C") {
+                    if(this.shippingAndHandlingFeesSavedWithPremium[1]==="$") {
+                        currentCurrency="C$";
+                    }
+                    else {
+                        currentCurrency="CN¥";
+                    }
+                }
+                return parseFloat(this.totalItemDiscounts.substring(currentCurrency.length))>0
             }
         }
     };

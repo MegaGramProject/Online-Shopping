@@ -21,9 +21,23 @@
                     </div>
                 </div>
 
+                <p v-if="product.deals.length>0" :style="{fontSize:'0.88em', marginBottom:'0em', marginTop:'2em', lineHeight:'2'}">
+                    Deal Selected: <span :style="{padding: '0.5em 0.5em', color: 'white', fontWeight: 'bold', backgroundColor:'#b81220', fontSize: '0.8em', marginRight:'1em'}">{{ formatProductDealText(product.deals[0]) }}</span>
+                
+                    <template v-if="product.deals[0].prices.length==3">
+                        <span :style="{textDecoration: 'line-through', color: 'gray'}">{{ product.deals[0].prices[0] }}</span>
+                        <span :style="{color: 'green', fontSize:'1.2em', fontWeight: 'bold', marginLeft:'0.5em'}">{{ product.deals[0].prices[1] }}</span>
+                    </template>
+
+                    <select @input="onChangingSelectedProductDeal(product.id, product.deals[0])" :style="{padding: '0.3em 0.3em', fontSize:'0.9em'}">
+                        <option value="">Select A Different Deal</option>
+                        <option v-for="(deal, index) in product.deals" :key="index" :value="formatProductDealText(deal)">{{ formatProductDealText(deal) }}</option>
+                    </select>
+                </p>
+
                 <p :style="{fontSize:'0.88em', marginBottom:'0em'}">
                     <b>Quantity:</b> {{ product.quantity }}
-                    <select @input="onChangingQuantity(product.id)" :style="{marginLeft:'1em', padding: '0.3em 0.3em'}">
+                    <select @input="onChangingQuantity(product.id, product.quantity)" :style="{marginLeft:'1em', padding: '0.3em 0.3em'}">
                         <option value="">Change</option>
                         <option value="0">0 (Delete this item)</option>
                         <option value="1">1</option>
@@ -132,7 +146,7 @@
             </div>
 
             <form>
-                <input type="radio" name="scheduleDelivery" value="default" :style="{marginBottom:'1em'}"><b>{{ formatArrivalText() }}</b><br>
+                <input type="radio" name="scheduleDelivery" value="default" :style="{marginBottom:'1em'}" checked><b>{{ formatArrivalText() }}</b><br>
                 <input type="radio" name="scheduleDelivery" value="scheduleAhead">Schedule <b>ahead</b><br>
             </form>
 
@@ -158,7 +172,7 @@ import showerCurtains from '@/assets/images/showerCurtains.jpg';
         data() {
             return {
                 showerCurtains,
-                checkmark
+                checkmark,
             }
         },
 
@@ -189,19 +203,47 @@ import showerCurtains from '@/assets/images/showerCurtains.jpg';
                 return arrivalDate.toLocaleDateString('en-US', dayOptions);
             },
 
-            onChangingQuantity(id) {
-                if(event.target.value==="") {
+            onChangingQuantity(id, quantity) {
+                if(event.target.value==="" || quantity===parseInt(event.target.value)) {
                     return;
                 }
                 this.$emit("updateItemQuantity",
-                {
-                    arrivalTextHeader: this.arrivalTextHeader,
-                    id: id,
-                    newQuantity: parseInt(event.target.value)
-                });
+                    {
+                        id: id,
+                        arrivalTextHeader: this.arrivalTextHeader,
+                        newQuantity: parseInt(event.target.value)
+                    }
+                );
+            },
 
+            formatProductDealText(productDealInfo) {
+                if(productDealInfo.requirement==='NONE') {
+                    return `FOR EVERYBODY: ${productDealInfo.discount}`;
+                }
+                else if(productDealInfo.requirement==='PREMIUM') {
+                    return `PREMIUM ONLY: ${productDealInfo.discount}`;
+                }
+                else {
+                    return `FROM PROMO-CODE: ${productDealInfo.discount}`;
+                }
+            },
+
+            onChangingSelectedProductDeal(id, firstProductDeal) {
+                if(event.target.value==="") {
+                    return;
+                }
+                if(this.formatProductDealText(firstProductDeal)===event.target.value) {
+                    return
+                }
+                this.$emit("updateSelectedProductDeal",
+                    {
+                        id: id,
+                        arrivalTextHeader: this.arrivalTextHeader,
+                        newlySelectedProductDeal: event.target.value,
+                    }
+                );
+            }
         }
-    }
 
     };
 </script>
