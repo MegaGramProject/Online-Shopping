@@ -6,7 +6,7 @@
         <div :style="{backgroundColor: '#ededed', padding: '1.5em 1.5em', display: 'flex', justifyContent: 'space-between',
         alignItems: 'center', borderStyle: 'solid', borderColor: 'lightgray', borderRadius: '0.8em 0.8em 0em 0em',
         borderTop: 'none', borderLeft: 'none', borderRight: 'none'}">
-            <b :style="{fontSize:'1.1em'}">Edit/Delete your address</b>
+            <b :style="{fontSize:'1.1em'}">Add an address</b>
             <img @click="closePopup" :src="thinGrayXIcon" :style="{cursor: 'pointer', height: '1.4em', width: '1.4em'}"/>
         </div>
 
@@ -64,10 +64,8 @@
             </div>
 
             <p v-if="fieldsAreInvalid" :style="{color: '#b3071b', fontSize:'0.85em', marginTop:'0em', marginBottom:'0em'}">You must provide valid values for all of the required fields above</p>
-            <button @click="saveEditsToThisAddress" :style="{border: 'none', padding: '0.7em 1.2em', cursor: 'pointer', borderRadius: '2em',
+            <button @click="addNewAddress" :style="{border: 'none', padding: '0.7em 1.2em', cursor: 'pointer', borderRadius: '2em',
             backgroundColor:'#ffe359', width: '12em'}">Use this address</button>
-
-            <a @click="deleteThisAddress" :style="{color: '#2f6da3', cursor: 'pointer', fontSize:'0.9em', marginTop:'0.5em'}">Delete</a>
 
 
         </div>
@@ -81,33 +79,19 @@ import thinGrayXIcon from '@/assets/images/thinGrayXIcon.png';
 
     export default {
 
-        props: {
-            indexOfAddressToEditOrDelete: Number,
-            propCountry: String,
-            propFullName: String,
-            propHouseOrBuildingNumber: String,
-            propStreetName: String,
-            propApartmentOrSuiteNumber: String,
-            propTownOrCity: String,
-            propStateOrProvince: String,
-            propZipCode: String,
-            propPhoneNumber: String,
-            propIsSelected: Boolean
-        },
-
         data() {
             return {
                 thinGrayXIcon,
-                country: this.propCountry || "",
-                fullName: this.propFullName || "",
-                houseOrBuildingNumber: this.propHouseOrBuildingNumber || "",
-                streetName: this.propStreetName || "",
-                apartmentOrSuiteNumber: this.propApartmentOrSuiteNumber || "",
-                townOrCity: this.propTownOrCity || "",
-                stateOrProvince: this.propStateOrProvince || "",
-                zipCode: this.propZipCode || "",
-                phoneNumber: this.propPhoneNumber || "",
-                isSelected: this.propIsSelected || false,
+                country: "",
+                fullName: "",
+                houseOrBuildingNumber: "",
+                streetName: "",
+                apartmentOrSuiteNumber: "",
+                townOrCity: "",
+                stateOrProvince: "",
+                zipCode: "",
+                phoneNumber: "",
+                isSelected: false,
                 fieldsAreInvalid: false
             }
         },
@@ -130,46 +114,24 @@ import thinGrayXIcon from '@/assets/images/thinGrayXIcon.png';
                 return !this.fieldsAreInvalid;
             },
 
-            saveEditsToThisAddress() {
+            addNewAddress() {
                 if(!this.fieldsAreValidated()) {
                     return;
                 }
-                const changesMade = {};
-                if(this.country!==this.propCountry) {
-                    changesMade.country = this.country;
-                }
-                if(this.fullName!==this.propFullName) {
-                    changesMade.fullName = this.fullName;
-                }
-                if(this.houseOrBuildingNumber!==this.propHouseOrBuildingNumber) {
-                    changesMade.houseOrBuildingNumber = this.houseOrBuildingNumber;
-                }
-                if(this.streetName!==this.propStreetName) {
-                    changesMade.streetName = this.streetName;
-                }
-                if(this.apartmentOrSuiteNumber!==this.propApartmentOrSuiteNumber) {
-                    changesMade.apartmentOrSuiteNumber = this.apartmentOrSuiteNumber;
-                }
-                if(this.townOrCity!==this.propTownOrCity) {
-                    changesMade.townOrCity = this.townOrCity;
-                }
-                if(this.stateOrProvince!==this.propStateOrProvince) {
-                    changesMade.stateOrProvince = this.stateOrProvince;
-                }
-                if(this.zipCode!==this.propZipCode) {
-                    changesMade.zipCode = this.zipCode;
-                }
-                if(this.phoneNumber!==this.propPhoneNumber) {
-                    changesMade.phoneNumber = this.phoneNumber;
-                }
-                if(this.isSelected!==this.propIsSelected) {
-                    changesMade.isSelected = this.isSelected;
-                }
-                this.$emit("saveEditsToThisAddress", changesMade);
-            },
-
-            deleteThisAddress() {
-                this.$emit("deleteThisAddress");
+                this.$emit("addNewAddress",
+                    {
+                        country: this.country,
+                        fullName: this.fullName,
+                        houseOrBuildingNumber: this.houseOrBuildingNumber.length>0 ? this.houseOrBuildingNumber : null,
+                        streetName: this.streetName,
+                        apartmentOrSuiteNumber: this.apartmentOrSuiteNumber.length>0 ? this.apartmentOrSuiteNumber : null,
+                        townOrCity: this.townOrCity,
+                        stateOrProvince: this.stateOrProvince.length>0 ? this.stateOrProvince : null,
+                        zipCode: this.zipCode,
+                        phoneNumber: this.phoneNumber,
+                        isSelected: this.isSelected
+                    }
+                );
             }
         },
     };

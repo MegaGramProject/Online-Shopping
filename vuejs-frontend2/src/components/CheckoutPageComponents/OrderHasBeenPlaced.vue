@@ -9,7 +9,14 @@
         </div>
 
         <p>Confirmation will be sent to your email.</p>
-        <p><b>Shipping to {{ selectedDeliveryAddress.fullName }}, </b>{{ selectedDeliveryAddress.addressText }}</p>
+        <p v-if="selectedDeliveryAddress!==null"><b>Shipping to {{ selectedDeliveryAddress.fullName }}, </b>{{ selectedDeliveryAddress.addressText }}</p>
+        <template v-if="selectedPickupLocation!==null">
+            <p><b>Shipping to {{ selectedPickupLocation.pickupLocationAddress }}</b> for pick-up</p>
+            <p :style="{marginLeft:'3em', marginBottom:'0.5em'}">{{ selectedPickupLocation.pickupDirections }}</p>
+            <p v-for="weekDays in Object.keys(selectedPickupLocation.openingHours)" :style="{marginLeft: '3em', marginBottom: '-0.5em'}" :key="weekDays">{{ weekDays }}: {{ selectedPickupLocation.openingHours[weekDays] }}</p>
+            <br/>
+            <br/>
+        </template>
         <p>Paid via <b>{{ selectedPaymentCard.cardCompany + " (" + selectedPaymentCard.cardType + ") " + selectedPaymentCard.last4Digits }}</b></p>
         <p v-if="wasAnyShippingAndHandlingFeesSavedWithPremium()">You saved <b>{{ shippingAndHandlingFeesSavedWithPremium }}</b> in shipping and handling fees on this order with Premium.</p>
         <p v-if="wasTotalItemDiscountsGreaterThan0()">In addition, you saved <b>{{ totalItemDiscounts }}</b> with discounts on items on this order.</p>
@@ -30,7 +37,8 @@ import checkmarkInGreenCircle from '@/assets/images/checkmarkInGreenCircle.webp'
             selectedDeliveryAddress: Object,
             selectedPaymentCard: Object,
             shippingAndHandlingFeesSavedWithPremium: String,
-            totalItemDiscounts: String
+            totalItemDiscounts: String,
+            selectedPickupLocation: Object
         },
 
         data() {

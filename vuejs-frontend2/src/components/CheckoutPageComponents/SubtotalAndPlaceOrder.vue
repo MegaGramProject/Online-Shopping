@@ -1,8 +1,8 @@
 <template>
     <div :style="{width: '17em', backgroundColor: 'white', padding: '1.5em 1.5em', display: 'flex',
     flexDirection: 'column'}">
-        <button @click="placeOrder" :style="{border: 'none', padding: '0.7em 1.2em', cursor: this.selectedDeliveryAddress==null || this.selectedPaymentCard==null ? 'auto' : 'pointer', borderRadius: '2em',
-        backgroundColor:'#ffe359', opacity: this.selectedDeliveryAddress==null || this.selectedPaymentCard==null ? '0.3' : '1'}">Place your order</button>
+        <button @click="placeOrder" :style="{border: 'none', padding: '0.7em 1.2em', cursor: (this.selectedDeliveryAddress==null && this.selectedPickupLocation==null) || this.selectedPaymentCard==null ? 'auto' : 'pointer', borderRadius: '2em',
+        backgroundColor:'#ffe359', opacity: (this.selectedDeliveryAddress==null && this.selectedPickupLocation==null) || this.selectedPaymentCard==null ? '0.3' : '1'}">Place your order</button>
         <p :style="{fontSize:'0.8em'}">By placing your order, you agree to Megagram's privacy notice and conditions of use.</p>
         
         <div :style="{display: 'flex', flexDirection: 'column', borderStyle: 'solid', borderColor: 'lightgray',
@@ -55,12 +55,13 @@
             totalItemDiscounts: String,
             selectedDeliveryAddress: Object,
             selectedPaymentCard: Object,
-            quantityTotal: Number
+            quantityTotal: Number,
+            selectedPickupLocation: Object
         },
 
         methods: {
             placeOrder() {
-                if(this.selectedDeliveryAddress!==null && this.selectedPaymentCard!==null) {
+                if((this.selectedDeliveryAddress!==null || this.selectedPickupLocation!==null) && this.selectedPaymentCard!==null) {
                     this.$emit("placeOrder");
                 }
             }

@@ -83,7 +83,7 @@ import SelectCard from './SelectCard.vue';
                 plusIcon,
                 defaultPaymentCard,
                 cardsOfUser: [],
-                isMinimized: false,
+                isMinimized: true,
                 invalidPromoCode: false,
                 promoCodeInput: "",
                 promoCodeMatches: [],

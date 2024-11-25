@@ -6,7 +6,7 @@
             <p :style="{fontSize:'0.9em', marginTop:'0.5em'}">{{ addressText }}</p>
             <p :style="{fontSize:'0.9em', marginTop:'-0.5em'}">Phone number: {{ phoneNumber }}</p>
             <div :style="{display: 'flex', alignItems: 'center', fontSize:'0.9em', marginTop:'-1em'}">
-                <a :style="{color: '#2f6da3', cursor: 'pointer'}">Edit or Delete</a>
+                <a @click="showEditOrDeleteAddressPopup" :style="{color: '#2f6da3', cursor: 'pointer'}">Edit or Delete</a>
                 <div class="vertical-line">
                 </div>
                 <a :style="{color: '#2f6da3', cursor: 'pointer'}">Add delivery instructions</a>
@@ -29,6 +29,12 @@
         data() {
             return {
                 mutableIsSelected: this.isSelected
+            }
+        },
+
+        methods: {
+            showEditOrDeleteAddressPopup() {
+                this.$emit("showEditOrDeleteAddressPopup", this.index);
             }
         },
 

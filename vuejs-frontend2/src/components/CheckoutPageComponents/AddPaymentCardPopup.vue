@@ -1,5 +1,5 @@
 <template>
-    <div :style="{backgroundColor: 'white', position: 'absolute', top: '30%', left: '25%', width: '50em',
+    <div :style="{backgroundColor: 'white', position: 'absolute', top: '66%', left: '25%', width: '50em',
     display: 'flex', flexDirection: 'column', borderRadius:'0.8em', height: '22em', gap: '1em'}">
 
         <div :style="{backgroundColor: '#ededed', padding: '1.5em 1.5em', display: 'flex', justifyContent: 'space-between',

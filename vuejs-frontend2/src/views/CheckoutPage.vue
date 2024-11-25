@@ -6,14 +6,19 @@
         <div v-if="orderHasBeenPlaced" :style="{display: 'flex', alignItems: 'start', justifyContent: 'center', marginTop:'1em'}">
             <OrderHasBeenPlaced v-if="orderHasBeenPlaced" @cancelPlacingOrder="toggleOrderHasBeenPlaced"
             :selectedDeliveryAddress="selectedDeliveryAddress" :selectedPaymentCard="selectedPaymentCard"
-            :shippingAndHandlingFeesSavedWithPremium="shippingAndHandlingFeesSavedWithPremium"
+            :selectedPickupLocation="selectedPickupLocation" :shippingAndHandlingFeesSavedWithPremium="shippingAndHandlingFeesSavedWithPremium"
             :totalItemDiscounts="totalItemDiscounts"
             />
         </div>
 
-        <div v-if="!orderHasBeenPlaced" :style="{display: 'flex', alignItems: 'start', justifyContent: 'center', gap: '1em', marginTop:'1em'}">
+        <div :style="{display: !orderHasBeenPlaced ? 'flex' : 'none', alignItems: 'start', justifyContent: 'center', gap: '1em', marginTop:'1em'}">
             <div :style="{display: 'flex', flexDirection: 'column', gap: '1em'}">
-                <SelectADeliveryAddress :authenticatedUsername="authenticatedUsername" @notifyParentOfSelectedDeliveryAddress="receiveSelectedDeliveryAddress"/>
+                <SelectADeliveryAddress :authenticatedUsername="authenticatedUsername" @notifyParentOfSelectedDeliveryAddress="receiveSelectedDeliveryAddress"
+                @showEditOrDeleteAddressPopup="showEditOrDeleteAddressPopup" :adjustmentsToAddressToEditOrDelete="adjustmentsToAddressToEditOrDelete"
+                @showAddNewDeliveryAddressPopup="toggleAddNewDeliveryAddressPopup" :newAddressToAdd="newAddressToAdd"
+                @showSelectPickupLocationPopup="toggleSelectPickupLocationPopup" :newlySetPickupLocation="newlySetPickupLocation"
+                @notifyParentOfSelectedPickupLocation="receiveSelectedPickupLocation"
+                />
                 <PaymentSection :authenticatedUsername="authenticatedUsername" @notifyParentOfSelectedCard="receiveSelectedPaymentCard"
                 @showAddPaymentCardPopup="toggleAddPaymentCardPopup" :newCardOfUser="newCardOfUser"
                 :promoCodes="promoCodes" @applyPromoCode="applyPromoCode"/>
@@ -24,10 +29,11 @@
                     @updateItemQuantity="updateItemQuantity" @updateSelectedProductDeal="updateSelectedProductDeal"
                 />
                 <PlaceYourOrder :orderSubtotal="orderSubtotal" :selectedDeliveryAddress="selectedDeliveryAddress"
+                :selectedPickupLocation="selectedPickupLocation"
                 :selectedPaymentCard="selectedPaymentCard" @placeOrder="toggleOrderHasBeenPlaced"/>
             </div>
             <SubtotalAndPlaceOrder :itemsSubtotal="itemsSubtotal" :shippingHandlingAndDeliverySubtotal="shippingHandlingAndDeliverySubtotal"
-            :taxSubtotal="taxSubtotal" :orderSubtotal="orderSubtotal" :selectedDeliveryAddress="selectedDeliveryAddress"
+            :taxSubtotal="taxSubtotal" :orderSubtotal="orderSubtotal" :selectedDeliveryAddress="selectedDeliveryAddress" :selectedPickupLocation="selectedPickupLocation"
             :selectedPaymentCard="selectedPaymentCard" @placeOrder="toggleOrderHasBeenPlaced" :quantityTotal="quantityTotal"
             :shippingAndHandlingFeesSavedWithPremium="shippingAndHandlingFeesSavedWithPremium" :totalItemDiscounts="totalItemDiscounts"
             />
@@ -38,10 +44,27 @@
     </div>
 
     <img v-if="displayDarkScreen" :src="blackScreen" :style="{opacity: '0.7',
-    position: 'absolute', top: '0%', left: '0%', height: '210%', width: '105%', objectFit: 'cover'}">
+    position: 'absolute', top: '0%', left: '0%', height: '250%', width: '105%', objectFit: 'cover'}">
 
     <AddPaymentCardPopup v-if="displayAddPaymentCardPopup" @closePopup="toggleAddPaymentCardPopup"
     @addPaymentCard="addPaymentCard"/>
+
+    <EditOrDeleteAddressPopup v-if="displayEditOrDeleteAddressPopup" @closePopup="closeEditOrDeleteAddressPopup"
+    :indexOfAddressToEditOrDelete="addressToEditOrDelete.index" :propCountry="addressToEditOrDelete.country"
+    :propFullName="addressToEditOrDelete.fullName" :propHouseOrBuildingNumber="addressToEditOrDelete.houseOrBuildingNumber"
+    :propStreetName="addressToEditOrDelete.streetName" :propApartmentOrSuiteNumber="addressToEditOrDelete.apartmentOrSuiteNumber"
+    :propTownOrCity="addressToEditOrDelete.townOrCity" :propStateOrProvince="addressToEditOrDelete.stateOrProvince"
+    :propZipCode="addressToEditOrDelete.zipCode" :propPhoneNumber="addressToEditOrDelete.phoneNumber"
+    :propIsSelected="addressToEditOrDelete.isSelected" @deleteThisAddress="deleteThisAddress"
+    @saveEditsToThisAddress="saveEditsToThisAddress"
+    />
+
+    <AddNewDeliveryAddressPopup v-if="displayAddNewDeliveryAddressPopup" @closePopup="toggleAddNewDeliveryAddressPopup"
+    @addNewAddress="addNewAddress"
+    />
+
+    <SelectPickupLocationPopup v-if="displaySelectPickupLocationPopup" @closePopup="toggleSelectPickupLocationPopup"
+    @setPickupLocation="setPickupLocation"/>
 
 
 </template>
@@ -60,6 +83,9 @@ import PlaceYourOrder from '@/components/CheckoutPageComponents/PlaceYourOrder.v
 import SelectADeliveryAddress from '@/components/CheckoutPageComponents/SelectADeliveryAddress.vue';
 import SubtotalAndPlaceOrder from '@/components/CheckoutPageComponents/SubtotalAndPlaceOrder.vue';
 import TopSection from '@/components/CheckoutPageComponents/TopSection.vue';
+import EditOrDeleteAddressPopup from '@/components/CheckoutPageComponents/EditOrDeleteAddressPopup.vue';
+import AddNewDeliveryAddressPopup from '@/components/CheckoutPageComponents/AddNewDeliveryAddressPopup.vue';
+import SelectPickupLocationPopup from '@/components/CheckoutPageComponents/SelectPickupLocationPopup.vue';
 
 import '../styles.css';
 
@@ -113,7 +139,28 @@ import '../styles.css';
                 displayDarkScreen: false,
                 displayAddPaymentCardPopup: false,
                 newCardOfUser: null,
-                promoCodes: {}
+                promoCodes: {},
+                displayEditOrDeleteAddressPopup: false,
+                addressToEditOrDelete: {
+                    index: -1,
+                    fullName: null,
+                    country: null,
+                    houseOrBuildingNumber: null,
+                    streetName: null,
+                    apartmentOrSuiteNumber: null,
+                    townOrCity: null,
+                    stateOrProvince: null,
+                    zipCode: null,
+                    addressText: null,
+                    phoneNumber: null,
+                    isSelected: false
+                },
+                adjustmentsToAddressToEditOrDelete: null,
+                displayAddNewDeliveryAddressPopup: false,
+                newAddressToAdd: null,
+                displaySelectPickupLocationPopup: false,
+                newlySetPickupLocation: null,
+                selectedPickupLocation: null
             }
         },
 
@@ -126,7 +173,10 @@ import '../styles.css';
             PaymentSection,
             OrderArrivals,
             OrderHasBeenPlaced,
-            AddPaymentCardPopup
+            AddPaymentCardPopup,
+            EditOrDeleteAddressPopup,
+            AddNewDeliveryAddressPopup,
+            SelectPickupLocationPopup
         },
 
         methods: {
@@ -509,6 +559,38 @@ import '../styles.css';
                 }
             },
 
+            closeEditOrDeleteAddressPopup() {
+                this.displayEditOrDeleteAddressPopup = false;
+                this.displayDarkScreen = false;
+            },
+            
+
+            showEditOrDeleteAddressPopup(addressToEditOrDelete) {
+                this.displayEditOrDeleteAddressPopup = true;
+                this.displayDarkScreen = true;
+                this.addressToEditOrDelete = {...addressToEditOrDelete};
+            },
+
+            deleteThisAddress() {
+                this.displayEditOrDeleteAddressPopup = false;
+                this.displayDarkScreen = false;
+
+                this.adjustmentsToAddressToEditOrDelete = {
+                    index: this.addressToEditOrDelete.index,
+                    delete: true
+                };
+            },
+
+            saveEditsToThisAddress(changesMade) {
+                this.displayEditOrDeleteAddressPopup = false;
+                this.displayDarkScreen = false;
+
+                this.adjustmentsToAddressToEditOrDelete = {
+                    index: this.addressToEditOrDelete.index,
+                    ...changesMade
+                };
+            },
+
             addPaymentCard(newCardOfUser) {
                 this.newCardOfUser = newCardOfUser;
                 this.displayAddPaymentCardPopup = false;
@@ -645,8 +727,35 @@ import '../styles.css';
                         }
                     }
                 }
-            }
+            },
 
+
+            toggleAddNewDeliveryAddressPopup() {
+                this.displayDarkScreen = !this.displayDarkScreen;
+                this.displayAddNewDeliveryAddressPopup = !this.displayAddNewDeliveryAddressPopup;
+            },
+
+            addNewAddress(newAddress) {
+                this.displayDarkScreen = false;
+                this.displayAddNewDeliveryAddressPopup = false;
+                this.newAddressToAdd = newAddress;
+            },
+
+            toggleSelectPickupLocationPopup() {
+                this.displayDarkScreen = !this.displayDarkScreen;
+                this.displaySelectPickupLocationPopup = !this.displaySelectPickupLocationPopup;
+            },
+
+            setPickupLocation(newlySetPickupLocation) {
+                this.newlySetPickupLocation = newlySetPickupLocation;
+                this.selectedPickupLocation = newlySetPickupLocation;
+                this.displaySelectPickupLocationPopup = false;
+                this.displayDarkScreen = false;
+            },
+
+            receiveSelectedPickupLocation(newlySelectedPickupLocation) {
+                this.selectedPickupLocation = newlySelectedPickupLocation;
+            }
         },
 
         watch: {
