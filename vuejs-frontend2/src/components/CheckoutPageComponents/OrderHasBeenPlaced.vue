@@ -1,6 +1,6 @@
 <template>
 
-    <div :style="{width: '65em', padding: '1em 1em', backgroundColor: 'white', display: 'flex',
+    <div class="miniSection" :style="{width: '65em', padding: '1em 1em', backgroundColor: 'white', display: 'flex',
     flexDirection: 'column'}">
 
         <div :style="{display: 'flex', alignItems: 'center', gap: '0.6em'}">

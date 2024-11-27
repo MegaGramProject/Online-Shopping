@@ -3,11 +3,11 @@
     <div class="popup" :style="{backgroundColor: 'white', position: 'absolute', top: '8%', left: '31%', width: '42em',
     display: 'flex', flexDirection: 'column', borderRadius:'0.8em', paddingBottom:'1em', gap: '1em'}">
 
-        <div :style="{backgroundColor: '#ededed', padding: '1.5em 1.5em', display: 'flex', justifyContent: 'space-between',
+        <div class="popupHeader" :style="{backgroundColor: '#ededed', padding: '1.5em 1.5em', display: 'flex', justifyContent: 'space-between',
         alignItems: 'center', borderStyle: 'solid', borderColor: 'lightgray', borderRadius: '0.8em 0.8em 0em 0em',
         borderTop: 'none', borderLeft: 'none', borderRight: 'none'}">
             <b :style="{fontSize:'1.1em'}">Add delivery instructions</b>
-            <img @click="closePopup" :src="thinGrayXIcon" :style="{cursor: 'pointer', height: '1.4em', width: '1.4em'}"/>
+            <img @click="closePopup" :src="thinGrayXIcon" class="iconToBeAdjustedForDarkMode" :style="{cursor: 'pointer', height: '1.4em', width: '1.4em'}"/>
         </div>
 
         <div :style="{display: 'flex', flexDirection: 'column', padding: '0.5em 1em'}">
@@ -48,7 +48,7 @@
 
             <div :style="{display: 'flex', flexDirection: 'column', gap: '0em'}">
 
-                <div v-if="propertyType==='Business' || propertyType==='Other'" @click="toggleDivMinimization('When is this address open for deliveries?')" :style="{backgroundColor: '#f0f0f0', padding: '1em 1em', width: '94%', cursor: 'pointer',
+                <div class="deliveryInstructionSectionHeader" v-if="propertyType==='Business' || propertyType==='Other'" @click="toggleDivMinimization('When is this address open for deliveries?')" :style="{backgroundColor: '#f0f0f0', padding: '1em 1em', width: '94%', cursor: 'pointer',
                 position: 'relative', borderStyle: 'solid', borderLeft: 'none', borderRight: 'none', borderTop: 'none', borderColor: 'lightgray'}">
                     <b :style="{fontSize:'0.88em'}">When is this address open for deliveries?</b>
                     <template v-if="divMinimizations['When is this address open for deliveries?']==true">
@@ -62,7 +62,7 @@
                     top: '25%', left: '93%', objectFit: 'contain', display: 'none', transform:'rotate(180deg)',
                     display: divMinimizations['When is this address open for deliveries?']==true ? 'none' : ''}"/>
                 </div>
-                <div v-if="divMinimizations['When is this address open for deliveries?']==false"
+                <div class="popup" v-if="divMinimizations['When is this address open for deliveries?']==false"
                 :style="{backgroundColor: 'white', padding: '1em 1em', width: '86%', display: 'flex', flexDirection: 'column'}">
                     
                     <template v-if="weekdaysAreGrouped">
@@ -581,7 +581,7 @@
 
                 </div>
 
-                <div @click="toggleDivMinimization('Where should we leave your packages at this address?')" :style="{backgroundColor: '#f0f0f0', padding: '1em 1em', width: '94%', cursor: 'pointer',
+                <div class="deliveryInstructionSectionHeader" @click="toggleDivMinimization('Where should we leave your packages at this address?')" :style="{backgroundColor: '#f0f0f0', padding: '1em 1em', width: '94%', cursor: 'pointer',
                 position: 'relative'}">
                     <b :style="{fontSize:'0.88em'}">Where should we leave your packages at this address?</b>
                     <p v-if="divMinimizations['Where should we leave your packages at this address?']==true && packageShouldBeLeftHere.length>0" :style="{fontSize:'0.85em'}">{{packageShouldBeLeftHere}}</p>
@@ -592,7 +592,7 @@
                     top: '25%', left: '93%', objectFit: 'contain', display: 'none', transform:'rotate(180deg)',
                     display: divMinimizations['Where should we leave your packages at this address?']==true ? 'none' : ''}"/>
                 </div>
-                <div v-if="divMinimizations['Where should we leave your packages at this address?']==false"
+                <div class="popup" v-if="divMinimizations['Where should we leave your packages at this address?']==false"
                 :style="{backgroundColor: 'white', padding: '1em 1em'}">
                     <form style="display: flex; flex-direction: column; gap: 0.2em; font-size: 0.9em;">
                         <label>
@@ -646,7 +646,7 @@
                     </form>
                 </div>
 
-                <div @click="toggleDivMinimization('Do we need a security code, call box number, or key to access this building?')" :style="{backgroundColor: '#f0f0f0', padding: '1em 1em', width: '94%', cursor: 'pointer',
+                <div class="deliveryInstructionSectionHeader" @click="toggleDivMinimization('Do we need a security code, call box number, or key to access this building?')" :style="{backgroundColor: '#f0f0f0', padding: '1em 1em', width: '94%', cursor: 'pointer',
                 position: 'relative', borderStyle: 'solid', borderLeft: 'none', borderRight: 'none', borderBottom: 'none', borderColor: 'lightgray'}">
                     <b :style="{fontSize:'0.88em'}">Do we need a security code, call box number, or key to access this building?</b>
                     <p v-if="divMinimizations['Do we need a security code, call box number, or key to access this building?']==true && securityCode.length>0" :style="{fontSize:'0.85em'}">Security code: {{ securityCode }}</p>
@@ -659,7 +659,7 @@
                     top: '25%', left: '93%', objectFit: 'contain', display: 'none', transform:'rotate(180deg)',
                     display: divMinimizations['Do we need a security code, call box number, or key to access this building?']==true ? 'none' : ''}"/>
                 </div>
-                <div v-if="divMinimizations['Do we need a security code, call box number, or key to access this building?']==false"
+                <div class="popup" v-if="divMinimizations['Do we need a security code, call box number, or key to access this building?']==false"
                 :style="{backgroundColor: 'white', padding: '0.8em 1em', display: 'flex', flexDirection: 'column', gap: '0.5em',
                 fontSize:'0.92em'}">
                     <b>Security code</b>
@@ -675,7 +675,7 @@
                     </div>
                 </div>
 
-                <div v-if="moreOptionsAreShown && propertyType!=='Apartment' && propertyType!=='Business' && propertyType!=='Other'" @click="toggleDivMinimization('Do you have a dog at this address?')" :style="{backgroundColor: '#f0f0f0', padding: '1em 1em', width: '94%', cursor: 'pointer',
+                <div class="deliveryInstructionSectionHeader" v-if="moreOptionsAreShown && propertyType!=='Apartment' && propertyType!=='Business' && propertyType!=='Other'" @click="toggleDivMinimization('Do you have a dog at this address?')" :style="{backgroundColor: '#f0f0f0', padding: '1em 1em', width: '94%', cursor: 'pointer',
                 position: 'relative', borderStyle: 'solid', borderLeft: 'none', borderRight: 'none', borderBottom: 'none', borderColor: 'lightgray'}">
                     <b :style="{fontSize:'0.88em'}">Do you have a dog at this address?</b>
                     <p v-if="divMinimizations['Do you have a dog at this address?']==true && dogPresent!==null" :style="{fontSize:'0.85em'}">{{ dogPresent }}</p>
@@ -686,7 +686,7 @@
                     top: '25%', left: '93%', objectFit: 'contain', display: 'none', transform:'rotate(180deg)',
                     display: divMinimizations['Do you have a dog at this address?']==true ? 'none' : ''}"/>
                 </div>
-                <div v-if="moreOptionsAreShown && divMinimizations['Do you have a dog at this address?']==false"
+                <div class="popup" v-if="moreOptionsAreShown && divMinimizations['Do you have a dog at this address?']==false"
                 :style="{backgroundColor: 'white', padding: '1em 1em', width: '86%', display: 'flex', alignItems: 'center',
                 gap: '1.6em'}">
                     <button @click="updateDogAtAddress('Yes')" :style="{backgroundColor: dogPresent==='Yes' ? '#ebf2ff' : 'white', borderRadius: '0.88em', padding: '0.5em 1em',
@@ -698,7 +698,7 @@
                     borderColor: dogPresent==='No' ? '#5c749c' : ''}">No</button>
                 </div>
 
-                <div v-if="moreOptionsAreShown" @click="toggleDivMinimization('Do we need additional instructions to deliver to this address?')" :style="{backgroundColor: '#f0f0f0', padding: '1em 1em', width: '94%', cursor: 'pointer',
+                <div class="deliveryInstructionSectionHeader" v-if="moreOptionsAreShown" @click="toggleDivMinimization('Do we need additional instructions to deliver to this address?')" :style="{backgroundColor: '#f0f0f0', padding: '1em 1em', width: '94%', cursor: 'pointer',
                 position: 'relative', borderStyle: 'solid', borderLeft: 'none', borderRight: 'none', borderBottom: 'none', borderColor: 'lightgray'}">
                     <b :style="{fontSize:'0.88em'}">Do we need additional instructions to deliver to this address?</b>
                     <p v-if="divMinimizations['Do we need additional instructions to deliver to this address?']==true && additionalInstructions.length>0" :style="{fontSize:'0.9em'}">{{ additionalInstructions }}</p>
@@ -709,7 +709,7 @@
                     top: '25%', left: '93%', objectFit: 'contain', display: 'none', transform:'rotate(180deg)',
                     display: divMinimizations['Do we need additional instructions to deliver to this address?']==true ? 'none' : ''}"/>
                 </div>
-                <div v-if="moreOptionsAreShown && divMinimizations['Do we need additional instructions to deliver to this address?']==false"
+                <div class="popup" v-if="moreOptionsAreShown && divMinimizations['Do we need additional instructions to deliver to this address?']==false"
                 :style="{backgroundColor: 'white', padding: '1em 1em', width: '86%'}">
                     <textarea v-model="additionalInstructions" placeholder="Provide details such as a building description, a nearby landmark, or other navigation instructions."
                     :style="{fontFamily: 'Arial', width: '100%', height: '10em', fontSize:'0.95em', paddingTop:'0.5em', paddingLeft: '0.5em',
@@ -1096,3 +1096,14 @@ import warningIcon from '@/assets/images/warningIcon.png';
     }
 
 </script>
+
+
+
+<style>
+
+    @media (prefers-color-scheme: dark) {
+        .deliveryInstructionSectionHeader {
+            background-color: #4a4a4a !important;
+        }
+    }
+</style>

@@ -28,6 +28,7 @@
                     :arrivalTextHeader="arrivalTextHeader"
                     :hasPremium="hasPremium" :products="itemsToBeOrderedByUserAsDict[arrivalTextHeader]"
                     @updateItemQuantity="updateItemQuantity" @updateSelectedProductDeal="updateSelectedProductDeal"
+                    @productDeliveryDateHasBeenUpdated="updateProductDeliveryDate" :deliveryAreaCountry="deliveryAreaCountry"
                 />
                 <PlaceYourOrder :orderSubtotal="orderSubtotal" :selectedDeliveryAddress="selectedDeliveryAddress"
                 :selectedPickupLocation="selectedPickupLocation"
@@ -36,7 +37,7 @@
             <SubtotalAndPlaceOrder :itemsSubtotal="itemsSubtotal" :shippingHandlingAndDeliverySubtotal="shippingHandlingAndDeliverySubtotal"
             :taxSubtotal="taxSubtotal" :orderSubtotal="orderSubtotal" :selectedDeliveryAddress="selectedDeliveryAddress" :selectedPickupLocation="selectedPickupLocation"
             :selectedPaymentCard="selectedPaymentCard" @placeOrder="toggleOrderHasBeenPlaced" :quantityTotal="quantityTotal"
-            :shippingAndHandlingFeesSavedWithPremium="shippingAndHandlingFeesSavedWithPremium" :totalItemDiscounts="totalItemDiscounts"
+            :shippingAndHandlingFeesSavedWithPremium="shippingAndHandlingFeesSavedWithPremium" :totalItemDiscounts="totalItemDiscounts" :priceDifferencesFromSchedulingLater="priceDifferencesFromSchedulingLater"
             />
         </div>
 
@@ -111,6 +112,7 @@ import '../styles.css';
                 orderSubtotal: "$0.00",
                 shippingAndHandlingFeesSavedWithPremium: "$0.00",
                 totalItemDiscounts: "$0.00",
+                priceDifferencesFromSchedulingLater: "$0.00",
                 quantityTotal: 0,
                 deliveryAreaCountry: "",
                 deliveryZipcode: "",
@@ -328,7 +330,7 @@ import '../styles.css';
                         productPricePerUnit: "$2.50/Ounce",
                         productOptions: {},
                         quantity: 3,
-                        getItAsSoonAs: 38,
+                        getItAsSoonAs: 15000,
                         shippingAndHandlingPrice: "$7.40",
                         tax: "$0.036",
                         sAndHPriceSavedWithPremium: "$0.40",
@@ -410,7 +412,8 @@ import '../styles.css';
                         this.shippingHandlingAndDeliverySubtotal,
                         this.taxSubtotal,
                         this.shippingAndHandlingFeesSavedWithPremium,
-                        this.totalItemDiscounts
+                        this.totalItemDiscounts,
+                        this.priceDifferencesFromSchedulingLater
                     );
 
                     let promoCodes = {
@@ -477,6 +480,16 @@ import '../styles.css';
                             }
                             deal.prices = [...newPrices];
                         }
+
+                        if('deliveryDate' in product) {
+                            let priceDifference = product.deliveryDate[2];
+                            const firstChar = priceDifference[0]; //either '+' or '-'
+                    
+                            priceDifference = parseFloat(priceDifference.substring(currentCurrency.length+1));
+                            priceDifference/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                            priceDifference*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
+                            product.deliveryDate[2] = firstChar+newCurrency+priceDifference.toFixed(2);
+                        }
                     }
                 }
 
@@ -505,6 +518,11 @@ import '../styles.css';
                 totalItemDiscounts*=this.currencyToDollarMap[newCurrency];
                 this.totalItemDiscounts = newCurrency+totalItemDiscounts.toFixed(2);
 
+                let priceDifferencesFromSchedulingLater = parseFloat(this.priceDifferencesFromSchedulingLater.substring(currentCurrency.length));
+                priceDifferencesFromSchedulingLater/=this.currencyToDollarMap[currentCurrency];
+                priceDifferencesFromSchedulingLater*=this.currencyToDollarMap[newCurrency];
+                this.priceDifferencesFromSchedulingLater = newCurrency+priceDifferencesFromSchedulingLater.toFixed(2);
+
                 let orderSubtotal = parseFloat(this.orderSubtotal.substring(currentCurrency.length));
                 orderSubtotal/=this.currencyToDollarMap[currentCurrency];
                 orderSubtotal*=this.currencyToDollarMap[newCurrency];
@@ -520,7 +538,7 @@ import '../styles.css';
             },
 
             getTotal(itemsSubtotal, shippingHandlingAndDeliverySubtotal, taxSubtotal,
-            shippingAndHandlingFeesSavedWithPremium, totalItemDiscounts) {
+            shippingAndHandlingFeesSavedWithPremium, totalItemDiscounts, priceDifferencesFromSchedulingLater) {
                 let currencySymbol = itemsSubtotal[0];
                 if(currencySymbol==="A") {
                     currencySymbol+="$";
@@ -542,6 +560,7 @@ import '../styles.css';
                 orderTotal+=parseFloat(taxSubtotal.substring(currencySymbol.length));
                 orderTotal-=parseFloat(shippingAndHandlingFeesSavedWithPremium.substring(currencySymbol.length));
                 orderTotal-=parseFloat(totalItemDiscounts.substring(currencySymbol.length));
+                orderTotal+=parseFloat(priceDifferencesFromSchedulingLater.substring(currencySymbol.length));
                 return currencySymbol + orderTotal.toFixed(2);
             },
 
@@ -677,7 +696,8 @@ import '../styles.css';
                             this.shippingHandlingAndDeliverySubtotal,
                             this.taxSubtotal,
                             this.shippingAndHandlingFeesSavedWithPremium,
-                            this.totalItemDiscounts
+                            this.totalItemDiscounts,
+                            this.priceDifferencesFromSchedulingLater
                         );
 
                         return;
@@ -801,6 +821,56 @@ import '../styles.css';
 
                 this.displayAddDeliveryInstructionsPopup = false;
                 this.displayDarkScreen = false;
+            },
+
+            updateProductDeliveryDate(info) {
+                const arrivalTextHeader = info.arrivalTextHeader;
+                const id = info.id;
+                const newWeekday = info.newWeekday;
+                const newMonthAndDay = info.newMonthAndDay;
+                const newPriceDifference = info.newPriceDifference;
+                const newYear = info.newYear;
+
+                for(let i=0; i<this.itemsToBeOrderedByUserAsDict[arrivalTextHeader].length; i++) {
+                    const product = this.itemsToBeOrderedByUserAsDict[arrivalTextHeader][i];
+                    if(product.id==id) {
+                        const currentCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
+
+                        let orderSubtotal = this.orderSubtotal;
+                        orderSubtotal = parseFloat(orderSubtotal.substring(currentCurrency.length));
+                        
+                        let priceDifferencesFromSchedulingLater = this.priceDifferencesFromSchedulingLater;
+                        priceDifferencesFromSchedulingLater = parseFloat(priceDifferencesFromSchedulingLater.substring(currentCurrency.length));
+                        
+                        if('deliveryDate' in product) {
+                            let originalPriceDifference = product.deliveryDate[2];
+                            if(originalPriceDifference[0]==='-') {
+                                originalPriceDifference = parseFloat(originalPriceDifference.substring(currentCurrency.length+1));
+                                priceDifferencesFromSchedulingLater+=originalPriceDifference;
+                                orderSubtotal+=originalPriceDifference;
+                            }
+                            else {
+                                originalPriceDifference = parseFloat(originalPriceDifference.substring(currentCurrency.length+1));
+                                priceDifferencesFromSchedulingLater-=originalPriceDifference;
+                                orderSubtotal-=originalPriceDifference;
+                            }
+                        }
+
+                        if(newPriceDifference[0]==='-') {
+                            priceDifferencesFromSchedulingLater-=parseFloat(newPriceDifference.substring(currentCurrency.length+1));
+                            orderSubtotal-=parseFloat(newPriceDifference.substring(currentCurrency.length+1));
+                        }
+                        else {
+                            priceDifferencesFromSchedulingLater+=parseFloat(newPriceDifference.substring(currentCurrency.length+1));
+                            orderSubtotal+=parseFloat(newPriceDifference.substring(currentCurrency.length+1));
+                        }
+
+                        this.priceDifferencesFromSchedulingLater = currentCurrency + priceDifferencesFromSchedulingLater.toFixed(2);
+                        this.orderSubtotal = currentCurrency + orderSubtotal.toFixed(2);
+                        product.deliveryDate = [newWeekday, newMonthAndDay, newPriceDifference, newYear];
+                        return;
+                    }
+                }
             }
         },
 

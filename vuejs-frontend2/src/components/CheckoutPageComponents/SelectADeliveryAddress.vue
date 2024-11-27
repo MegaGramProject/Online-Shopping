@@ -1,6 +1,6 @@
 <template>
 
-    <div :style="{width: '50em', padding: '1em 1em', backgroundColor: 'white', display: 'flex',
+    <div class="miniSection" :style="{width: '50em', padding: '1em 1em', backgroundColor: 'white', display: 'flex',
     flexDirection: 'column'}">
         <template v-if="!isMinimized">
             <h3>Select a delivery address</h3>

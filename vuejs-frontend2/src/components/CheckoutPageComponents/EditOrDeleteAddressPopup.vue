@@ -1,13 +1,13 @@
 <template>
 
-    <div :style="{backgroundColor: 'white', position: 'absolute', top: '7%', left: '31%', width: '42em',
+    <div class="popup" :style="{backgroundColor: 'white', position: 'absolute', top: '7%', left: '31%', width: '42em',
     display: 'flex', flexDirection: 'column', borderRadius:'0.8em', paddingBottom:'3em', gap: '1em'}">
         
-        <div :style="{backgroundColor: '#ededed', padding: '1.5em 1.5em', display: 'flex', justifyContent: 'space-between',
+        <div class="popupHeader" :style="{backgroundColor: '#ededed', padding: '1.5em 1.5em', display: 'flex', justifyContent: 'space-between',
         alignItems: 'center', borderStyle: 'solid', borderColor: 'lightgray', borderRadius: '0.8em 0.8em 0em 0em',
         borderTop: 'none', borderLeft: 'none', borderRight: 'none'}">
             <b :style="{fontSize:'1.1em'}">Edit/Delete your address</b>
-            <img @click="closePopup" :src="thinGrayXIcon" :style="{cursor: 'pointer', height: '1.4em', width: '1.4em'}"/>
+            <img @click="closePopup" :src="thinGrayXIcon" class="iconToBeAdjustedForDarkMode" :style="{cursor: 'pointer', height: '1.4em', width: '1.4em'}"/>
         </div>
 
         <div :style="{display: 'flex', flexDirection: 'column', paddingLeft:'3em', gap: '0.8em'}">

@@ -1,12 +1,12 @@
 <template>
 
-    <div :style="{width: '50em', padding: '1em 1em', backgroundColor: 'white', display: 'flex',
+    <div class="miniSection" :style="{width: '49em', padding: '2em 1.5em', backgroundColor: 'white', display: 'flex',
     flexDirection: 'column', gap: '1em'}">
         <h3>{{ arrivalTextHeader }}</h3>
 
         <div v-for="product in products" :key="product.id" :style="{display: 'flex', gap: '1.5em'}">
 
-            <div :style="{width: '50%', backgroundColor: '#ededed', padding: '1em 2em', display: 'flex',
+            <div class="miniSection" :style="{width: '50%', backgroundColor: '#ededed', padding: '1em 2em', display: 'flex',
             flexDirection: 'column'}">
 
                 <div :style="{display: 'flex', gap: '1.25em'}">
@@ -145,10 +145,42 @@
                 <p v-for="optionKey in Object.keys(product.productOptions)" :key="optionKey" :style="{fontSize:'0.88em', marginBottom:'0em'}"><b>{{ optionKey }}:</b> <span :style="{color: 'gray'}">{{ product.productOptions[optionKey] }}</span></p>
             </div>
 
-            <form>
-                <input type="radio" name="scheduleDelivery" value="default" :style="{marginBottom:'1em'}" checked><b>{{ formatArrivalText() }}</b><br>
-                <input type="radio" name="scheduleDelivery" value="scheduleAhead">Schedule <b>ahead</b><br>
-            </form>
+            <div :style="{display: 'flex', flexDirection: 'column'}">
+                <form @change="productDeliveryScheduleTypeChanged(product)">
+                    <input v-model="this.productScheduleTypes[product.id]" type="radio" name="scheduleDelivery" value="default" :style="{marginBottom:'1em'}" checked><b>{{ formatArrivalText() }}</b><br>
+                    <input v-model="this.productScheduleTypes[product.id]" type="radio" name="scheduleDelivery" value="scheduleLater">Schedule <b>later</b><br>
+                </form>
+
+                <template v-if="this.productScheduleTypes[product.id]==='scheduleLater'">
+                    <div :style="{position: 'relative', marginTop:'1em', marginBottom:'-1em', cursor: 'pointer'}">
+                        <p><b>Selected:</b>  {{ productSchedules[product.id] == null ? 'None' : productSchedules[product.id][0] + ", " + productSchedules[product.id][1]}}</p>
+
+                        <p v-if="productSchedules[product.id]!==null && productSchedules[product.id][2][0]==='-'" :style="{color: 'darkgreen', position: 'absolute', left: '130%', top: '0%', cursor: 'pointer'}">{{ productSchedules[product.id][2]}}</p>
+                        <p v-if="productSchedules[product.id]!==null && productSchedules[product.id][2][0]==='+'" :style="{color: '#bf2a40', position: 'absolute', left: '130%', top: '0%', cursor: 'pointer'}">{{ productSchedules[product.id][2]}}</p>
+                    </div>
+
+                    <b v-if="productToDisplayOtherSchedulingOptionsMappings[product.id]==true" @click="toggleDisplayOtherSchedulingOptions(product)" :style="{marginTop:'1em', cursor: 'pointer'}">Hide other options</b>
+                    <b v-else @click="toggleDisplayOtherSchedulingOptions(product)" :style="{marginTop:'1em', cursor: 'pointer'}">Show other options</b>
+
+                    <template v-if="productToDisplayOtherSchedulingOptionsMappings[product.id]==true">
+                        <br/>
+                        <div v-for="schedulingOption in productToOtherSchedulingOptionsMappings[product.id]" :key="schedulingOption.monthAndDay"
+                        @click="updateScheduleAheadDate(product, schedulingOption.weekday, schedulingOption.monthAndDay, schedulingOption.priceDifference, schedulingOption.year)"
+                        :style="{position: 'relative', cursor: 'pointer',
+                        fontSize:'0.9em'}">
+                            <template v-if="productSchedules[product.id]==null || schedulingOption.monthAndDay!==productSchedules[product.id][1]">
+                                <p><b>{{ schedulingOption.weekday }},</b> {{ schedulingOption.monthAndDay }}</p>
+                                <p></p>
+
+                                <p v-if="schedulingOption.priceDifference[0]==='+'" :style="{color: '#bf2a40', position: 'absolute', left: '130%', top: '0%'}">{{ schedulingOption.priceDifference }}</p>
+                                <p v-else :style="{color: 'darkgreen', position: 'absolute', left: '130%', top: '0%'}">{{ schedulingOption.priceDifference }}</p>
+                            </template>
+                        </div>
+                    </template>
+                    
+                </template>
+                
+            </div>
 
         </div>
 
@@ -167,12 +199,52 @@ import showerCurtains from '@/assets/images/showerCurtains.jpg';
             getItAsSoonAs: Number,
             hasPremium: Boolean,
             products: Array,
+            deliveryAreaCountry: String
+        },
+
+        mounted() {
+            this.getDefaultWeekdayMonthDayAndYear();
+
+            for(let product of this.products) {
+                this.productScheduleTypes[product.id] = 'default';
+                this.productSchedules[product.id] = [this.defaultWeekday, this.defaultMonthAndDay, '-$0', this.defaultYear];
+                this.productToDisplayOtherSchedulingOptionsMappings[product.id] = false;
+            }
         },
 
         data() {
             return {
                 showerCurtains,
                 checkmark,
+                productScheduleTypes: {}, //keys are the ids(not product-id, but cart-item-id) and values are either 'default' or 'scheduleLater'
+                productSchedules: {}, //keys are ids(not product-id, but cart-item-id) and values are either [this.defaultWeekday, this.defaultMonthAndDay, '-$0', this.defaultYear](if default) or something like this otherwise: ['Thurs, Nov 28', '+$12', 2024]
+                productToDisplayOtherSchedulingOptionsMappings: {}, //keys are ids(not product-id, but cart-item-id) and values are booleans that are true if other scheduling options are shown, false otherwise
+                productToOtherSchedulingOptionsMappings: {}, //keys are ids(not product-id, but cart-item-id) and values are lists of scheduling options available for the product upto 5 days ahead of the default scheduled date.
+                defaultWeekday: "",
+                defaultMonthAndDay: "",
+                defaultYear: "",
+                countryCurrencyMap: {
+                    "the United States": "$", // USD - US Dollar
+                    "Australia": "A$",     // AUD - Australian Dollar
+                    "Canada": "C$",        // CAD - Canadian Dollar
+                    "China": "CN¥",          // CNY - Chinese Yuan
+                    "Germany": "€",        // EUR - Euro
+                    "India": "₹",          // INR - Indian Rupee
+                    "Japan": "¥",          // JPY - Japanese Yen
+                    "Mexico": "MX$",         // MXN - Mexican Peso
+                    "United Kingdom": "£"  // GBP - British Pound
+                },
+                currencyToDollarMap: {
+                    "$": 1,            // USD - United States
+                    "A$": 1.5063,        // AUD - Australian Dollar
+                    "C$": 1.3855,        // CAD - Canadian Dollar
+                    "¥": 151.88,       // JPY - Japanese Yen (for Japan)
+                    "₹": 84.079,        // INR - Indian Rupee (for India)
+                    "€": 0.9240,         // EUR - Euro (for Germany)
+                    "CN¥": 7.1198,   // CNY - Chinese Yuan (for China)
+                    "MX$": 19.86,      // MXN - Mexican Peso (for Mexico)
+                    "£": 0.7709          // GBP - British Pound (for United Kingdom)
+                }
             }
         },
 
@@ -242,6 +314,160 @@ import showerCurtains from '@/assets/images/showerCurtains.jpg';
                         newlySelectedProductDeal: event.target.value,
                     }
                 );
+            },
+
+            toggleDisplayOtherSchedulingOptions(product) {
+                this.productToDisplayOtherSchedulingOptionsMappings[product.id] = !this.productToDisplayOtherSchedulingOptionsMappings[product.id];
+                if(product.id in this.productToOtherSchedulingOptionsMappings==false) {
+                    this.getOtherSchedulingOptions(product);
+                }
+            },
+
+            getOtherSchedulingOptions(product) {
+                const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                const months = [
+                    { name: "Jan", days: 31 },
+                    { name: "Feb", days: 28 },
+                    { name: "Mar", days: 31 },
+                    { name: "Apr", days: 30 },
+                    { name: "May", days: 31 },
+                    { name: "Jun", days: 30 },
+                    { name: "Jul", days: 31 },
+                    { name: "Aug", days: 31 },
+                    { name: "Sep", days: 30 },
+                    { name: "Oct", days: 31 },
+                    { name: "Nov", days: 30 },
+                    { name: "Dec", days: 31 }
+                ];
+                const priceDifferences = ["+"+this.countryCurrencyMap[this.deliveryAreaCountry]+"10", "+"+this.countryCurrencyMap[this.deliveryAreaCountry]+"5", "-"+this.countryCurrencyMap[this.deliveryAreaCountry]+"0", "-"+this.countryCurrencyMap[this.deliveryAreaCountry]+"19", "-"+this.countryCurrencyMap[this.deliveryAreaCountry]+"22"];
+
+                const isLeapYear = (year) => (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+
+                const updateLeapYearDays = (year) => {
+                    months[1].days = isLeapYear(year) ? 29 : 28;
+                };
+
+                const getIndex = (array, value) => array.findIndex(item => item.name === value || item === value);
+
+                const startWeekdayIndex = getIndex(weekdays, this.defaultWeekday);
+                const [startMonth, startDay] = this.defaultMonthAndDay.split(" ");
+                const startMonthIndex = getIndex(months, startMonth);
+                const startDayNumber = parseInt(startDay);
+                let currentYear = this.defaultYear;
+
+                updateLeapYearDays(currentYear);
+
+                const schedulingOptions = [];
+                let currentWeekdayIndex = startWeekdayIndex;
+                let currentMonthIndex = startMonthIndex;
+                let currentDay = startDayNumber;
+
+                for (let i = 0; i < 5; i++) {
+                    currentWeekdayIndex = (currentWeekdayIndex + 1) % 7;
+                    currentDay++;
+
+                    if (currentDay > months[currentMonthIndex].days) {
+                        currentDay = 1;
+                        currentMonthIndex = (currentMonthIndex + 1) % months.length;
+
+                        if (currentMonthIndex === 0) {
+                            currentYear++;
+                            updateLeapYearDays(currentYear);
+                        }
+                    }
+
+                    schedulingOptions.push({
+                        year: currentYear,
+                        weekday: weekdays[currentWeekdayIndex],
+                        monthAndDay: `${months[currentMonthIndex].name} ${currentDay}`,
+                        priceDifference: priceDifferences[i]
+                    });
+                }
+
+                this.productToOtherSchedulingOptionsMappings[product.id] = schedulingOptions;
+            },
+
+            updateScheduleAheadDate(product, newWeekday, newMonthAndDay, newPriceDifference, newYear) {
+                this.productSchedules[product.id] = [newWeekday, newMonthAndDay, newPriceDifference, newYear];
+                this.$emit("productDeliveryDateHasBeenUpdated",
+                    {
+                        arrivalTextHeader: this.arrivalTextHeader,
+                        id: product.id,
+                        newWeekday: newWeekday,
+                        newMonthAndDay: newMonthAndDay,
+                        newPriceDifference: newPriceDifference,
+                        newYear: newYear
+                    }
+                );
+            },
+
+            getDefaultWeekdayMonthDayAndYear() {
+                const currentDate = new Date();
+    
+                currentDate.setHours(currentDate.getHours() + this.getItAsSoonAs);
+
+                const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+                const weekday = weekdays[currentDate.getDay()];
+                this.defaultWeekday = weekday;
+
+                const month = months[currentDate.getMonth()];
+                const day = currentDate.getDate();
+                this.defaultMonthAndDay = `${month} ${day}`;
+
+                this.defaultYear = currentDate.getFullYear();
+            },
+
+            productDeliveryScheduleTypeChanged(product) {
+                if(this.productScheduleTypes[product.id]==='default') {
+                    this.productToDisplayOtherSchedulingOptionsMappings[product.id] = false;
+                    this.productSchedules[product.id] = [this.defaultWeekday, this.defaultMonthAndDay, '-'+this.countryCurrencyMap[this.deliveryAreaCountry]+'0'];
+                    this.$emit("productDeliveryDateHasBeenUpdated",
+                        {
+                            arrivalTextHeader: this.arrivalTextHeader,
+                            id: product.id,
+                            newWeekday: this.defaultWeekday,
+                            newMonthAndDay: this.defaultMonthAndDay,
+                            newPriceDifference: '-'+this.countryCurrencyMap[this.deliveryAreaCountry]+'0',
+                            newYear: this.defaultYear
+                        }
+                    );
+                }
+            },
+
+            updateCurrencies(currentCurrency, newCurrency) {
+                for(let id of Object.keys(this.productSchedules)) {
+                    const productSchedule = this.productSchedules[id];
+                    let priceDifferenceInProductSchedule = productSchedule[2]; //something like '+$20' or '-$12' etc
+                    const firstChar = priceDifferenceInProductSchedule[0]; //either '+' or '-'
+                    
+                    priceDifferenceInProductSchedule = parseFloat(priceDifferenceInProductSchedule.substring(currentCurrency.length+1));
+                    priceDifferenceInProductSchedule/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                    priceDifferenceInProductSchedule*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
+                    this.productSchedules[id][2] = firstChar+newCurrency+priceDifferenceInProductSchedule.toFixed(2);
+
+                    if(id in this.productToOtherSchedulingOptionsMappings) {
+                        for(let otherSchedulingOption of this.productToOtherSchedulingOptionsMappings[id]) {
+                            let priceDifference = otherSchedulingOption.priceDifference;
+                            const firstChar = priceDifference[0]; //either '+' or '-'
+                        
+                            priceDifference = parseFloat(priceDifference.substring(currentCurrency.length+1));
+                            priceDifference/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                            priceDifference*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
+                            otherSchedulingOption.priceDifference = firstChar+newCurrency+priceDifference.toFixed(2);
+                        }
+                    }
+                }
+            }
+        },
+
+        watch: {
+
+            deliveryAreaCountry(newVal, oldVal) {
+                let currentCurrency = this.countryCurrencyMap[oldVal];
+                let newCurrency = this.countryCurrencyMap[newVal];
+                this.updateCurrencies(currentCurrency, newCurrency);
             }
         }
 

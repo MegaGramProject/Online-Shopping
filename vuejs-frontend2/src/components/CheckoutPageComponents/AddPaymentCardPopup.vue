@@ -1,12 +1,12 @@
 <template>
-    <div :style="{backgroundColor: 'white', position: 'absolute', top: '66%', left: '25%', width: '50em',
+    <div class="popup" :style="{backgroundColor: 'white', position: 'absolute', top: '66%', left: '25%', width: '50em',
     display: 'flex', flexDirection: 'column', borderRadius:'0.8em', height: '22em', gap: '1em'}">
 
-        <div :style="{backgroundColor: '#ededed', padding: '1.5em 1.5em', display: 'flex', justifyContent: 'space-between',
+        <div class="popupHeader" :style="{backgroundColor: '#ededed', padding: '1.5em 1.5em', display: 'flex', justifyContent: 'space-between',
         alignItems: 'center', borderStyle: 'solid', borderColor: 'lightgray', borderRadius: '0.8em 0.8em 0em 0em',
         borderTop: 'none', borderLeft: 'none', borderRight: 'none'}">
             <b :style="{fontSize:'1.1em'}">Add a credit or debit card</b>
-            <img @click="closePopup" :src="thinGrayXIcon" :style="{cursor: 'pointer', height: '1.4em', width: '1.4em'}"/>
+            <img @click="closePopup" :src="thinGrayXIcon" class="iconToBeAdjustedForDarkMode" :style="{cursor: 'pointer', height: '1.4em', width: '1.4em'}"/>
         </div>
 
 
@@ -85,7 +85,7 @@
 
         </div>
 
-        <div :style="{backgroundColor: '#ededed', marginTop:'-1em', borderRadius: '0em 0em 0.8em 0.8em',
+        <div class="popupHeader" :style="{backgroundColor: '#ededed', marginTop:'-1em', borderRadius: '0em 0em 0.8em 0.8em',
         padding: '1em 1em', display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
         gap: '1em'}">
             <button @click="closePopup" :style="{padding: '0.5em 1em', backgroundColor: 'white', cursor: 'pointer',

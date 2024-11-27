@@ -1,22 +1,22 @@
 <template>
-    <div :style="{backgroundColor: 'white', position: 'absolute', top: '7%', left: '10%', width: '85em',
+    <div class="popup" :style="{backgroundColor: 'white', position: 'absolute', top: '7%', left: '10%', width: '85em',
     display: 'flex', flexDirection: 'column', borderRadius:'0.8em', height: '40em', gap: '1em'}">
 
-        <div :style="{backgroundColor: '#ededed', padding: '1.5em 1.5em', display: 'flex', justifyContent: 'space-between',
+        <div class="popupHeader" :style="{backgroundColor: '#ededed', padding: '1.5em 1.5em', display: 'flex', justifyContent: 'space-between',
         alignItems: 'center', borderStyle: 'solid', borderColor: 'lightgray', borderRadius: '0.8em 0.8em 0em 0em',
         borderTop: 'none', borderLeft: 'none', borderRight: 'none'}">
             <b :style="{fontSize:'1.1em'}">Select a pickup location</b>
-            <img @click="closePopup" :src="thinGrayXIcon" :style="{cursor: 'pointer', height: '1.4em', width: '1.4em'}"/>
+            <img @click="closePopup" :src="thinGrayXIcon" class="iconToBeAdjustedForDarkMode" :style="{cursor: 'pointer', height: '1.4em', width: '1.4em'}"/>
         </div>
 
-        <div :style="{backgroundColor: 'white', display: 'flex', alignItems: 'center', paddingBottom:'0.7em',
+        <div class="popup" :style="{backgroundColor: 'white', display: 'flex', alignItems: 'center', paddingBottom:'0.7em',
         paddingLeft: '1em', borderStyle: 'solid', borderColor: 'lightgray', borderTop: 'none', borderLeft: 'none', borderRight: 'none',
         borderWidth:'0.3em', gap: '4.5%'}">
             <div :style="{display: 'flex', flexDirection: 'column', gap:'0.3em', position: 'relative'}">
                 <b :style="{fontSize:'0.87em'}">Find pickup locations near:</b>
                 <textarea placeholder="Enter an address, zip-code, or landmark" :style="{fontSize:'0.88em', fontFamily: 'Arial', resize: 'none', width: '30em',
                 paddingTop:'0.7em', paddingLeft:'0.5em'}"/>
-                <img @click="fetchPickupLocationResults" :src="searchIcon" :style="{position: 'absolute', top: '0%', left: '95%', height: '5em', width: '5em', objectFit: 'contain', cursor: 'pointer'}"/>
+                <img @click="fetchPickupLocationResults" :src="searchIcon" class="iconToBeAdjustedForDarkMode" :style="{position: 'absolute', top: '0%', left: '95%', height: '5em', width: '5em', objectFit: 'contain', cursor: 'pointer'}"/>
             </div>
 
             <div :style="{display: 'flex', flexDirection: 'column', gap:'0.3em'}">
@@ -30,7 +30,7 @@
 
         <div :style="{display: 'flex', width: '100%', height: '100%', marginTop:'-1.3em'}">
 
-            <div :style="{backgroundColor: 'white', height: '99.1%', width: '43%', display: 'flex', flexDirection: 'column',
+            <div class="popup" :style="{backgroundColor: 'white', height: '99.1%', width: '43%', display: 'flex', flexDirection: 'column',
             gap: '0em', overflowY: 'scroll', borderStyle: 'solid', borderLeft: 'none', borderRight: 'none', borderBottom: 'none',
             borderColor: 'lightgray', borderWidth: '0.3em'}">
                 <SinglePickupLocationResult v-for="(result, index) in pickupLocationResults" :key="index"

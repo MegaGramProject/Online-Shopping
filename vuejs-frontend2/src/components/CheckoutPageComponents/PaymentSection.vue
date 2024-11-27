@@ -1,5 +1,5 @@
 <template>
-    <div :style="{width: '49em', backgroundColor: 'white', display: 'flex',
+    <div class="miniSection" :style="{width: '49em', backgroundColor: 'white', display: 'flex',
     flexDirection: 'column', padding: '1.7em 1.5em'}">
 
         <template v-if="!isMinimized">
@@ -19,7 +19,7 @@
                 @toggleSelectCard="toggleSelectCard" :cardCompany="card.cardCompany"
                 />
                 <div :style="{display: 'flex', alignItems: 'center', paddingLeft: '1em', gap: '1em'}">
-                    <img @click="showAddPaymentCardPopup" :src="plusIcon" :style="{height: '1.2em', width: '1.2em', cursor: 'pointer'}">
+                    <img @click="showAddPaymentCardPopup" :src="plusIcon" class="iconToBeAdjustedForDarkMode" :style="{height: '1.2em', width: '1.2em', cursor: 'pointer'}">
                     <img :src="defaultPaymentCard" :style="{height: '2.5em', width: '2.5em', objectFit: 'contain', cursor: 'pointer'}">
                     <a @click="showAddPaymentCardPopup" :style="{cursor: 'pointer', color: '#2f6da3', fontSize: '0.9em'}">Add a credit or debit card</a>
                     <small :style="{color: 'gray'}">Megagram accepts all major debit & credit cards</small>
@@ -34,7 +34,7 @@
                     <button @click="applyPromoCode" :style="{borderStyle: 'solid', borderRadius: '2em', padding: '0.5em 1em', backgroundColor: 'white',
                     cursor: 'pointer', borderWidth:'0.1em'}">Apply</button>
                 </div>
-                <p v-if="invalidPromoCode" :style="{color: 'maroon'}">**Invalid promo-code</p>
+                <p v-if="invalidPromoCode" :style="{color: '#bf2a40'}">**Invalid promo-code</p>
 
                 <small v-if="promoCodeMatches.length>0" :style="{color: 'darkgreen'}">Promo-codes successfully applied.</small>
                 <div v-for="(promoCodeMatch, index) in promoCodeMatches" :key="index"

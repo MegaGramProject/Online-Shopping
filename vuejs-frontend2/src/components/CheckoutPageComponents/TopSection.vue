@@ -16,7 +16,7 @@
         <div :style="{display: 'flex', position: 'relative', alignItems: 'center',gap: '0.5em'}">
             <p @click="toggleSecureCheckoutMiniPopup" :style="{fontSize:'1.7em', cursor: 'pointer'}">Secure Checkout</p>
             <img :src="downwardTriangle" @click="toggleSecureCheckoutMiniPopup" :style="{height: '1.2em', width: '1.2em', cursor: 'pointer'}"/>
-            <div v-if="showSecureCheckoutMiniPopup" :style="{backgroundColor: 'white', color: 'black', position: 'absolute',
+            <div class="miniSection" v-if="showSecureCheckoutMiniPopup" :style="{backgroundColor: 'white', color: 'black', position: 'absolute',
             top: '98%', left: '-50%', padding: '1em 1.5em', width: '26em', borderRadius: '0.7em', boxShadow: 'rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px'}">
                 <p :style="{maxWidth:'88%'}">We secure your payment and personal information when you share or save it with us. We don't share payment details with third-party sellers. We don't sell your information to others.</p>
             </div>
