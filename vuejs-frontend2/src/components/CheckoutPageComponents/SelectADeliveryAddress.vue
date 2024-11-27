@@ -10,13 +10,14 @@
                 <SelectSingleAddress v-for="(address, index) in addressesOfUser" :key="address.id" :index="index"
                 :fullName="address.fullName" :addressText="address.addressText" :phoneNumber="address.phoneNumber"
                 :isSelected="index==0 && address.isSelected==true" @toggleSelectSingleAddress="toggleSelectSingleAddress"
-                @showEditOrDeleteAddressPopup="showEditOrDeleteAddressPopup"/>
+                @showEditOrDeleteAddressPopup="showEditOrDeleteAddressPopup" @showAddDeliveryInstructionsPopup="showAddDeliveryInstructionsPopup"
+                />
                 <a @click="showAddNewDeliveryAddressPopup" :style="{color: '#2f6da3', cursor: 'pointer'}">Add a new delivery address</a>
             </div>
 
             <h3>Pickup locations</h3>
             <template v-if="selectedPickupLocationOfUser!==null">
-                <b>Currently Selected: Megagram Locker - {{selectedPickupLocationOfUser.locationName}} ({{selectedPickupLocationOfUser.distance + selectedPickupLocationOfUser.distanceUnit }})</b>
+                <b>Currently Selected: Megagram Locker - {{selectedPickupLocationOfUser.locationName}} ({{selectedPickupLocationOfUser.distance + " " + selectedPickupLocationOfUser.distanceUnit }})</b>
                 <p :style="{marginLeft: '3em', marginBottom:'0.5em'}">{{ selectedPickupLocationOfUser.pickupLocationAddress }}</p>
                 <p :style="{marginLeft:'3em', marginBottom:'0.5em'}">{{ selectedPickupLocationOfUser.pickupDirections }}</p>
                 <p v-for="weekDays in Object.keys(selectedPickupLocationOfUser.openingHours)" :style="{marginLeft: '3em', marginBottom: '-0.5em'}" :key="weekDays">{{ weekDays }}: {{ selectedPickupLocationOfUser.openingHours[weekDays] }}</p>
@@ -54,7 +55,8 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
             authenticatedUsername: String,
             adjustmentsToAddressToEditOrDelete: Object,
             newAddressToAdd: Object,
-            newlySetPickupLocation: Object
+            newlySetPickupLocation: Object,
+            addressWithUpdatedDeliveryInstructions: Object
         },
 
         components: {
@@ -95,7 +97,18 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                         zipCode: "35521",
                         addressText: "369 Leffler Trafficway, Domitilachester Utah 35521, the United States",
                         phoneNumber: "+16088613433",
-                        isSelected: true
+                        isSelected: true,
+                        deliveryInstructions: {
+                            propertyType: 'Home',
+                            whereToLeavePackage: 'Front door',
+                            securityCode: null,
+                            callBox: null,
+                            keyOrFobIsRequired: null,
+                            dogPresent: null,
+                            additionalInstructions: null,
+                            hoursOpenForDelivery: null,
+                            availableOnFederalHolidays: null
+                        }
                     },
                     
                     {
@@ -109,7 +122,18 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                         stateOrProvince: "West Virginia",
                         zipCode: "91793",
                         addressText: "75165 Greenfelder Drive, South Nanceetown West Virginia 91793, the United States",
-                        phoneNumber: "+16098671431"
+                        phoneNumber: "+16098671431",
+                        deliveryInstructions: {
+                            propertyType: 'Townhome',
+                            whereToLeavePackage: 'No preference',
+                            securityCode: 'abc',
+                            callBox: null,
+                            keyOrFobIsRequired: false,
+                            dogPresent: 'Yes',
+                            additionalInstructions: 'Please don\'t ring or knock, or else I will let the dogs out!',
+                            hoursOpenForDelivery: null,
+                            availableOnFederalHolidays: null
+                        }
                     },
                     {
                         id: 2,
@@ -122,7 +146,25 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                         stateOrProvince: "Missouri",
                         zipCode: "19198",
                         addressText: "69127 Fritsch Ranch, Apt. 974, Greenholtborough Missouri 19198, the United States",
-                        phoneNumber: "+12088673421"
+                        phoneNumber: "+12088673421",
+                        deliveryInstructions: {
+                            propertyType: 'Business',
+                            whereToLeavePackage: 'Property Staff',
+                            securityCode: 'sxc',
+                            callBox: 'def',
+                            keyOrFobIsRequired: false,
+                            additionalInstructions: null,
+                            hoursOpenForDelivery: {
+                                Monday: ['9:00AM', '5:00PM'],
+                                Tuesday: ['9:00AM', '5:00PM'],
+                                Wednesday: ['9:00AM', '5:00PM'],
+                                Thursday: ['9:00AM', '5:00PM'],
+                                Friday: ['9:00AM', '3:00PM'],
+                                Saturday: ['', '11:00AM'],
+                                Sunday: ['', ''],
+                            },
+                            availableOnFederalHolidays: 'Yes'
+                        }
                     }
                 ];
                 this.addressesOfUser = addressesOfUser;
@@ -159,6 +201,17 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
 
             showAddNewDeliveryAddressPopup() {
                 this.$emit("showAddNewDeliveryAddressPopup");
+            },
+
+            showAddDeliveryInstructionsPopup(addressIndex) {
+                this.$emit("showAddDeliveryInstructionsPopup",
+                    {
+                        index:addressIndex,
+                        addressText: this.addressesOfUser[addressIndex].addressText,
+                        fullName: this.addressesOfUser[addressIndex].fullName,
+                        deliveryInstructions: this.addressesOfUser[addressIndex].deliveryInstructions
+                    }
+                );
             },
 
             showSelectPickupLocationPopup() {
@@ -276,6 +329,12 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                     this.addressesOfUser[0].isSelected = false;
                     this.$emit("notifyParentOfSelectedDeliveryAddress", null);
                 }
+            },
+
+            addressWithUpdatedDeliveryInstructions(newVal) {
+                const addressIndex = newVal.index;
+                const updatedDeliveryInstructions = newVal.deliveryInstructions;
+                this.addressesOfUser[addressIndex].deliveryInstructions = updatedDeliveryInstructions;
             }
         }
     }

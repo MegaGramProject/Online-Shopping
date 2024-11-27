@@ -9,7 +9,7 @@
                 <a @click="showEditOrDeleteAddressPopup" :style="{color: '#2f6da3', cursor: 'pointer'}">Edit or Delete</a>
                 <div class="vertical-line">
                 </div>
-                <a :style="{color: '#2f6da3', cursor: 'pointer'}">Add delivery instructions</a>
+                <a @click="showAddDeliveryInstructionsPopup" :style="{color: '#2f6da3', cursor: 'pointer'}">Add delivery instructions</a>
             </div>
         </div>
     </div>
@@ -35,6 +35,10 @@
         methods: {
             showEditOrDeleteAddressPopup() {
                 this.$emit("showEditOrDeleteAddressPopup", this.index);
+            },
+
+            showAddDeliveryInstructionsPopup() {
+                this.$emit("showAddDeliveryInstructionsPopup", this.index);
             }
         },
 

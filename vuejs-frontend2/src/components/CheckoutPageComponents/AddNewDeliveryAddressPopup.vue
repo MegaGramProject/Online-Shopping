@@ -129,7 +129,16 @@ import thinGrayXIcon from '@/assets/images/thinGrayXIcon.png';
                         stateOrProvince: this.stateOrProvince.length>0 ? this.stateOrProvince : null,
                         zipCode: this.zipCode,
                         phoneNumber: this.phoneNumber,
-                        isSelected: this.isSelected
+                        isSelected: this.isSelected,
+                        deliveryInstructions: {
+                            propertyType: 'Home',
+                            whereToLeavePackage: 'Front door',
+                            securityCode: null,
+                            callBox: null,
+                            keyOrFobRequired: null,
+                            dogPresent: null,
+                            additionalInstructions: null,
+                        }
                     }
                 );
             }

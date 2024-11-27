@@ -57,6 +57,10 @@ import SinglePickupLocationResult from './SinglePickupLocationResult.vue';
 
     export default {
 
+        props: {
+            deliveryAreaCountry: String
+        },
+
         components: {
             SinglePickupLocationResult
         },
@@ -68,7 +72,7 @@ import SinglePickupLocationResult from './SinglePickupLocationResult.vue';
                 sampleMapOfPickupLocations,
                 pickupLocationsCategory: 'Recommended',
                 pickupLocationResults: [],
-                distanceUnit: "mi"
+                distanceUnit: this.deliveryAreaCountry==='the United States' ? 'mi' : 'km'
             }
         },
 
@@ -188,11 +192,30 @@ import SinglePickupLocationResult from './SinglePickupLocationResult.vue';
                 }
 
                 this.pickupLocationResults = [...pickupLocationResults];
+
+                if(this.distanceUnit==="km") {
+                    this.convertDistancesFromOneUnitToAnother();
+                }
             },
 
             pickupHere(indexOfPickupLocation) {
                 const pickupLocation = this.pickupLocationResults[indexOfPickupLocation-1];
                 this.$emit("setPickupLocation", {...pickupLocation, distanceUnit: this.distanceUnit});
+            },
+
+            convertDistancesFromOneUnitToAnother() {
+                let conversionCoefficient = 1;
+                if(this.distanceUnit==='km') {
+                    conversionCoefficient*=1.60934;
+                }
+                else  {
+                    conversionCoefficient*=0.62137;
+                }
+
+                for(let result of this.pickupLocationResults) {
+                    result.distance*=conversionCoefficient;
+                    result.distance=parseFloat(result.distance.toFixed(2));
+                }
             }
 
         }

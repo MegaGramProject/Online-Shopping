@@ -17,7 +17,8 @@
                 @showEditOrDeleteAddressPopup="showEditOrDeleteAddressPopup" :adjustmentsToAddressToEditOrDelete="adjustmentsToAddressToEditOrDelete"
                 @showAddNewDeliveryAddressPopup="toggleAddNewDeliveryAddressPopup" :newAddressToAdd="newAddressToAdd"
                 @showSelectPickupLocationPopup="toggleSelectPickupLocationPopup" :newlySetPickupLocation="newlySetPickupLocation"
-                @notifyParentOfSelectedPickupLocation="receiveSelectedPickupLocation"
+                @notifyParentOfSelectedPickupLocation="receiveSelectedPickupLocation" @showAddDeliveryInstructionsPopup="toggleAddDeliveryInstructionsPopup"
+                :addressWithUpdatedDeliveryInstructions="addressWithUpdatedDeliveryInstructions"
                 />
                 <PaymentSection :authenticatedUsername="authenticatedUsername" @notifyParentOfSelectedCard="receiveSelectedPaymentCard"
                 @showAddPaymentCardPopup="toggleAddPaymentCardPopup" :newCardOfUser="newCardOfUser"
@@ -64,7 +65,10 @@
     />
 
     <SelectPickupLocationPopup v-if="displaySelectPickupLocationPopup" @closePopup="toggleSelectPickupLocationPopup"
-    @setPickupLocation="setPickupLocation"/>
+    @setPickupLocation="setPickupLocation" :deliveryAreaCountry="deliveryAreaCountry"/>
+
+    <AddDeliveryInstructionsPopup v-if="displayAddDeliveryInstructionsPopup" @closePopup="toggleAddDeliveryInstructionsPopup"
+    :addressToAddDeliveryInstructions="addressToAddDeliveryInstructions" @saveDeliveryInstructions="saveDeliveryInstructions"/>
 
 
 </template>
@@ -74,18 +78,19 @@ import blackScreen from '@/assets/images/blackScreen.png';
 import blueCologne from '@/assets/images/blueCologne.jpg';
 import popcorn from '@/assets/images/popcorn.jpg';
 import showerCurtains from '@/assets/images/showerCurtains.jpg';
+import AddDeliveryInstructionsPopup from '@/components/CheckoutPageComponents/AddDeliveryInstructionsPopup.vue';
+import AddNewDeliveryAddressPopup from '@/components/CheckoutPageComponents/AddNewDeliveryAddressPopup.vue';
 import AddPaymentCardPopup from '@/components/CheckoutPageComponents/AddPaymentCardPopup.vue';
+import EditOrDeleteAddressPopup from '@/components/CheckoutPageComponents/EditOrDeleteAddressPopup.vue';
 import FooterSection from '@/components/CheckoutPageComponents/FooterSection.vue';
 import OrderArrivals from '@/components/CheckoutPageComponents/OrderArrivals.vue';
 import OrderHasBeenPlaced from '@/components/CheckoutPageComponents/OrderHasBeenPlaced.vue';
 import PaymentSection from '@/components/CheckoutPageComponents/PaymentSection.vue';
 import PlaceYourOrder from '@/components/CheckoutPageComponents/PlaceYourOrder.vue';
 import SelectADeliveryAddress from '@/components/CheckoutPageComponents/SelectADeliveryAddress.vue';
+import SelectPickupLocationPopup from '@/components/CheckoutPageComponents/SelectPickupLocationPopup.vue';
 import SubtotalAndPlaceOrder from '@/components/CheckoutPageComponents/SubtotalAndPlaceOrder.vue';
 import TopSection from '@/components/CheckoutPageComponents/TopSection.vue';
-import EditOrDeleteAddressPopup from '@/components/CheckoutPageComponents/EditOrDeleteAddressPopup.vue';
-import AddNewDeliveryAddressPopup from '@/components/CheckoutPageComponents/AddNewDeliveryAddressPopup.vue';
-import SelectPickupLocationPopup from '@/components/CheckoutPageComponents/SelectPickupLocationPopup.vue';
 
 import '../styles.css';
 
@@ -160,7 +165,10 @@ import '../styles.css';
                 newAddressToAdd: null,
                 displaySelectPickupLocationPopup: false,
                 newlySetPickupLocation: null,
-                selectedPickupLocation: null
+                selectedPickupLocation: null,
+                displayAddDeliveryInstructionsPopup: false,
+                addressToAddDeliveryInstructions: null,
+                addressWithUpdatedDeliveryInstructions: null
             }
         },
 
@@ -176,7 +184,8 @@ import '../styles.css';
             AddPaymentCardPopup,
             EditOrDeleteAddressPopup,
             AddNewDeliveryAddressPopup,
-            SelectPickupLocationPopup
+            SelectPickupLocationPopup,
+            AddDeliveryInstructionsPopup
         },
 
         methods: {
@@ -559,6 +568,18 @@ import '../styles.css';
                 }
             },
 
+            toggleAddDeliveryInstructionsPopup(addressToAddDeliveryInstructions) {
+                this.addressToAddDeliveryInstructions = addressToAddDeliveryInstructions;
+
+                this.displayAddDeliveryInstructionsPopup = !this.displayAddDeliveryInstructionsPopup;
+                if(this.displayAddDeliveryInstructionsPopup) {
+                    this.displayDarkScreen = true;
+                }
+                else {
+                    this.displayDarkScreen = false;
+                }
+            },
+
             closeEditOrDeleteAddressPopup() {
                 this.displayEditOrDeleteAddressPopup = false;
                 this.displayDarkScreen = false;
@@ -755,6 +776,31 @@ import '../styles.css';
 
             receiveSelectedPickupLocation(newlySelectedPickupLocation) {
                 this.selectedPickupLocation = newlySelectedPickupLocation;
+            },
+
+            convertDistancesFromOneUnitToAnother(desiredUnit) {
+                let conversionCoefficient = 1;
+                if(desiredUnit==='km') {
+                    conversionCoefficient*=1.60934;
+                }
+                else  {
+                    conversionCoefficient*=0.62137;
+                }
+
+                this.selectedPickupLocation.distance*=conversionCoefficient;
+                this.selectedPickupLocation.distance=parseFloat(this.selectedPickupLocation.distance.toFixed(2));
+                this.selectedPickupLocation.distanceUnit = desiredUnit;
+                this.newlySetPickupLocation = this.selectedPickupLocation;
+            },
+
+
+            saveDeliveryInstructions(updatedDeliveryInstructions) {
+                let addressWithUpdatedDeliveryInstructions = this.addressToAddDeliveryInstructions;
+                addressWithUpdatedDeliveryInstructions.deliveryInstructions = updatedDeliveryInstructions;
+                this.addressWithUpdatedDeliveryInstructions = addressWithUpdatedDeliveryInstructions;
+
+                this.displayAddDeliveryInstructionsPopup = false;
+                this.displayDarkScreen = false;
             }
         },
 
@@ -803,6 +849,14 @@ import '../styles.css';
 
                 if(currentCurrency!==newCurrency) {
                     this.updateCurrencies(currentCurrency, newCurrency);
+                }
+
+                if(this.selectedPickupLocation!==null) {
+                    const originalDistanceUnit = this.selectedPickupLocation.distanceUnit;
+                    const newDistanceUnit = newVal==='the United States' ? 'mi' : 'km';
+                    if(originalDistanceUnit!==newDistanceUnit) {
+                        this.convertDistancesFromOneUnitToAnother(newDistanceUnit);
+                    }
                 }
             }
         }
