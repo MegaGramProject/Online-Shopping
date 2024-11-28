@@ -155,8 +155,8 @@
                     <div :style="{position: 'relative', marginTop:'1em', marginBottom:'-1em', cursor: 'pointer'}">
                         <p><b>Selected:</b>  {{ productSchedules[product.id] == null ? 'None' : productSchedules[product.id][0] + ", " + productSchedules[product.id][1]}}</p>
 
-                        <p v-if="productSchedules[product.id]!==null && productSchedules[product.id][2][0]==='-'" :style="{color: 'darkgreen', position: 'absolute', left: '130%', top: '0%', cursor: 'pointer'}">{{ productSchedules[product.id][2]}}</p>
-                        <p v-if="productSchedules[product.id]!==null && productSchedules[product.id][2][0]==='+'" :style="{color: '#bf2a40', position: 'absolute', left: '130%', top: '0%', cursor: 'pointer'}">{{ productSchedules[product.id][2]}}</p>
+                        <p v-if="productSchedules[product.id]!==null && productSchedules[product.id][2][0]==='-'" :style="{color: 'darkgreen', position: 'absolute', left: '130%', top: '0%', cursor: 'pointer'}">{{ getTotalPriceDifferenceWithQuantity(productSchedules[product.id][2], product.quantity) }}</p>
+                        <p v-if="productSchedules[product.id]!==null && productSchedules[product.id][2][0]==='+'" :style="{color: '#bf2a40', position: 'absolute', left: '130%', top: '0%', cursor: 'pointer'}">{{ getTotalPriceDifferenceWithQuantity(productSchedules[product.id][2]) }}</p>
                     </div>
 
                     <b v-if="productToDisplayOtherSchedulingOptionsMappings[product.id]==true" @click="toggleDisplayOtherSchedulingOptions(product)" :style="{marginTop:'1em', cursor: 'pointer'}">Hide other options</b>
@@ -172,8 +172,8 @@
                                 <p><b>{{ schedulingOption.weekday }},</b> {{ schedulingOption.monthAndDay }}</p>
                                 <p></p>
 
-                                <p v-if="schedulingOption.priceDifference[0]==='+'" :style="{color: '#bf2a40', position: 'absolute', left: '130%', top: '0%'}">{{ schedulingOption.priceDifference }}</p>
-                                <p v-else :style="{color: 'darkgreen', position: 'absolute', left: '130%', top: '0%'}">{{ schedulingOption.priceDifference }}</p>
+                                <p v-if="schedulingOption.priceDifference[0]==='+'" :style="{color: '#bf2a40', position: 'absolute', left: '130%', top: '0%'}">{{ getTotalPriceDifferenceWithQuantity(schedulingOption.priceDifference, product.quantity) }}</p>
+                                <p v-else :style="{color: 'darkgreen', position: 'absolute', left: '130%', top: '0%'}">{{ getTotalPriceDifferenceWithQuantity(schedulingOption.priceDifference, product.quantity) }}</p>
                             </template>
                         </div>
                     </template>
@@ -459,6 +459,14 @@ import showerCurtains from '@/assets/images/showerCurtains.jpg';
                         }
                     }
                 }
+            },
+
+            getTotalPriceDifferenceWithQuantity(priceDifference, quantity) {
+                const currentCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
+                let priceDiff = priceDifference; //something like '+$10', '-$5', etc.
+                priceDiff = parseFloat(priceDiff.substring(currentCurrency.length+1));
+                priceDiff*=quantity;
+                return priceDifference[0]+currentCurrency+priceDiff.toFixed(2);
             }
         },
 

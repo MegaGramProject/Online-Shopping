@@ -22,7 +22,7 @@
                 <p>Estimated tax to be collected:</p>
                 <p>{{ taxSubtotal }}</p>
             </div>
-            <div :style="{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
+            <div v-if="hasPremium" :style="{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
             fontSize: '0.8em', marginBottom:'0em'}">
                 <p>S/H/D discounts</p>
                 <p>-{{ shippingAndHandlingFeesSavedWithPremium }}</p>
@@ -52,6 +52,7 @@
 
     export default {
         props: {
+            hasPremium: Boolean,
             itemsSubtotal: String,
             shippingHandlingAndDeliverySubtotal: String,
             taxSubtotal: String,

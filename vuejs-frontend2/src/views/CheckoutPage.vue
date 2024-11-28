@@ -37,7 +37,9 @@
             <SubtotalAndPlaceOrder :itemsSubtotal="itemsSubtotal" :shippingHandlingAndDeliverySubtotal="shippingHandlingAndDeliverySubtotal"
             :taxSubtotal="taxSubtotal" :orderSubtotal="orderSubtotal" :selectedDeliveryAddress="selectedDeliveryAddress" :selectedPickupLocation="selectedPickupLocation"
             :selectedPaymentCard="selectedPaymentCard" @placeOrder="toggleOrderHasBeenPlaced" :quantityTotal="quantityTotal"
-            :shippingAndHandlingFeesSavedWithPremium="shippingAndHandlingFeesSavedWithPremium" :totalItemDiscounts="totalItemDiscounts" :priceDifferencesFromSchedulingLater="priceDifferencesFromSchedulingLater"
+            :shippingAndHandlingFeesSavedWithPremium="shippingAndHandlingFeesSavedWithPremium"
+            :totalItemDiscounts="totalItemDiscounts" :priceDifferencesFromSchedulingLater="priceDifferencesFromSchedulingLater"
+            :hasPremium="hasPremium"
             />
         </div>
 
@@ -283,7 +285,7 @@ import '../styles.css';
                         productId: "0",
                         productImage: blueCologne,
                         productName: "Blue Cologne for Men - Spice & Black Vanilla Mens Cologne - An Explosion of Vibrant Spices, Dark Woods and Black Vanilla, 3.4 Fl Oz",
-                        productPrice: "$22.96",
+                        productPrice: "$45.92",
                         productPricePerUnit: "$6.75/Fl Oz",
                         productOptions: {Scent: 'Spice & Black Vanilla'},
                         quantity: 1,
@@ -318,7 +320,6 @@ import '../styles.css';
                         shippingAndHandlingPrice: "$5.40",
                         tax: "$0.05",
                         sAndHPriceSavedWithPremium: "$0.40",
-                        unDiscountedPrice: "$16.99",
                         deals: []
                     },
                     {
@@ -330,11 +331,10 @@ import '../styles.css';
                         productPricePerUnit: "$2.50/Ounce",
                         productOptions: {},
                         quantity: 3,
-                        getItAsSoonAs: 15000,
+                        getItAsSoonAs: 48,
                         shippingAndHandlingPrice: "$7.40",
                         tax: "$0.036",
                         sAndHPriceSavedWithPremium: "$0.40",
-                        unDiscountedPrice: "$29.99",
                         deals: [
                             {
                                 discount: "3 for 1",
@@ -385,7 +385,7 @@ import '../styles.css';
                         }
 
                         quantityTotal+=item.quantity;
-                        itemsSubtotal+=parseFloat(item.unDiscountedPrice.substring(currentCurrency.length))*item.quantity;
+                        itemsSubtotal+=parseFloat(item.productPrice.substring(currentCurrency.length))*item.quantity;
                         shippingHandlingAndDeliverySubtotal+=parseFloat(item.shippingAndHandlingPrice.substring(currentCurrency.length))*item.quantity;
                         taxSubtotal+=parseFloat(item.tax.substring(currentCurrency.length))*item.quantity;
 
@@ -454,11 +454,6 @@ import '../styles.css';
                         tax/=this.currencyToDollarMap[currentCurrency];
                         tax*=this.currencyToDollarMap[newCurrency];
                         product.tax= newCurrency+tax.toFixed(2);
-                        
-                        let unDiscountedPrice = parseFloat(product.unDiscountedPrice.substring(currentCurrency.length));
-                        unDiscountedPrice/=this.currencyToDollarMap[currentCurrency];
-                        unDiscountedPrice*=this.currencyToDollarMap[newCurrency];
-                        product.unDiscountedPrice= newCurrency+unDiscountedPrice.toFixed(2);
 
                         if(product.productPricePerUnit!==null) {
                             const indexOfSeparator = product.productPricePerUnit.indexOf("/");
@@ -558,7 +553,9 @@ import '../styles.css';
                 orderTotal+=parseFloat(itemsSubtotal.substring(currencySymbol.length));
                 orderTotal+=parseFloat(shippingHandlingAndDeliverySubtotal.substring(currencySymbol.length));
                 orderTotal+=parseFloat(taxSubtotal.substring(currencySymbol.length));
-                orderTotal-=parseFloat(shippingAndHandlingFeesSavedWithPremium.substring(currencySymbol.length));
+                if(this.hasPremium) {
+                    orderTotal-=parseFloat(shippingAndHandlingFeesSavedWithPremium.substring(currencySymbol.length));
+                }
                 orderTotal-=parseFloat(totalItemDiscounts.substring(currencySymbol.length));
                 orderTotal+=parseFloat(priceDifferencesFromSchedulingLater.substring(currencySymbol.length));
                 return currencySymbol + orderTotal.toFixed(2);
@@ -652,28 +649,11 @@ import '../styles.css';
                                 this.arrivalTextHeaders.splice(this.arrivalTextHeaders.indexOf(arrivalTextHeaderOfItem), 1);
                             }
                         }
-                        else {
-                            product.quantity = newQuantityOfItem;
-                        }
+                        product.quantity = newQuantityOfItem;
 
-                        let currentCurrency = product.productPrice[0];
-                        if(currentCurrency==="A") {
-                            currentCurrency+="$";
-                        }
-                        else if(currentCurrency==="M") {
-                            currentCurrency+="X$";
-                        }
-                        else if(currentCurrency==="C") {
-                            if(product.productPrice[1]==="$") {
-                                currentCurrency="C$";
-                            }
-                            else {
-                                currentCurrency="CN¥";
-                            }
-                        }
+                        const currentCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
 
                         this.quantityTotal+=differenceInQuantities;
-                        //later, the biggest-product-deal will be the selected one and the totalItemDiscounts variable will be updated
 
                         let itemsSubtotal = parseFloat(this.itemsSubtotal.substring(currentCurrency.length));
                         itemsSubtotal+=differenceInQuantities*parseFloat(product.productPrice.substring(currentCurrency.length));
@@ -691,6 +671,17 @@ import '../styles.css';
                         shippingAndHandlingFeesSavedWithPremium+=differenceInQuantities*parseFloat(product.sAndHPriceSavedWithPremium.substring(currentCurrency.length));
                         this.shippingAndHandlingFeesSavedWithPremium = currentCurrency+shippingAndHandlingFeesSavedWithPremium.toFixed(2);
 
+                        if('deliveryDate' in product) {
+                            let priceDiffForProduct = product.deliveryDate[2]
+                            priceDiffForProduct = parseFloat(priceDiffForProduct.substring(currentCurrency.length+1));
+                            if(product.deliveryDate[2][0]==='-') {
+                                priceDiffForProduct*=-1;
+                            }
+                            let priceDifferencesFromSchedulingLater = parseFloat(this.priceDifferencesFromSchedulingLater.substring(currentCurrency.length));
+                            priceDifferencesFromSchedulingLater+=differenceInQuantities*priceDiffForProduct;
+                            this.priceDifferencesFromSchedulingLater = currentCurrency+priceDifferencesFromSchedulingLater.toFixed(2);
+                        }
+
                         this.orderSubtotal = this.getTotal(
                             this.itemsSubtotal,
                             this.shippingHandlingAndDeliverySubtotal,
@@ -700,10 +691,91 @@ import '../styles.css';
                             this.priceDifferencesFromSchedulingLater
                         );
 
+                        if(product.deals.length>0) {
+                            const currentCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
+                            let originalAmountSaved = 0;
+
+                            if(product.deals[0].prices.length==3) {
+                                originalAmountSaved = parseFloat(product.deals[0].prices[2].substring(currentCurrency.length));
+                            }
+
+                            if(product.quantity==0) {
+                                let totalItemDiscounts = this.totalItemDiscounts;
+                                totalItemDiscounts = parseFloat(totalItemDiscounts.substring(currentCurrency.length));
+                                totalItemDiscounts-=originalAmountSaved;
+                                this.totalItemDiscounts = currentCurrency + totalItemDiscounts.toFixed(2);
+
+                                let orderSubtotal = this.orderSubtotal;
+                                orderSubtotal = parseFloat(orderSubtotal.substring(currentCurrency.length));
+                                orderSubtotal+=originalAmountSaved;
+                                this.orderSubtotal = currentCurrency + orderSubtotal.toFixed(2);
+
+                                this.orderSubtotal = this.getTotal(
+                                    this.itemsSubtotal,
+                                    this.shippingHandlingAndDeliverySubtotal,
+                                    this.taxSubtotal,
+                                    this.shippingAndHandlingFeesSavedWithPremium,
+                                    this.totalItemDiscounts,
+                                    this.priceDifferencesFromSchedulingLater
+                                );
+                                return;
+                            }
+
+                            for(let deal of product.deals) {
+                                deal.prices= this.getPricesAsResultOfDeal(deal.discount, product.quantity, parseFloat(product.productPrice.substring(currentCurrency.length)), currentCurrency);
+                            }
+                            product.deals = this.applyBestDealToProduct(product, originalAmountSaved);
+                        }
+
                         return;
                     }
                 }
             },
+
+            applyBestDealToProduct(product, originalAmountSaved) {
+                const currentCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
+                const productDeals = product.deals;
+                let bestDeal = productDeals[0];
+                let indexOfBestDeal = 0;
+                let amountSavedFromBestDeal = 0;
+                if(bestDeal.prices.length==3) {
+                    amountSavedFromBestDeal = parseFloat(bestDeal.prices[2].substring(currentCurrency.length));
+                }
+
+                for(let i=1; i<productDeals.length; i++) {
+                    const deal = productDeals[i];
+                    const prices = deal.prices;
+                    if(prices.length==3) {
+                        const amountSavedFromDeal = parseFloat(prices[2].substring(currentCurrency.length));
+                        if(amountSavedFromDeal>amountSavedFromBestDeal) {
+                            bestDeal = deal;
+                            indexOfBestDeal = i;
+                            amountSavedFromBestDeal = amountSavedFromDeal;
+                        }
+                    }
+                }
+
+                const differenceInAmountSaved = amountSavedFromBestDeal - originalAmountSaved;
+                    
+                let totalItemDiscounts = this.totalItemDiscounts;
+                totalItemDiscounts = parseFloat(totalItemDiscounts.substring(currentCurrency.length));
+                totalItemDiscounts+=differenceInAmountSaved;
+                this.totalItemDiscounts = currentCurrency + totalItemDiscounts.toFixed(2);
+
+                let orderSubtotal = this.orderSubtotal;
+                orderSubtotal = parseFloat(orderSubtotal.substring(currentCurrency.length));
+                orderSubtotal+=originalAmountSaved;
+                orderSubtotal-=amountSavedFromBestDeal;
+                this.orderSubtotal = currentCurrency + orderSubtotal.toFixed(2);
+
+                let output = productDeals;
+                if(indexOfBestDeal>0) {
+                    output = output.filter((_, index)=>index!==indexOfBestDeal);
+                    output.splice(0,0,bestDeal);
+                }
+                return output;
+            },
+    
 
             formatProductDealText(productDealInfo) {
                 if(productDealInfo.requirement==='NONE') {
@@ -721,16 +793,36 @@ import '../styles.css';
                 const arrivalTextHeaderOfItem = info.arrivalTextHeader;
                 const idOfItem = info.id;
                 const newlySelectedProductDeal = info.newlySelectedProductDeal;
+                const currentCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
 
                 for(let i=0; i<this.itemsToBeOrderedByUserAsDict[arrivalTextHeaderOfItem].length; i++) {
                     const product = this.itemsToBeOrderedByUserAsDict[arrivalTextHeaderOfItem][i];
                     if(product.id==idOfItem) {
+                        let originalAmountSaved = 0;
+                        if(product.deals[0].prices.length==3) {
+                            originalAmountSaved = parseFloat(product.deals[0].prices[2].substring(currentCurrency.length));
+                        }
                         for(let j=1; j<product.deals.length; j++) {
                             const currentProductDeal = product.deals[j];
                             if(this.formatProductDealText(currentProductDeal)===newlySelectedProductDeal) {
+                                let amountSavedFromNewlySelectedDeal = 0;
+                                if(currentProductDeal.prices.length==3) {
+                                    amountSavedFromNewlySelectedDeal = parseFloat(currentProductDeal.prices[2].substring(currentCurrency.length));
+                                }
                                 product.deals.splice(j,1);
-                                currentProductDeal.prices = [];
                                 product.deals.splice(0, 0, currentProductDeal);
+
+                                let totalItemDiscounts = this.totalItemDiscounts;
+                                totalItemDiscounts = parseFloat(totalItemDiscounts.substring(currentCurrency.length));
+                                totalItemDiscounts+=(amountSavedFromNewlySelectedDeal-originalAmountSaved);
+                                this.totalItemDiscounts = currentCurrency+totalItemDiscounts.toFixed(2);
+                                
+                                let orderSubtotal = this.orderSubtotal;
+                                orderSubtotal = parseFloat(orderSubtotal.substring(currentCurrency.length));
+                                orderSubtotal+=originalAmountSaved;
+                                orderSubtotal-=amountSavedFromNewlySelectedDeal;
+                                this.orderSubtotal = currentCurrency + orderSubtotal.toFixed(2);
+                                
                                 return;
                             }
                         }
@@ -752,25 +844,70 @@ import '../styles.css';
                     }
                 }
 
+                const currentCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
+
                 for(let arrivalTextHeader of Object.keys(this.itemsToBeOrderedByUserAsDict)) {
                     for(let i=0; i<this.itemsToBeOrderedByUserAsDict[arrivalTextHeader].length; i++) {
                         const product = this.itemsToBeOrderedByUserAsDict[arrivalTextHeader][i];
                         if(product.productId in productIdToPromoCodeDiscountMappings) {
+                            let originalAmountSaved = 0;
+                            if(product.deals.length>0 && product.deals[0].prices.length==3) {
+                                originalAmountSaved = parseFloat(product.deals[0].prices[2].substring(currentCurrency.length));
+                            }
                             for(let promoCodeDiscount of productIdToPromoCodeDiscountMappings[product.productId]) {
                                 product.deals.push({
                                     discount: promoCodeDiscount,
-                                    prices: [],
+                                    prices: this.getPricesAsResultOfDeal(promoCodeDiscount, product.quantity, parseFloat(product.productPrice.substring(currentCurrency.length)), currentCurrency),
                                     requirement: `PROMO-CODE=${promoCode}`
                                 });
-                                //later, the biggest-product-deal will be the selected one instead of just adding
-                                //each new product-deal to the deals list of the product.
                             }
+                            product.deals = this.applyBestDealToProduct(product, originalAmountSaved);
                         }
                     }
                 }
             },
 
+            //the method below returns either an empty list or a list of 3 elems.
+            //the list is empty if the discount doesn't save any money(i.e it is a Buy 1 get 1 free but the user only purchased 1)
+            //if the user does save money then the list will contain the following elems: ["Total Undiscounted Price", "Total Price after Discount", "Money Saved"]. i.e ["$45", "$40", "$5"]
+            getPricesAsResultOfDeal(discount, productQuantity, productPrice, currentCurrency) {
+                const totalUndiscountedPrice = productQuantity * productPrice;
 
+                let discountedPrice = totalUndiscountedPrice;
+
+                if (discount.includes('% off')) {
+                    // Percentage-based discount
+                    const percentOff = parseFloat(discount.match(/([\d.]+)% off/)[1]);
+                    discountedPrice = totalUndiscountedPrice * (1 - percentOff / 100);
+                } else if (discount.includes('for')) {
+                    // Quantity-based discount (e.g., "5 for 3")
+                    const [buy, pay] = discount.match(/(\d+) for (\d+)/).slice(1).map(Number);
+                    const effectiveSets = Math.floor(productQuantity / buy);
+                    const remainingItems = productQuantity % buy;
+                    discountedPrice = effectiveSets * pay * productPrice + remainingItems * productPrice;
+                } else if (discount.includes('Buy') && discount.includes('get')) {
+                    // Mixed offers (e.g., "Buy 2, get 3rd one 75% off")
+                    //still buggy
+                    const [buy, get, percentOff] = discount.match(/Buy (\d+), get (\d+)(?:th|rd|st|nd) one (\d+)% off/).slice(1).map(Number);
+                    const sets = Math.floor(productQuantity / (buy + get));
+                    const remainingItems = productQuantity % (buy + get);
+                    discountedPrice = sets * (buy * productPrice + get * productPrice * (1 - percentOff / 100)) + remainingItems * productPrice;
+                }
+
+                const moneySaved = totalUndiscountedPrice - discountedPrice;
+
+                if (moneySaved > 0) {
+                    return [
+                        currentCurrency+totalUndiscountedPrice.toFixed(2),
+                        currentCurrency+discountedPrice.toFixed(2),
+                        currentCurrency+moneySaved.toFixed(2),
+                    ];
+                } else {
+                    return [];
+                }
+            },
+
+    
             toggleAddNewDeliveryAddressPopup() {
                 this.displayDarkScreen = !this.displayDarkScreen;
                 this.displayAddNewDeliveryAddressPopup = !this.displayAddNewDeliveryAddressPopup;
@@ -845,24 +982,24 @@ import '../styles.css';
                         if('deliveryDate' in product) {
                             let originalPriceDifference = product.deliveryDate[2];
                             if(originalPriceDifference[0]==='-') {
-                                originalPriceDifference = parseFloat(originalPriceDifference.substring(currentCurrency.length+1));
+                                originalPriceDifference = parseFloat(originalPriceDifference.substring(currentCurrency.length+1))*product.quantity;
                                 priceDifferencesFromSchedulingLater+=originalPriceDifference;
                                 orderSubtotal+=originalPriceDifference;
                             }
                             else {
-                                originalPriceDifference = parseFloat(originalPriceDifference.substring(currentCurrency.length+1));
+                                originalPriceDifference = parseFloat(originalPriceDifference.substring(currentCurrency.length+1))*product.quantity;
                                 priceDifferencesFromSchedulingLater-=originalPriceDifference;
                                 orderSubtotal-=originalPriceDifference;
                             }
                         }
 
                         if(newPriceDifference[0]==='-') {
-                            priceDifferencesFromSchedulingLater-=parseFloat(newPriceDifference.substring(currentCurrency.length+1));
-                            orderSubtotal-=parseFloat(newPriceDifference.substring(currentCurrency.length+1));
+                            priceDifferencesFromSchedulingLater-=parseFloat(newPriceDifference.substring(currentCurrency.length+1))*product.quantity;
+                            orderSubtotal-=parseFloat(newPriceDifference.substring(currentCurrency.length+1))*product.quantity;
                         }
                         else {
-                            priceDifferencesFromSchedulingLater+=parseFloat(newPriceDifference.substring(currentCurrency.length+1));
-                            orderSubtotal+=parseFloat(newPriceDifference.substring(currentCurrency.length+1));
+                            priceDifferencesFromSchedulingLater+=parseFloat(newPriceDifference.substring(currentCurrency.length+1))*product.quantity;
+                            orderSubtotal+=parseFloat(newPriceDifference.substring(currentCurrency.length+1))*product.quantity;
                         }
 
                         this.priceDifferencesFromSchedulingLater = currentCurrency + priceDifferencesFromSchedulingLater.toFixed(2);
