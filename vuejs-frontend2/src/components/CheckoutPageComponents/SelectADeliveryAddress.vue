@@ -83,21 +83,26 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
             },
 
             async fetchAddressesOfUser() {
-                //make API-request to get addresses of user
-                let addressesOfUser = [
-                    {
-                        id: 0,
-                        fullName: "Rishav Ray",
-                        country: "the United States",
-                        houseOrBuildingNumber: "369",
-                        streetName: "Leffler Trafficway",
-                        apartmentOrSuiteNumber: null,
-                        townOrCity: "Domitilachester",
-                        stateOrProvince: "Utah",
-                        zipCode: "35521",
-                        addressText: "369 Leffler Trafficway, Domitilachester Utah 35521, the United States",
-                        phoneNumber: "+16088613433",
-                        isSelected: true,
+                const response = await fetch(`http://localhost:8026/getAddressesOfUser/${this.authenticatedUsername}`);
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+
+                let addressesOfUser = await response.json();
+                for(let i=0; i<addressesOfUser.length; i++) {
+                    const address = addressesOfUser[i];
+                    const newAddress = {
+                        id: address.id,
+                        fullName: address.full_name,
+                        country: address.country,
+                        houseOrBuildingNumber: address.house_or_building_number,
+                        streetName: address.street_name,
+                        apartmentOrSuiteNumber: address.apartment_or_suite,
+                        townOrCity: address.town_or_city,
+                        stateOrProvince: address.state_or_province,
+                        zipCode: address.zipcode,
+                        phoneNumber: address.phone_number,
+                        isSelected: address.is_selected,
                         deliveryInstructions: {
                             propertyType: 'Home',
                             whereToLeavePackage: 'Front door',
@@ -109,8 +114,14 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                             hoursOpenForDelivery: null,
                             availableOnFederalHolidays: null
                         }
-                    },
-                    
+                    };
+
+                    newAddress.addressText = this.getAddressText(newAddress);
+                    addressesOfUser[i] = newAddress;
+                }
+
+                /*
+                let addressesOfUserExample = [
                     {
                         id: 1,
                         fullName: "Rishav Ray",
@@ -167,15 +178,30 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                         }
                     }
                 ];
+                */
+
                 this.addressesOfUser = addressesOfUser;
-                this.$emit("notifyParentOfSelectedDeliveryAddress", this.addressesOfUser[0]);
+
+                if(this.addressesOfUser.length>0 && this.addressesOfUser[0].isSelected==true) {
+                    this.$emit("notifyParentOfSelectedDeliveryAddress", this.addressesOfUser[0]);
+                }
+                else {
+                    this.$emit("notifyParentOfSelectedDeliveryAddress", null);
+                }
                 this.$emit("notifyParentOfSelectedPickupLocation", null);
             },
 
-            toggleSelectSingleAddress(indexOfSingleAddressToToggle) {
+            async toggleSelectSingleAddress(indexOfSingleAddressToToggle) {
                 this.selectedPickupLocationOfUser = null;
                 this.$emit("notifyParentOfSelectedPickupLocation", null);
                 if(indexOfSingleAddressToToggle==0) {
+                    const response = await fetch(`http://localhost:8026/toggleSelectCustomerAddress/${this.addressesOfUser[0].id}`, {
+                        method: 'PATCH'
+                    });
+                    if(!response.ok) {
+                        throw new Error('Network response not ok');
+                    }
+
                     this.addressesOfUser[0].isSelected = !this.addressesOfUser[0].isSelected;
                     if(this.addressesOfUser[0].isSelected) {
                         this.$emit("notifyParentOfSelectedDeliveryAddress", this.addressesOfUser[0]);
@@ -185,8 +211,24 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                     }
                 }
                 else {
-                    delete this.addressesOfUser[0].isSelected;
+                    if(this.addressesOfUser[0].isSelected==true) {
+                        const response0 = await fetch(`http://localhost:8026/unselectSelectedAddressOfUser/${this.authenticatedUsername}`, {
+                            method: 'PATCH'
+                        });
+                        if(!response0.ok) {
+                            throw new Error('Network response not ok');
+                        }
+                        this.addressesOfUser[0].isSelected = false;
+                    }
+
                     const newlySelectedAddress = this.addressesOfUser[indexOfSingleAddressToToggle];
+                    const response = await fetch(`http://localhost:8026/toggleSelectCustomerAddress/${newlySelectedAddress.id}`, {
+                        method: 'PATCH'
+                    });
+                    if(!response.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    
                     newlySelectedAddress.isSelected = true;
                     this.addressesOfUser.splice(indexOfSingleAddressToToggle, 1);
                     this.addressesOfUser.splice(0, 0, newlySelectedAddress);
@@ -249,21 +291,79 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                 }
             },
 
-            adjustmentsToAddressToEditOrDelete(newVal) {
+            async adjustmentsToAddressToEditOrDelete(newVal) {
                 if(newVal==null) {
                     return;
                 }
                 const indexToEditOrDelete = newVal.index;
+                const idOfAddressToEditOrDelete = this.addressesOfUser[indexToEditOrDelete].id;
                 if(newVal.delete==true) {
+                    const response = await fetch(`http://localhost:8026/deleteCustomerAddress/${idOfAddressToEditOrDelete}`, {
+                        method: 'DELETE'
+                    });
+                    if(!response.ok) {
+                        throw new Error('Network response not ok');
+                    }
+
                     if(indexToEditOrDelete==0) {
-                        if(this.addressesOfUser.length>1) {
-                            this.addressesOfUser[1].isSelected = false;
-                        }
                         this.$emit("notifyParentOfSelectedDeliveryAddress", null);
                     }
                     this.addressesOfUser.splice(indexToEditOrDelete, 1);
                 }
                 else {
+                    const patchRequestBody = {};
+                    for(let key of Object.keys(newVal)) {
+                        if(key==='fullName') {
+                            patchRequestBody.full_name = newVal[key];
+                        }
+                        else if(key==='houseOrBuildingNumber') {
+                            patchRequestBody.house_or_building_number = newVal[key];
+                        }
+                        else if(key==='streetName') {
+                            patchRequestBody.street_name = newVal[key];
+                        }
+                        else if(key==='apartmentOrSuiteNumber') {
+                            patchRequestBody.apartment_or_suite = newVal[key];
+                        }
+                        else if(key==='townOrCity') {
+                            patchRequestBody.town_or_city = newVal[key];
+                        }
+                        else if(key==='stateOrProvince') {
+                            patchRequestBody.state_or_province = newVal[key];
+                        }
+                        else if(key==='zipCode') {
+                            patchRequestBody.zipcode = newVal[key];
+                        }
+                        else if(key==='phoneNumber') {
+                            patchRequestBody.phone_number = newVal[key];
+                        }
+                        else if(key==='isSelected') {
+                            patchRequestBody.is_selected = newVal[key];
+                        }
+                        else if(key!=='index') {
+                            patchRequestBody[key] = newVal[key];
+                        }
+                    }
+                    patchRequestBody.id = idOfAddressToEditOrDelete;
+
+                    if(patchRequestBody.is_selected==true && this.addressesOfUser[0].isSelected==true) {
+                        const response0 = await fetch(`http://localhost:8026/unselectSelectedAddressOfUser/${this.authenticatedUsername}`, {
+                            method: 'PATCH'
+                        });
+                        if(!response0.ok) {
+                            throw new Error('Network response not ok');
+                        }
+                    }
+            
+                    const response = await fetch('http://localhost:8026/editCustomerAddress', {
+                        method: 'PATCH',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(patchRequestBody)
+                    });
+                    if(!response.ok) {
+                        throw new Error('Network response not ok');
+                    }
+
                     for(let key of Object.keys(newVal)) {
                         if(key==='index' || key==='isSelected') {
                             continue;
@@ -286,9 +386,9 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                     if(newVal.isSelected==true) {
                         this.selectedPickupLocationOfUser = null;
                         this.$emit("notifyParentOfSelectedPickupLocation", null);
-                        delete this.addressesOfUser[0].isSelected;
+                        this.addressesOfUser[0].isSelected = false;
                         this.addressesOfUser[indexToEditOrDelete].isSelected = true;
-                        const newlySelectedAddress =  this.addressesOfUser[indexToEditOrDelete];
+                        const newlySelectedAddress = this.addressesOfUser[indexToEditOrDelete];
                         this.addressesOfUser.splice(indexToEditOrDelete, 1);
                         this.addressesOfUser.splice(0,0,newlySelectedAddress);
                         this.$emit("notifyParentOfSelectedDeliveryAddress", this.addressesOfUser[0]);
@@ -300,32 +400,68 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                 }
             },
 
-            newAddressToAdd(newVal) {
+            async newAddressToAdd(newVal) {
                 if(newVal==null) {
                     return;
                 }
-                if(newVal.isSelected) {
-                    delete this.addressesOfUser[0].isSelected;
-                    this.addressesOfUser.splice(0,0,
-                        {...newVal,
-                            id: Math.floor(Math.random*5000)+1000,
-                            addressText: this.getAddressText(newVal)
-                        }
-                    );
+
+                if(newVal.isSelected && this.addressesOfUser.length>0 && this.addressesOfUser[0].isSelected) {
+                    const response0 = await fetch(`http://localhost:8026/unselectSelectedAddressOfUser/${this.authenticatedUsername}`, {
+                        method: 'PATCH'
+                    });
+                    if(!response0.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                }
+
+                const response = await fetch('http://localhost:8026/addNewCustomerAddress', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        username: this.authenticatedUsername,
+                        house_or_building_number: newVal.houseOrBuildingNumber,
+                        street_name: newVal.streetName,
+                        apartment_or_suite: newVal.apartmentOrSuiteNumber,
+                        town_or_city: newVal.townOrCity,
+                        state_or_province: newVal.stateOrProvince,
+                        zipcode: newVal.zipCode,
+                        country: newVal.country,
+                        is_selected: newVal.isSelected,
+                        full_name: newVal.fullName,
+                        phone_number: newVal.phoneNumber
+                    })
+                });
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+                const newlyAddedAddressId = await response.json();
+                const newAddress =
+                {
+                    ...newVal,
+                    id: newlyAddedAddressId,
+                    addressText: this.getAddressText(newVal)
+                };
+                
+                if(newVal.isSelected==true) {
+                    if(this.addressesOfUser.length>0) {
+                        this.addressesOfUser[0].isSelected = false;
+                    }
+                    this.addressesOfUser.splice(0,0, newAddress);
                 }
                 else {
-                    this.addressesOfUser = [...this.addressesOfUser,
-                        {...newVal,
-                            id: Math.floor(Math.random*5000)+1000,
-                            addressText: this.getAddressText(newVal)
-                        }
-                    ];
+                    this.addressesOfUser = [...this.addressesOfUser, newAddress];
                 }
             },
 
-            newlySetPickupLocation(newVal) {
+            async newlySetPickupLocation(newVal) {
                 this.selectedPickupLocationOfUser = newVal;
-                if(this.addressesOfUser.length>0){
+                if(this.addressesOfUser.length>0 && this.addressesOfUser[0].isSelected==true){
+                    const response0 = await fetch(`http://localhost:8026/unselectSelectedAddressOfUser/${this.authenticatedUsername}`, {
+                        method: 'PATCH'
+                    });
+                    if(!response0.ok) {
+                        throw new Error('Network response not ok');
+                    }
                     this.addressesOfUser[0].isSelected = false;
                     this.$emit("notifyParentOfSelectedDeliveryAddress", null);
                 }

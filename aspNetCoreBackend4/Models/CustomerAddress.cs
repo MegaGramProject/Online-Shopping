@@ -35,5 +35,12 @@ public class CustomerAddress
 
     [Column("is_selected")]
     public bool is_selected { get; set; }
+
+    [Column("full_name")]
+    public string full_name {get; set; }
+
+    [Column("phone_number")]
+    public string phone_number {get; set; }
+
 }
 

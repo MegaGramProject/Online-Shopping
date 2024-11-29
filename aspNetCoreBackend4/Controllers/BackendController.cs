@@ -118,6 +118,12 @@ public class BackendController : ControllerBase
             if(ca.is_selected!=null) {
                 customerAddressToEdit.is_selected = (bool) ca.is_selected;
             }
+            if(ca.full_name!=null) {
+                customerAddressToEdit.full_name = ca.full_name;
+            }
+            if(ca.phone_number!=null) {
+                customerAddressToEdit.phone_number = ca.phone_number;
+            }
             _megaDBContext.customerAddresses.Update(customerAddressToEdit);
             await _megaDBContext.SaveChangesAsync();
             return Ok(true);

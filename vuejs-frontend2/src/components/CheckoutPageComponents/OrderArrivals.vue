@@ -156,7 +156,7 @@
                         <p><b>Selected:</b>  {{ productSchedules[product.id] == null ? 'None' : productSchedules[product.id][0] + ", " + productSchedules[product.id][1]}}</p>
 
                         <p v-if="productSchedules[product.id]!==null && productSchedules[product.id][2][0]==='-'" :style="{color: 'darkgreen', position: 'absolute', left: '130%', top: '0%', cursor: 'pointer'}">{{ getTotalPriceDifferenceWithQuantity(productSchedules[product.id][2], product.quantity) }}</p>
-                        <p v-if="productSchedules[product.id]!==null && productSchedules[product.id][2][0]==='+'" :style="{color: '#bf2a40', position: 'absolute', left: '130%', top: '0%', cursor: 'pointer'}">{{ getTotalPriceDifferenceWithQuantity(productSchedules[product.id][2]) }}</p>
+                        <p v-if="productSchedules[product.id]!==null && productSchedules[product.id][2][0]==='+'" :style="{color: '#bf2a40', position: 'absolute', left: '130%', top: '0%', cursor: 'pointer'}">{{ getTotalPriceDifferenceWithQuantity(productSchedules[product.id][2], product.quantity) }}</p>
                     </div>
 
                     <b v-if="productToDisplayOtherSchedulingOptionsMappings[product.id]==true" @click="toggleDisplayOtherSchedulingOptions(product)" :style="{marginTop:'1em', cursor: 'pointer'}">Hide other options</b>

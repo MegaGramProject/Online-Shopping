@@ -21,5 +21,9 @@ public class EditCustomerAddress
     public string? country {get; set; }
 
     public bool? is_selected { get; set; }
+
+    public string? full_name {get; set; }
+
+    public string? phone_number { get; set; }
 }
 

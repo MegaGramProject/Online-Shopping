@@ -14,7 +14,7 @@
         borderWidth:'0.3em', gap: '4.5%'}">
             <div :style="{display: 'flex', flexDirection: 'column', gap:'0.3em', position: 'relative'}">
                 <b :style="{fontSize:'0.87em'}">Find pickup locations near:</b>
-                <textarea placeholder="Enter an address, zip-code, or landmark" :style="{fontSize:'0.88em', fontFamily: 'Arial', resize: 'none', width: '30em',
+                <textarea v-model="inputLocation" placeholder="Enter an address, zip-code, or landmark" :style="{fontSize:'0.88em', fontFamily: 'Arial', resize: 'none', width: '30em',
                 paddingTop:'0.7em', paddingLeft:'0.5em'}"/>
                 <img @click="fetchPickupLocationResults" :src="searchIcon" class="iconToBeAdjustedForDarkMode" :style="{position: 'absolute', top: '0%', left: '95%', height: '5em', width: '5em', objectFit: 'contain', cursor: 'pointer'}"/>
             </div>
@@ -72,7 +72,8 @@ import SinglePickupLocationResult from './SinglePickupLocationResult.vue';
                 sampleMapOfPickupLocations,
                 pickupLocationsCategory: 'Recommended',
                 pickupLocationResults: [],
-                distanceUnit: this.deliveryAreaCountry==='the United States' ? 'mi' : 'km'
+                distanceUnit: this.deliveryAreaCountry==='the United States' ? 'mi' : 'km',
+                inputLocation: ''
             }
         },
 
@@ -96,6 +97,7 @@ import SinglePickupLocationResult from './SinglePickupLocationResult.vue';
 
             fetchPickupLocationResults() {
                 //max results: 7
+                console.log(this.inputLocation);
                 let pickupLocationResults = [
                     {
                         locationName: "Central Park Pickup",

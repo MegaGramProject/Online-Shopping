@@ -130,7 +130,7 @@ import thinGrayXIcon from '@/assets/images/thinGrayXIcon.png';
                 return !this.fieldsAreInvalid;
             },
 
-            saveEditsToThisAddress() {
+            async saveEditsToThisAddress() {
                 if(!this.fieldsAreValidated()) {
                     return;
                 }
