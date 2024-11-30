@@ -16,3 +16,4 @@ Route::get('/getPickupAreasOfProduct/{productId}', [BackendController::class, 'g
 Route::post('/addProductPickupArea/{productId}', [BackendController::class, 'addProductPickupArea']);
 Route::patch('/editProductPickupArea/{productId}', [BackendController::class, 'editProductPickupArea']);
 Route::delete('/deleteProductPickupArea/{productId}', [BackendController::class, 'deleteProductPickupArea']);
+Route::post('/getNearestPickupLocations', [BackendController::class, 'getNearestPickupLocations']);

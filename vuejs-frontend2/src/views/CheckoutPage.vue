@@ -288,6 +288,7 @@ import '../styles.css';
                         productPrice: "$45.92",
                         productPricePerUnit: "$6.75/Fl Oz",
                         productOptions: {Scent: 'Spice & Black Vanilla'},
+                        status: "Available",
                         quantity: 1,
                         getItAsSoonAs: 12,
                         shippingAndHandlingPrice: "$4.40",
@@ -315,6 +316,7 @@ import '../styles.css';
                         productPrice: "$16.99",
                         productPricePerUnit: null,
                         productOptions: {Color: 'Green', Size: '71"W x 71"L (Pack of 1)'},
+                        status: "Available",
                         quantity: 2,
                         getItAsSoonAs: 32,
                         shippingAndHandlingPrice: "$5.40",
@@ -330,6 +332,7 @@ import '../styles.css';
                         productPrice: "$29.99",
                         productPricePerUnit: "$2.50/Ounce",
                         productOptions: {},
+                        status: "Available",
                         quantity: 3,
                         getItAsSoonAs: 48,
                         shippingAndHandlingPrice: "$7.40",
@@ -347,7 +350,7 @@ import '../styles.css';
 
                 if(itemsToBeOrderedByUser.length>0) {
                     const itemsToBeOrderedByUserAsDict = {};
-                    /* in the dict above, keys are the getItAsSoonAs(number of hours it takes for the fastest-delivery of the product),
+                    /* in the dict above, keys are the values like "Arriving Nov 28, 2024"
                     and values are lists of products with that delivery-time */
 
                     let currentCurrency = itemsToBeOrderedByUser[0].productPrice[0];
@@ -384,17 +387,19 @@ import '../styles.css';
                             arrivalTextHeaders.push(arrivalTextHeader);
                         }
 
-                        quantityTotal+=item.quantity;
-                        itemsSubtotal+=parseFloat(item.productPrice.substring(currentCurrency.length))*item.quantity;
-                        shippingHandlingAndDeliverySubtotal+=parseFloat(item.shippingAndHandlingPrice.substring(currentCurrency.length))*item.quantity;
-                        taxSubtotal+=parseFloat(item.tax.substring(currentCurrency.length))*item.quantity;
+                        if(item.status==='Available') {
+                            quantityTotal+=item.quantity;
+                            itemsSubtotal+=parseFloat(item.productPrice.substring(currentCurrency.length))*item.quantity;
+                            shippingHandlingAndDeliverySubtotal+=parseFloat(item.shippingAndHandlingPrice.substring(currentCurrency.length))*item.quantity;
+                            taxSubtotal+=parseFloat(item.tax.substring(currentCurrency.length))*item.quantity;
 
-                        if(this.hasPremium) {
-                            shippingAndHandlingFeesSavedWithPremium+=parseFloat(item.sAndHPriceSavedWithPremium.substring(currentCurrency.length))*item.quantity;
-                        }
+                            if(this.hasPremium) {
+                                shippingAndHandlingFeesSavedWithPremium+=parseFloat(item.sAndHPriceSavedWithPremium.substring(currentCurrency.length))*item.quantity;
+                            }
 
-                        if(item.deals.length>0 && item.deals[0].prices.length==3) {
-                            totalItemDiscounts+=parseFloat(item.deals[0].prices[2].substring(currentCurrency.length));
+                            if(item.deals.length>0 && item.deals[0].prices.length==3) {
+                                totalItemDiscounts+=parseFloat(item.deals[0].prices[2].substring(currentCurrency.length));
+                            }
                         }
                     }
 
@@ -422,7 +427,6 @@ import '../styles.css';
                         "goBigOrGoHome$$$": [["2", "Kudos Protein Popcorn", "Buy 10, Get 11th one 36% off"]]
                     };
                     this.promoCodes = promoCodes;
-
                 }
             },
 
@@ -849,7 +853,7 @@ import '../styles.css';
                 for(let arrivalTextHeader of Object.keys(this.itemsToBeOrderedByUserAsDict)) {
                     for(let i=0; i<this.itemsToBeOrderedByUserAsDict[arrivalTextHeader].length; i++) {
                         const product = this.itemsToBeOrderedByUserAsDict[arrivalTextHeader][i];
-                        if(product.productId in productIdToPromoCodeDiscountMappings) {
+                        if(product.status==='Available' && product.productId in productIdToPromoCodeDiscountMappings) {
                             let originalAmountSaved = 0;
                             if(product.deals.length>0 && product.deals[0].prices.length==3) {
                                 originalAmountSaved = parseFloat(product.deals[0].prices[2].substring(currentCurrency.length));

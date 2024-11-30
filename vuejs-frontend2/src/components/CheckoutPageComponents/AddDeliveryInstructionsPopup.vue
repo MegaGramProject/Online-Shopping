@@ -841,9 +841,9 @@ import warningIcon from '@/assets/images/warningIcon.png';
             if(deliveryInstructionsOfAddress.callBox!==null) {
                 this.callBox = deliveryInstructionsOfAddress.callBox;
             }
-
-            this.keyOrFobIsRequired = deliveryInstructionsOfAddress.keyOrFobIsRequired;
-
+            if(deliveryInstructionsOfAddress.keyOrFobIsRequired!==null) {
+                this.keyOrFobIsRequired = deliveryInstructionsOfAddress.keyOrFobIsRequired;
+            }
             if(deliveryInstructionsOfAddress.dogPresent!==null) {
                 this.dogPresent = deliveryInstructionsOfAddress.dogPresent;
             }

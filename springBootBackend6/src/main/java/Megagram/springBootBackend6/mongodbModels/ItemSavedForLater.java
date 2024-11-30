@@ -1,4 +1,4 @@
-package Megagram.springBootBackend6;
+package Megagram.springBootBackend6.mongodbModels;
 
 import java.util.HashMap;
 

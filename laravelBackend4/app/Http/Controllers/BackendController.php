@@ -90,7 +90,7 @@ class BackendController extends Controller {
     public function addProductPickupArea(Request $request, string $productId) {
         $newDocument = [
             'productId' => $productId,
-            'listOfCountriesAndTheirAddressesToPickUpOrder' => $request->input('listOfCountriesAndTheirAddressesToPickUpOrder')
+            'countriesAndTheirPickupLocations' => $request->input('countriesAndTheirPickupLocations')
         ];
 
         $insertResult = $this->productPickupAreas->insertOne($newDocument);
@@ -100,7 +100,7 @@ class BackendController extends Controller {
     public function editProductPickupArea(Request $request, string $productId) {
         $editResult = $this->productPickupAreas->updateOne(
             [ 'productId' => $productId ],
-            [ '$set' => [ 'listOfCountriesAndTheirAddressesToPickUpOrder' => $request->input('listOfCountriesAndTheirAddressesToPickUpOrder') ]]
+            [ '$set' => [ 'countriesAndTheirPickupLocations' => $request->input('countriesAndTheirPickupLocations') ]]
         );
         return response()->json(['productFound' => $editResult->getMatchedCount()>0]);
     }
@@ -109,6 +109,41 @@ class BackendController extends Controller {
         $deleteResult = $this->productPickupAreas->deleteOne(['productId' => $productId]);
         return response()->json(['productFound' => $deleteResult->getDeletedCount()>0]);
     }
+
+    public function getNearestPickupLocations(Request $request) {
+        $nearThisLocation = $request->input('nearThisLocation');
+        $limit = $request->input('limit');
+    
+        $output = [];
+        $allRelevantData = $this->productPickupAreas->find(
+            [],
+            ['projection' => ['countriesAndTheirPickupLocations' => 1]]
+        )->toArray();
+    
+        foreach ($allRelevantData as $data) {
+            foreach ($data->countriesAndTheirPickupLocations as $country => $pickupLocations) {
+                foreach ($pickupLocations as $pickupLocation) {
+                    $output[] = [
+                        'locationName' => $pickupLocation->name,
+                        'distance' => 0.25+floor(rand(0, 1000)),
+                        'totalHoursOpenPerWeek' => $pickupLocation->totalHoursOpenPerWeek,
+                        'openingHours' => $pickupLocation->openingHours,
+                        'pickupLocationAddress' => $pickupLocation->address,
+                        'pickupDirections' => $pickupLocation->pickupDirections,
+                    ];
+                }
+            }
+        }
+    
+        usort($output, function ($a, $b) {
+            return $a['distance'] <=> $b['distance'];
+        });
+    
+        $output = array_slice($output, 0, $limit);
+    
+        return $output;
+    }
+    
 
 
 }

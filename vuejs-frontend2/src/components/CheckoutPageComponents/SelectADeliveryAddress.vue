@@ -87,10 +87,19 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                 if(!response.ok) {
                     throw new Error('Network response not ok');
                 }
+                const addressesOfUser = await response.json();
 
-                let addressesOfUser = await response.json();
+                const response1 = await fetch(`http://localhost:8035/getAllAddressDeliveryInstructionsOfUser/${this.authenticatedUsername}`);
+                if(!response1.ok) {
+                    throw new Error('Network response not ok');
+                }
+                const addressIdToDeliveryInstructionsMappings = await response1.json();
+
+
                 for(let i=0; i<addressesOfUser.length; i++) {
                     const address = addressesOfUser[i];
+                    const deliveryInstructionsOfAddress = addressIdToDeliveryInstructionsMappings[address.id];
+
                     const newAddress = {
                         id: address.id,
                         fullName: address.full_name,
@@ -104,81 +113,21 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                         phoneNumber: address.phone_number,
                         isSelected: address.is_selected,
                         deliveryInstructions: {
-                            propertyType: 'Home',
-                            whereToLeavePackage: 'Front door',
-                            securityCode: null,
-                            callBox: null,
-                            keyOrFobIsRequired: null,
-                            dogPresent: null,
-                            additionalInstructions: null,
-                            hoursOpenForDelivery: null,
-                            availableOnFederalHolidays: null
+                            propertyType: deliveryInstructionsOfAddress.propertyType,
+                            whereToLeavePackage: deliveryInstructionsOfAddress.whereToLeavePackage,
+                            securityCode: deliveryInstructionsOfAddress.securityCode,
+                            callBox: deliveryInstructionsOfAddress.callBox,
+                            keyOrFobIsRequired: deliveryInstructionsOfAddress.keyOrFobIsRequired,
+                            dogPresent: deliveryInstructionsOfAddress.dogPresent==true ? 'Yes' : 'No',
+                            additionalInstructions: deliveryInstructionsOfAddress.additionalInstructions,
+                            hoursOpenForDelivery: deliveryInstructionsOfAddress.hoursOpenForDelivery==null ? null : JSON.parse(deliveryInstructionsOfAddress.hoursOpenForDelivery),
+                            availableOnFederalHolidays: deliveryInstructionsOfAddress.availableOnFederalHolidays==true ? 'Yes' : 'No',
                         }
                     };
 
                     newAddress.addressText = this.getAddressText(newAddress);
                     addressesOfUser[i] = newAddress;
                 }
-
-                /*
-                let addressesOfUserExample = [
-                    {
-                        id: 1,
-                        fullName: "Rishav Ray",
-                        country: "the United States",
-                        houseOrBuildingNumber: "75165",
-                        streetName: "Greenfelder Drive",
-                        apartmentOrSuiteNumber: null,
-                        townOrCity: "South Nanceetown",
-                        stateOrProvince: "West Virginia",
-                        zipCode: "91793",
-                        addressText: "75165 Greenfelder Drive, South Nanceetown West Virginia 91793, the United States",
-                        phoneNumber: "+16098671431",
-                        deliveryInstructions: {
-                            propertyType: 'Townhome',
-                            whereToLeavePackage: 'No preference',
-                            securityCode: 'abc',
-                            callBox: null,
-                            keyOrFobIsRequired: false,
-                            dogPresent: 'Yes',
-                            additionalInstructions: 'Please don\'t ring or knock, or else I will let the dogs out!',
-                            hoursOpenForDelivery: null,
-                            availableOnFederalHolidays: null
-                        }
-                    },
-                    {
-                        id: 2,
-                        fullName: "Rishav Ray",
-                        country: "the United States",
-                        houseOrBuildingNumber: "69127",
-                        streetName: "Fritsch Ranch",
-                        apartmentOrSuiteNumber: "Apt. 974",
-                        townOrCity: "Greenholtborough",
-                        stateOrProvince: "Missouri",
-                        zipCode: "19198",
-                        addressText: "69127 Fritsch Ranch, Apt. 974, Greenholtborough Missouri 19198, the United States",
-                        phoneNumber: "+12088673421",
-                        deliveryInstructions: {
-                            propertyType: 'Business',
-                            whereToLeavePackage: 'Property Staff',
-                            securityCode: 'sxc',
-                            callBox: 'def',
-                            keyOrFobIsRequired: false,
-                            additionalInstructions: null,
-                            hoursOpenForDelivery: {
-                                Monday: ['9:00AM', '5:00PM'],
-                                Tuesday: ['9:00AM', '5:00PM'],
-                                Wednesday: ['9:00AM', '5:00PM'],
-                                Thursday: ['9:00AM', '5:00PM'],
-                                Friday: ['9:00AM', '3:00PM'],
-                                Saturday: ['', '11:00AM'],
-                                Sunday: ['', ''],
-                            },
-                            availableOnFederalHolidays: 'Yes'
-                        }
-                    }
-                ];
-                */
 
                 this.addressesOfUser = addressesOfUser;
 
@@ -281,7 +230,30 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                 addressText+=addressInfo.zipCode+", "+addressInfo.country;
 
                 return addressText;
+            },
+
+            areDictsEqual(dict1, dict2) {
+                if(dict1==null && dict2==null) {
+                    return true;
+                }
+                if(dict1==null || dict2==null) {
+                    return false;
+                }
+
+                const keys1 = Object.keys(dict1);
+                const keys2 = Object.keys(dict2);
+
+                if (keys1.length !== keys2.length) {
+                    return false;
+                }
+                for (let key of keys1) {
+                    if (!(key in dict2) || dict1[key]!==dict2[key]) {
+                        return false;
+                    }
+                }
+                return true;
             }
+
         },
 
         watch: {
@@ -302,6 +274,13 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                         method: 'DELETE'
                     });
                     if(!response.ok) {
+                        throw new Error('Network response not ok');
+                    }
+
+                    const response1 = await fetch(`http://localhost:8035/deleteAddressDeliveryInstructions/${idOfAddressToEditOrDelete}`, {
+                        method: 'DELETE',
+                    });
+                    if(response1.ok) {
                         throw new Error('Network response not ok');
                     }
 
@@ -435,11 +414,35 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                     throw new Error('Network response not ok');
                 }
                 const newlyAddedAddressId = await response.json();
+
+                const response1 = await fetch('http://localhost:8035/addAddressDeliveryInstructions', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        addressId: newlyAddedAddressId,
+                        username: this.authenticatedUsername,
+                    })
+                });
+                if(response1.ok) {
+                    throw new Error('Network response not ok');
+                }
+
                 const newAddress =
                 {
                     ...newVal,
                     id: newlyAddedAddressId,
-                    addressText: this.getAddressText(newVal)
+                    addressText: this.getAddressText(newVal),
+                    deliveryInstructions: {
+                        propertyType: 'Home',
+                        whereToLeavePackage: 'Front door',
+                        securityCode: null,
+                        callBox: null,
+                        keyOrFobIsRequired: null,
+                        dogPresent: null,
+                        additionalInstructions: null,
+                        hoursOpenForDelivery: null,
+                        availableOnFederalHolidays: null
+                    }
                 };
                 
                 if(newVal.isSelected==true) {
@@ -467,10 +470,53 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                 }
             },
 
-            addressWithUpdatedDeliveryInstructions(newVal) {
+            async addressWithUpdatedDeliveryInstructions(newVal) {
                 const addressIndex = newVal.index;
+                const address = this.addressesOfUser[addressIndex];
+                const currentDeliveryInstructions = address.deliveryInstructions;
                 const updatedDeliveryInstructions = newVal.deliveryInstructions;
-                this.addressesOfUser[addressIndex].deliveryInstructions = updatedDeliveryInstructions;
+                const patchRequestBody = {};
+
+                for(let key of Object.keys(updatedDeliveryInstructions)) {
+                    if(key==='propertyType' && updatedDeliveryInstructions.propertyType!==currentDeliveryInstructions.propertyType) {
+                        patchRequestBody.propertyType = updatedDeliveryInstructions.propertyType;
+                    }
+                    else if(key==='whereToLeavePackage' && updatedDeliveryInstructions.whereToLeavePackage!==currentDeliveryInstructions.whereToLeavePackage) {
+                        patchRequestBody.whereToLeavePackage = updatedDeliveryInstructions.whereToLeavePackage;
+                    }
+                    else if(key==='securityCode' && updatedDeliveryInstructions.securityCode!==currentDeliveryInstructions.securityCode) {
+                        patchRequestBody.securityCode = updatedDeliveryInstructions.securityCode;
+                    }
+                    else if(key==='callBox' && updatedDeliveryInstructions.callBox!==currentDeliveryInstructions.callBox) {
+                        patchRequestBody.callBox = updatedDeliveryInstructions.callBox;
+                    }
+                    else if(key==='keyOrFobIsRequired' && updatedDeliveryInstructions.keyOrFobIsRequired!=currentDeliveryInstructions.keyOrFobIsRequired) {
+                        patchRequestBody.keyOrFobIsRequired = updatedDeliveryInstructions.keyOrFobIsRequired;
+                    }
+                    else if(key==='additionalInstructions' && updatedDeliveryInstructions.additionalInstructions!==currentDeliveryInstructions.additionalInstructions) {
+                        patchRequestBody.additionalInstructions = updatedDeliveryInstructions.additionalInstructions;
+                    }
+                    else if(key==='hoursOpenForDelivery' && !this.areDictsEqual(updatedDeliveryInstructions.hoursOpenForDelivery, currentDeliveryInstructions.hoursOpenForDelivery)) {
+                        patchRequestBody.hoursOpenForDelivery = JSON.stringify(updatedDeliveryInstructions.hoursOpenForDelivery);
+                    }
+                    else if(key==='availableOnFederalHolidays' && updatedDeliveryInstructions.availableOnFederalHolidays!==currentDeliveryInstructions.availableOnFederalHolidays) {
+                        patchRequestBody.availableOnFederalHolidays = updatedDeliveryInstructions.availableOnFederalHolidays==='Yes' ? true : false;
+                    }
+                    else if(updatedDeliveryInstructions.dogPresent!==currentDeliveryInstructions.dogPresent){
+                        patchRequestBody.dogPresent = updatedDeliveryInstructions.dogPresent==='Yes' ? true : false;
+                    }
+                }
+
+                const response = await fetch(`http://localhost:8035/editAddressDeliveryInstructions/${address.id}`, {
+                    method: 'PATCH',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(patchRequestBody)
+                });
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+            
+                address.deliveryInstructions = updatedDeliveryInstructions;
             }
         }
     }

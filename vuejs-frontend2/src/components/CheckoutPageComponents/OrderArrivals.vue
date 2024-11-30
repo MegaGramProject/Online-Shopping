@@ -21,7 +21,11 @@
                     </div>
                 </div>
 
-                <p v-if="product.deals.length>0" :style="{fontSize:'0.88em', marginBottom:'0em', marginTop:'2em', lineHeight:'2'}">
+                <b v-if="product.status==='Out of stock'" :style="{color: 'white', backgroundColor: '#d14750', padding: '0.3em 0.3em', width: '6.3em', marginTop:'1em', fontSize:'0.88em'}">Out of Stock</b>
+                <b v-if="product.status==='Does not deliver to selected address'" :style="{color: 'white', backgroundColor: '#d14750', padding: '0.3em 0.3em', fontSize:'0.95em', width: '18em', marginTop:'3em', fontSize:'0.88em'}">Does not deliver to selected address</b>
+                <b v-if="product.status==='Does not deliver to selected pickup-location'" :style="{color: 'white', backgroundColor: '#d14750', padding: '0.3em 0.3em', fontSize:'0.95em', width: '21em', marginTop:'3em', fontSize:'0.88em'}">Does not deliver to selected pickup-location</b>
+
+                <p v-if="product.status==='Available' && product.deals.length>0" :style="{fontSize:'0.88em', marginBottom:'0em', marginTop:'2em', lineHeight:'2'}">
                     Deal Selected: <span :style="{padding: '0.5em 0.5em', color: 'white', fontWeight: 'bold', backgroundColor:'#b81220', fontSize: '0.8em', marginRight:'1em'}">{{ formatProductDealText(product.deals[0]) }}</span>
                 
                     <template v-if="product.deals[0].prices.length==3">
@@ -37,7 +41,7 @@
 
                 <p :style="{fontSize:'0.88em', marginBottom:'0em'}">
                     <b>Quantity:</b> {{ product.quantity }}
-                    <select @input="onChangingQuantity(product.id, product.quantity)" :style="{marginLeft:'1em', padding: '0.3em 0.3em'}">
+                    <select v-if="product.status==='Available'" @input="onChangingQuantity(product.id, product.quantity)" :style="{marginLeft:'1em', padding: '0.3em 0.3em'}">
                         <option value="">Change</option>
                         <option value="0">0 (Delete this item)</option>
                         <option value="1">1</option>

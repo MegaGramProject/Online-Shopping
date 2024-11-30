@@ -161,12 +161,12 @@ import SelectCard from './SelectCard.vue';
 
             applyPromoCode() {
                 if(this.promoCodeInput in this.promoCodes) {
-                    this.promoCodeMatches = this.promoCodes[this.promoCodeInput];
                     this.invalidPromoCode = false;
+                    this.promoCodeMatches = this.promoCodes[this.promoCodeInput];
                     if(!this.promoCodesAlreadyApplied.has(this.promoCodeInput)) {
                         this.$emit("applyPromoCode", this.promoCodeInput);
+                        this.promoCodesAlreadyApplied.add(this.promoCodeInput);
                     }
-                    this.promoCodesAlreadyApplied.add(this.promoCodeInput);
                 }
                 else {
                     this.promoCodeMatches = [];

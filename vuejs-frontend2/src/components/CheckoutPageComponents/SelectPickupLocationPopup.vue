@@ -95,101 +95,21 @@ import SinglePickupLocationResult from './SinglePickupLocationResult.vue';
                 this.pickupLocationResults = [...pickupLocationResults];
             },
 
-            fetchPickupLocationResults() {
-                //max results: 7
-                console.log(this.inputLocation);
-                let pickupLocationResults = [
-                    {
-                        locationName: "Central Park Pickup",
-                        distance: 2.5,
-                        totalHoursOpenPerWeek: 35,
-                        openingHours: {
-                        "Mon-Fri": "9am-6pm",
-                        Sat: "10am-4pm",
-                        },
-                        pickupLocationAddress: "123 Central Park Ave, New York, NY 10019",
-                        pickupDirections: "Enter through the main gate and look for the kiosk near the fountain."
-                    },
-                    {
-                        locationName: "Downtown Hub",
-                        distance: 5.0,
-                        totalHoursOpenPerWeek: 82,
-                        openingHours: {
-                        "Mon-Fri": "8am-8pm",
-                        Sat: "9am-6pm",
-                        Sun: "10am-5pm"
-                        },
-                        pickupLocationAddress: "456 Downtown Blvd, New York, NY 10001",
-                        pickupDirections: "Located in the parking lot opposite the main bus terminal."
-                    },
-                    {
-                        locationName: "Harborview Station",
-                        distance: 7.8,
-                        totalHoursOpenPerWeek: 122,
-                        openingHours: {
-                        Mon: "7:30am-7pm",
-                        Tue: "7:30am-7pm",
-                        "Wed-Fri": "8am-6pm",
-                        Sat: "9am-5pm"
-                        },
-                        pickupLocationAddress: "789 Harborview Rd, Brooklyn, NY 11201",
-                        pickupDirections: "Find the stand next to the docks near Pier 5."
-                    },
-                    {
-                        locationName: "Midtown Express",
-                        distance: 1.2,
-                        totalHoursOpenPerWeek: 120,
-                        openingHours: {
-                        "Mon-Sun": "24/7"
-                        },
-                        pickupLocationAddress: "101 Midtown St, New York, NY 10036",
-                        pickupDirections: "Located inside the gas station next to the convenience store."
-                    },
-                    {
-                        locationName: "East Village Stop",
-                        distance: 4.3,
-                        totalHoursOpenPerWeek: 88,
-                        openingHours: {
-                        Mon: "8am-5pm",
-                        Tue: "8am-6pm",
-                        Wed: "9am-6pm",
-                        "Thu-Fri": "10am-7pm",
-                        Sun: "12pm-4pm"
-                        },
-                        pickupLocationAddress: "202 East Village Ln, New York, NY 10009",
-                        pickupDirections: "Across from the community center, near the basketball courts."
-                    },
-                    {
-                        locationName: "Uptown Corner",
-                        distance: 3.8,
-                        totalHoursOpenPerWeek: 120,
-                        openingHours: {
-                        Mon: "9am-6pm",
-                        Tue: "9am-6pm",
-                        Wed: "9am-6pm",
-                        Thu: "10am-5pm",
-                        Fri: "10am-3pm",
-                        Sat: "9am-1pm",
-                        },
-                        pickupLocationAddress: "303 Uptown Blvd, Bronx, NY 10451",
-                        pickupDirections: "Next to the flower shop on the corner of Uptown Blvd and Main St."
-                    },
-                    {
-                        locationName: "Chelsea Market Pickup",
-                        distance: 2.9,
-                        totalHoursOpenPerWeek: 122,
-                        openingHours: {
-                        "Mon-Sat": "8am-8pm",
-                        Sun: "9am-5pm"
-                        },
-                        pickupLocationAddress: "404 Chelsea Market St, New York, NY 10011",
-                        pickupDirections: "Located inside the market, near the central food court entrance."
-                    }
-                ];
-                if(this.pickupLocationsCategory==='Nearest') {
-                    pickupLocationResults = pickupLocationResults.sort((a,b) => a.distance - b.distance);
+            async fetchPickupLocationResults() {
+                const response = await fetch('http://localhost:8027/api/getNearestPickupLocations', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        nearThisLocation: this.inputLocation,
+                        limit: 7
+                    })
+                });
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
                 }
-                else {
+                let pickupLocationResults = await response.json();
+                
+                if(this.pickupLocationsCategory==='Recommended') {
                     pickupLocationResults = pickupLocationResults.sort((a,b) => b.totalHoursOpenPerWeek/b.distance - a.totalHoursOpenPerWeek/a.distance);
                 }
 
