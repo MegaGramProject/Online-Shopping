@@ -26,9 +26,9 @@
                 <b v-if="product.status==='Does not deliver to selected pickup-location'" :style="{color: 'white', backgroundColor: '#d14750', padding: '0.3em 0.3em', fontSize:'0.95em', width: '21em', marginTop:'3em', fontSize:'0.88em'}">Does not deliver to selected pickup-location</b>
 
                 <p v-if="product.status==='Available' && product.deals.length>0" :style="{fontSize:'0.88em', marginBottom:'0em', marginTop:'2em', lineHeight:'2'}">
-                    Deal Selected: <span :style="{padding: '0.5em 0.5em', color: 'white', fontWeight: 'bold', backgroundColor:'#b81220', fontSize: '0.8em', marginRight:'1em'}">{{ formatProductDealText(product.deals[0]) }}</span>
+                    Deal Selected: <span v-if="(hasPremium==false && product.deals[0].requirement==='PREMIUM')==false" :style="{padding: '0.5em 0.5em', color: 'white', fontWeight: 'bold', backgroundColor:'#b81220', fontSize: '0.8em', marginRight:'1em'}">{{ formatProductDealText(product.deals[0]) }}</span> <span v-if="(hasPremium==false && product.deals[0].requirement==='PREMIUM')" :style="{marginRight: '1em'}">None</span>
                 
-                    <template v-if="product.deals[0].prices.length==3">
+                    <template v-if="product.deals[0].prices.length==3 && (hasPremium==false && product.deals[0].requirement==='PREMIUM')==false">
                         <span :style="{textDecoration: 'line-through', color: 'gray'}">{{ product.deals[0].prices[0] }}</span>
                         <span :style="{color: 'green', fontSize:'1.2em', fontWeight: 'bold', marginLeft:'0.5em'}">{{ product.deals[0].prices[1] }}</span>
                     </template>
@@ -149,7 +149,7 @@
                 <p v-for="optionKey in Object.keys(product.productOptions)" :key="optionKey" :style="{fontSize:'0.88em', marginBottom:'0em'}"><b>{{ optionKey }}:</b> <span :style="{color: 'gray'}">{{ product.productOptions[optionKey] }}</span></p>
             </div>
 
-            <div :style="{display: 'flex', flexDirection: 'column'}">
+            <div v-if="product.status==='Available'" :style="{display: 'flex', flexDirection: 'column'}">
                 <form @change="productDeliveryScheduleTypeChanged(product)">
                     <input v-model="this.productScheduleTypes[product.id]" type="radio" name="scheduleDelivery" value="default" :style="{marginBottom:'1em'}" checked><b>{{ formatArrivalText() }}</b><br>
                     <input v-model="this.productScheduleTypes[product.id]" type="radio" name="scheduleDelivery" value="scheduleLater">Schedule <b>later</b><br>

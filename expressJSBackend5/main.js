@@ -329,7 +329,7 @@ app.post("/checkIfDealsAreAvailableForProducts", async (req, res) => {
     const output = {};
     try {
         const hasPremium = req.body.hasPremium;
-        const productIds = new Set(req.body.productIds);
+        const productIds = req.body.productIds;
 
         for (let productId of productIds) {
             output[productId] = false;
@@ -342,12 +342,12 @@ app.post("/checkIfDealsAreAvailableForProducts", async (req, res) => {
 
         if (!hasPremium) {
             allDealsOfGivenProductsForUser = await productDealsCollection
-                .find({ productId: { '$in': Array.from(productIds) }, required: { '$eq': 'NONE' } },
+                .find({ productId: { '$in': productIds }, required: { '$eq': 'NONE' } },
                 { projection: { productId: 1, expiration: 1 } })
                 .toArray();
         } else {
             allDealsOfGivenProductsForUser = await productDealsCollection
-                .find({ productId: { '$in': Array.from(productIds) }, required: { '$in': ['NONE', 'PREMIUM'] } },
+                .find({ productId: { '$in': productIds }, required: { '$in': ['NONE', 'PREMIUM'] } },
                 { projection: { productId: 1, expiration: 1 } })
                 .toArray();
         }
@@ -363,6 +363,79 @@ app.post("/checkIfDealsAreAvailableForProducts", async (req, res) => {
 
     res.send(output);
 });
+
+app.post("/getPromoCodeDealsForListOfProducts", async (req, res) => {
+    const output = {};
+    try {
+        const productIds = req.body.productIds;
+
+        const database = mongoClient.db('Megagram');
+        const productDealsCollection = database.collection('productDeals');
+        const currDateTime = new Date();
+
+        let allValidPromoCodeDealsForListOfProducts;
+        allValidPromoCodeDealsForListOfProducts = await productDealsCollection
+            .find({ productId: { '$in': productIds }, required: { '$regex': '^promoCode=' } },
+            {}
+            ).toArray();
+
+        allValidPromoCodeDealsForListOfProducts = allValidPromoCodeDealsForListOfProducts
+            .filter(x => new Date(x.expiration) > currDateTime)
+
+        for(let validPromoCodeDeal of allValidPromoCodeDealsForListOfProducts) {
+            const promoCode = validPromoCodeDeal.required.substring(10);
+            if(!(promoCode in output)) {
+                output[promoCode] = [];
+            }
+            output[promoCode].push([validPromoCodeDeal.productId, validPromoCodeDeal.deal]);
+        }
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send({ error: "An error occurred while getting promo-code-deals" });
+    }
+
+    res.send(output);
+});
+
+app.post("/getProductDealsForMany", async (req, res) => {
+    const output = {};
+    try {
+        const productIds = req.body.productIds;
+
+        for (let productId of productIds) {
+            output[productId] = [];
+        }
+
+        const database = mongoClient.db('Megagram');
+        const productDealsCollection = database.collection('productDeals');
+        const currDateTime = new Date();
+        let foundProductDeals;
+
+        foundProductDeals = await productDealsCollection
+            .find({ productId: { '$in': productIds }, required: { '$in': ['NONE', 'PREMIUM'] } },
+                {})
+            .toArray();
+
+        
+        foundProductDeals = foundProductDeals
+        .filter(x => new Date(x.expiration) > currDateTime)
+
+        for(let deal of foundProductDeals) {
+            output[deal.productId].push({
+                deal: deal.deal,
+                required: deal.required
+            });
+        }
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send({ error: "An error occurred while checking deals." });
+    }
+
+    res.send(output);
+});
+
 
 
 app.listen(port, () => {

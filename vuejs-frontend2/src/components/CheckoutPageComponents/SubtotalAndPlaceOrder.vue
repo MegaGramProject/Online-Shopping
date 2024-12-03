@@ -1,5 +1,5 @@
 <template>
-    <div class="miniSection" :style="{width: '17em', backgroundColor: 'white', padding: '1.5em 1.5em', display: 'flex',
+    <div v-if="orderSubtotal.length>0" class="miniSection" :style="{width: '17em', backgroundColor: 'white', padding: '1.5em 1.5em', display: 'flex',
     flexDirection: 'column'}">
         <button @click="placeOrder" :style="{border: 'none', padding: '0.7em 1.2em', cursor: (this.selectedDeliveryAddress==null && this.selectedPickupLocation==null) || this.selectedPaymentCard==null ? 'auto' : 'pointer', borderRadius: '2em',
         backgroundColor:'#ffe359', opacity: (this.selectedDeliveryAddress==null && this.selectedPickupLocation==null) || this.selectedPaymentCard==null ? '0.3' : '1'}">Place your order</button>
@@ -24,7 +24,7 @@
             </div>
             <div v-if="hasPremium" :style="{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
             fontSize: '0.8em', marginBottom:'0em'}">
-                <p>S/H/D discounts</p>
+                <p>S/H/D discounts from Premium</p>
                 <p>-{{ shippingAndHandlingFeesSavedWithPremium }}</p>
             </div>
             <div :style="{display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%',
@@ -74,6 +74,9 @@
             },
 
             isThereAnyPriceDifferenceFromSchedulingLater() {
+                if(this.priceDifferencesFromSchedulingLater.length==0) {
+                    return false;
+                }
                 let currentCurrency = this.priceDifferencesFromSchedulingLater[0];
                 if(currentCurrency==="A") {
                     currentCurrency+="$";

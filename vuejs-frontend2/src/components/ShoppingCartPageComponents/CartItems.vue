@@ -57,8 +57,16 @@ import SingleItemInCart from './SingleItemInCart.vue';
                 const cartItemToSelect = this.items[indexOfCartItemToSelect];
                 this.selectedItems.push({
                     id: cartItemToSelect.id,
+                    productId: cartItemToSelect.productId,
+                    productImage: cartItemToSelect.productImage,
+                    productName: cartItemToSelect.productName,
+                    inStock: cartItemToSelect.inStock,
+                    options: cartItemToSelect.options,
+                    optionsWithoutText: cartItemToSelect.optionsWithoutText,
                     productPrice: cartItemToSelect.productPrice,
-                    quantity: cartItemToSelect.quantity
+                    productPricePerUnit: cartItemToSelect.productPricePerUnit,
+                    quantity: cartItemToSelect.quantity,
+                    dealsAvailable: cartItemToSelect.dealsAvailable,
                 });
                 this.$emit('updateSelectedCartItems', this.selectedItems);
             },

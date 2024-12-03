@@ -130,6 +130,7 @@ import '../styles.css';
             numItemsInCart: 0,
             numSelectedCartItems: 0,
             cartPriceSubtotal: "",
+            selectedCartItems: {},
             selectedCartItemsPriceSubtotal: "",
             deliveryZipcode: "",
             allPastSearchesOfUser: null,
@@ -225,23 +226,22 @@ import '../styles.css';
             },
             
             showDarkScreen1() {
-            this.displayDarkScreen1 = true;
+                this.displayDarkScreen1 = true;
             },
 
             hideDarkScreen1() {
-            this.displayDarkScreen1 = false;
+                this.displayDarkScreen1 = false;
             },
 
             showDarkScreen2() {
-            this.displayDarkScreen2 = true;
+                this.displayDarkScreen2 = true;
             },
 
             hideDarkScreen2() {
-            this.displayDarkScreen2 = false;
+                this.displayDarkScreen2 = false;
             },
 
             async fetchRelevantDataAtStart() {
-                /*
                 const response = await fetch(`http://localhost:8022/getBasicUserInfo/${this.authenticatedUsername}`);
                 if(!response.ok) {
                     throw new Error('Network response not ok');
@@ -257,13 +257,14 @@ import '../styles.css';
                 }
                 this.deliveryAreaCountry = basicUserInfo.deliveryAreaCountry;
                 this.hasPremium = basicUserInfo.hasPremium == 1 ? true : false;
-                */
                 
 
+                /*
                 this.deliveryArea = 'Verona, 53593';
                 this.deliveryZipcode = '53593';
                 this.deliveryAreaCountry = 'the United States';
                 this.hasPremium = true;
+                */
 
                 const response1  = await fetch('http://localhost:8029/graphql',{
                     method: 'POST',
@@ -289,7 +290,6 @@ import '../styles.css';
                 let productIdsOfCartItems = new Set();
                 let numItemsInCart = 0;
                 let productIdToOptionsListMappings = {};
-                localStorage.setItem("selectedCartItems", "[]");
                 
                 for(let cartItem of shoppingCartItemsOfUser) {
                     const id = cartItem.id;
@@ -315,7 +315,7 @@ import '../styles.css';
                 productIdsOfCartItems = [...productIdsOfCartItems];
                 this.productIdsOfCartItems = productIdsOfCartItems;
 
-                /*
+
                 const response1b = await fetch(`http://localhost:8026/getSelectedAddressOfUser/${this.authenticatedUsername}`);
                 if(!response1b.ok){
                     this.selectedAddressOfUser = "";
@@ -344,9 +344,6 @@ import '../styles.css';
                     newSelectedAddress+=selectedAddressOfUser.country;
                     this.selectedAddressOfUser = newSelectedAddress;
                 }
-                */
-            
-                this.selectedAddressOfUser = "(Fake Address) Placeholder";
 
                 if(numItemsInCart>0) {
                     const response2 = await fetch('http://localhost:8022/getNamesAndSpecificPricesOfGivenProducts', {
@@ -393,7 +390,6 @@ import '../styles.css';
                         else {
                             cartItemsInfo[cartItemIdNotProductId].productPricePerUnit = null;
                         }
-
                     }
 
                     const response3 = await fetch('http://localhost:8029/getFastestDeliveryTimesForProducts', {
@@ -418,6 +414,7 @@ import '../styles.css';
                         const productId = cartItemsInfo[cartItemIdNotProductId].productId;
                         const productDeliveryTimeInHours = deliveryTimesOfCartItems[productId];
                         cartItemsInfo[cartItemIdNotProductId].getItAsSoonAs = this.formatDeliveryArrivalText(productDeliveryTimeInHours);
+                        cartItemsInfo[cartItemIdNotProductId].getItAsSoonAsInHours = productDeliveryTimeInHours;
                     }
 
                     const response4 = await fetch('http://localhost:8032/api/checkForMegagramProductChoices', {
@@ -594,9 +591,10 @@ import '../styles.css';
                         cartItemsInfo[cartItemIdNotProductId].textOptions = newOptions;
                     }
 
+                    let itemsOfCart = [];
                     for(let cartItemIdNotProductId of Object.keys(cartItemsInfo)) {
                         const infoOnCurrentCartItem = cartItemsInfo[cartItemIdNotProductId];
-                        this.itemsOfCart.push({
+                        itemsOfCart.push({
                             id: parseInt(cartItemIdNotProductId),
                             productId: infoOnCurrentCartItem.productId,
                             productImage: infoOnCurrentCartItem.productImage,
@@ -607,6 +605,7 @@ import '../styles.css';
                             productPrice: infoOnCurrentCartItem.productPrice,
                             productPricePerUnit: infoOnCurrentCartItem.productPricePerUnit,
                             getItAsSoonAs: infoOnCurrentCartItem.getItAsSoonAs,
+                            getItAsSoonAsInHours: infoOnCurrentCartItem.getItAsSoonAsInHours,
                             quantity: infoOnCurrentCartItem.quantity,
                             dealsAvailable: infoOnCurrentCartItem.dealsAvailable,
                             megagramChoiceCategory: infoOnCurrentCartItem.megagramChoiceCategory,
@@ -615,7 +614,13 @@ import '../styles.css';
                             hasBeenSavedForLater: false
                         });
                     }
+                    this.itemsOfCart = [...itemsOfCart];
                 }
+                this.selectedCartItems = {
+                    fetchDateTime: new Date(),
+                    data: []
+                };
+                localStorage.setItem("selectedCartItems", JSON.stringify(this.selectedCartItems));
 
                 /*
                 const response10 = await fetch(`http://localhost:8025/getShopSearchesOfUser/${this.authenticatedUsername}`);
@@ -649,29 +654,31 @@ import '../styles.css';
                 }
                 let idsOfProductsAvailableToUser = await response11.json();
                 idsOfProductsAvailableToUser = idsOfProductsAvailableToUser.map(x=>x.productId);
-                
-                const response12 = await fetch('http://localhost:8026/getNumProductsLeftForListOfProducts', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(idsOfProductsAvailableToUser)
-                });
-                if(!response12.ok) {
-                    throw new Error('Network response not ok');
-                }
-                const numProductsLeftForListOfProducts = await response12.json();
 
-                const response13 = await fetch('http://localhost:8030/getProductIdsOfThoseInStock', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        numProductsLeftForListOfProducts: numProductsLeftForListOfProducts
-                    })
-                });
-                if(!response13.ok) {
-                    throw new Error('Network response not ok');
-                }
+                if(idsOfProductsAvailableToUser.length>0) {
+                    const response12 = await fetch('http://localhost:8026/getNumProductsLeftForListOfProducts', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(idsOfProductsAvailableToUser)
+                    });
+                    if(!response12.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const numProductsLeftForListOfProducts = await response12.json();
 
-                idsOfProductsAvailableToUser = await response13.json();
+                    const response13 = await fetch('http://localhost:8030/getProductIdsOfThoseInStock', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            numProductsLeftForListOfProducts: numProductsLeftForListOfProducts
+                        })
+                    });
+                    if(!response13.ok) {
+                        throw new Error('Network response not ok');
+                    }
+
+                    idsOfProductsAvailableToUser = await response13.json();
+                }
                 this.idsOfProductsAvailableToUser = idsOfProductsAvailableToUser;
 
                 const response14 = await fetch(`http://localhost:8028/getProductIdsPurchasedByUser/${this.authenticatedUsername}`);
@@ -687,29 +694,24 @@ import '../styles.css';
                 let itemsSavedForLaterByUser = await response15.json();
 
                 const savedItemsInfo = {};
-                let productIdsOfSavedItems = new Set();
                 productIdToOptionsListMappings = {};
                 
                 for(let savedItem of itemsSavedForLaterByUser) {
                     const id = savedItem.id;
                     const productId = savedItem.productId;
                     const options = savedItem.options;
-        
-                    productIdsOfSavedItems.add(productId);
 
                     if(!(productId in productIdToOptionsListMappings)) {
-                        productIdToOptionsListMappings[productId] = [options]
+                        productIdToOptionsListMappings[productId] = []
                     }
-                    else {
-                        productIdToOptionsListMappings[productId].push(options);
-                    }
+                    productIdToOptionsListMappings[productId].push(options);
 
                     savedItemsInfo[id] = {
                         productId: productId,
                         options: options
                     }
                 }
-                productIdsOfSavedItems = [...productIdsOfSavedItems];
+                let productIdsOfSavedItems = Object.keys(productIdToOptionsListMappings);
 
                 if(itemsSavedForLaterByUser.length>0) {
                     const response16 = await fetch('http://localhost:8022/getNamesAndSpecificPricesOfGivenProducts', {
@@ -757,6 +759,7 @@ import '../styles.css';
                             savedItemsInfo[savedItemIdNotProductId].productPricePerUnit = null;
                         }
                     }
+
 
                     const response17 = await fetch('http://localhost:8026/getNumProductsLeftForListOfProducts', {
                         method: 'POST',
@@ -1083,7 +1086,9 @@ import '../styles.css';
                 this.numSelectedCartItems = numSelectedCartItems;
                 this.selectedCartItemsPriceSubtotal =
                 currentCurrency + selectedCartItemsPriceSubtotal.toFixed(2).toLocaleString();
-                localStorage.setItem("selectedCartItems", JSON.stringify(newSelectedItems));
+                
+                this.selectedCartItems.data = newSelectedItems;
+                localStorage.setItem("selectedCartItems", JSON.stringify(this.selectedCartItems));
             },
 
             selectAllCartItems() {
@@ -1194,13 +1199,24 @@ import '../styles.css';
             },
 
             updateCurrencies(currentCurrency, newCurrency) {
-                for(let i=0; i<this.itemsOfCart.length; i++) {
-                    let currItemPrice = this.itemsOfCart[i].productPrice;
+                const itemsOfCart = [...this.itemsOfCart];
+                for(let i=0; i<itemsOfCart.length; i++) {
+                    let currItemPrice = itemsOfCart[i].productPrice;
                     currItemPrice = parseFloat(currItemPrice.substring(currentCurrency.length));
                     currItemPrice/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
                     currItemPrice*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
-                    this.itemsOfCart[i].productPrice = newCurrency+currItemPrice.toFixed(2);
+                    itemsOfCart[i].productPrice = newCurrency+currItemPrice.toFixed(2);
+
+                    if(itemsOfCart[i].productPricePerUnit!==null) {
+                        let indexOfSeparator = itemsOfCart[i].productPricePerUnit.indexOf("/");
+                        let currItemPricePerUnit = itemsOfCart[i].productPricePerUnit.substring(0, indexOfSeparator);
+                        currItemPricePerUnit = parseFloat(currItemPricePerUnit.substring(currentCurrency.length));
+                        currItemPricePerUnit/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                        currItemPricePerUnit*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
+                        itemsOfCart[i].productPricePerUnit = newCurrency+currItemPricePerUnit.toFixed(2)+ itemsOfCart[i].productPricePerUnit.substring(indexOfSeparator);
+                    }
                 }
+                this.itemsOfCart = [...itemsOfCart];
 
                 for(let i=0; i<this.itemsSavedForLater.length; i++) {
                     let currItemPrice = this.itemsSavedForLater[i].productPrice;
@@ -1209,6 +1225,25 @@ import '../styles.css';
                     currItemPrice*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
                     this.itemsSavedForLater[i].productPrice = newCurrency+currItemPrice.toFixed(2);
                 }
+
+                const selectedCartItemsData = this.selectedCartItems.data;
+                for(let i=0; i<selectedCartItemsData.length; i++) {
+                    let currItemPrice = selectedCartItemsData[i].productPrice;
+                    currItemPrice = parseFloat(currItemPrice.substring(currentCurrency.length));
+                    currItemPrice/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                    currItemPrice*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
+                    this.selectedCartItems.data[i].productPrice = newCurrency+currItemPrice.toFixed(2);
+
+                    if(selectedCartItemsData[i].productPricePerUnit!==null) {
+                        let indexOfSeparator = selectedCartItemsData[i].productPricePerUnit.indexOf("/");
+                        let currItemPricePerUnit = selectedCartItemsData[i].productPricePerUnit.substring(0, indexOfSeparator);
+                        currItemPricePerUnit = parseFloat(currItemPricePerUnit.substring(currentCurrency.length));
+                        currItemPricePerUnit/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                        currItemPricePerUnit*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
+                        this.selectedCartItems.data[i].productPricePerUnit = newCurrency+currItemPricePerUnit.toFixed(2)+ selectedCartItemsData[i].productPricePerUnit.substring(indexOfSeparator);
+                    }
+                }
+                localStorage.setItem("selectedCartItems", JSON.stringify(this.selectedCartItems));
             },
 
             async deleteSavedItem(idOfSavedItemToDelete) {
@@ -1236,7 +1271,6 @@ import '../styles.css';
                     }
                     return true;
                 });
-                console.log(savedItemToMoveToCart);
                 const escapedOptions = JSON.stringify(savedItemToMoveToCart.optionsWithoutText).replace(/"/g, '\\"');
 
                 const response1 = await fetch("http://localhost:8029/graphql", {
@@ -1328,6 +1362,7 @@ import '../styles.css';
                     options: itemInfo.options,
                     optionsWithoutText: itemInfo.optionsWithoutText,
                     productPrice: itemInfo.productPrice,
+                    productPricePerUnit: null,
                     getItAsSoonAs: null,
                     quantity: 1,
                     dealsAvailable: false,
@@ -1356,9 +1391,9 @@ import '../styles.css';
                 this.deliveryArea = null;
                 this.deliveryZipcode = null;
                 this.deliveryAreaCountry = newDeliveryAreaCountry
-
+                ;
                 if(this.selectedAddressOfUser!=="") {
-                    const response1 = await fetch(`http://localhost:8026/unselectSelectedAddressOfUser/${this.authenticatedUsernameauthenticatedUsername}`, {
+                    const response1 = await fetch(`http://localhost:8026/unselectSelectedAddressOfUser/${this.authenticatedUsername}`, {
                         method: 'PATCH'
                     });
                     if(!response1.ok) {
@@ -1430,31 +1465,6 @@ import '../styles.css';
                     }
                 }
                 const newCurrency = this.countryCurrencyMap[newVal];
-                if(currentCurrency!==newCurrency) {
-                    this.updateCurrencies(currentCurrency, newCurrency);
-                }
-            },
-
-            itemsOfCart(newVal) {
-                if(newVal.length==0 || this.deliveryAreaCountry.length==0) {
-                    return;
-                }
-                let currentCurrency = newVal[0].productPrice[0];
-                if(currentCurrency==="A") {
-                    currentCurrency+="$";
-                }
-                else if(currentCurrency==="M") {
-                    currentCurrency+="X$";
-                }
-                else if(currentCurrency==="C") {
-                    if(newVal[0].productPrice[1]==="$") {
-                        currentCurrency="C$";
-                    }
-                    else {
-                        currentCurrency="CN¥";
-                    }
-                }
-                const newCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
                 if(currentCurrency!==newCurrency) {
                     this.updateCurrencies(currentCurrency, newCurrency);
                 }

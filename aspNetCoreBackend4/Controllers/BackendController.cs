@@ -94,21 +94,21 @@ public class BackendController : ControllerBase
             if(ca.username!=null) {
                 customerAddressToEdit.username = ca.username;
             }
-            if(ca.house_or_building_number!=null) {
-                customerAddressToEdit.house_or_building_number = ca.house_or_building_number;
-            }
+
+            customerAddressToEdit.house_or_building_number = ca.house_or_building_number;
+
             if(ca.street_name!=null) {
                 customerAddressToEdit.street_name = ca.street_name;
             }
-            if(ca.apartment_or_suite!=null) {
-                customerAddressToEdit.apartment_or_suite = ca.apartment_or_suite;
-            }
+
+            customerAddressToEdit.apartment_or_suite = ca.apartment_or_suite;
+
             if(ca.town_or_city!=null) {
                 customerAddressToEdit.town_or_city = ca.town_or_city;
             }
-            if(ca.state_or_province!=null) {
-                customerAddressToEdit.state_or_province = ca.state_or_province;
-            }
+
+            customerAddressToEdit.state_or_province = ca.state_or_province;
+            
             if(ca.zipcode!=null) {
                 customerAddressToEdit.zipcode = ca.zipcode;
             }

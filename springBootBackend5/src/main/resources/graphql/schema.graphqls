@@ -11,6 +11,9 @@ type ProductDeliveryTime {
     factoryAddress: String!
     timeFormulaForDelivery: String!
     timeFormulaForPremiumDelivery: String!
+    SHDPriceFormula: String!
+    SHDPriceSavedWithPremium: Float!
+    taxRate: Float!
 }
 
 type WebsiteRatingAndReview {
@@ -25,8 +28,8 @@ type Query {
     getAllShoppingCartItems: [ShoppingCart!]!
     getAllShoppingCartItemsOfUser(username: String!): [ShoppingCart!]!
 
-    getAllProductDeliveryTimes: [ProductDeliveryTime!]!
-    getAllProductDeliveryTimesOfProduct(productId: String!): [ProductDeliveryTime!]!
+    getAllProductDeliveryTimesAndPrices: [ProductDeliveryTime!]!
+    getAllProductDeliveryTimesAndPricesOfProduct(productId: String!): [ProductDeliveryTime!]!
 
     getAllWebsiteRatingsAndReviews: [WebsiteRatingAndReview!]!
     getWebsiteRatingAndReviewOfUser(customer_username: String!): WebsiteRatingAndReview
@@ -37,9 +40,9 @@ type Mutation {
     editShoppingCartItem(id: Int!, newQuantity: Int!): ShoppingCart
     deleteShoppingCartItem(id: Int!): Boolean!
 
-    addProductDeliveryTime(productId: String!, factoryAddress: String!, timeFormulaForDelivery: String!, timeFormulaForPremiumDelivery: String!): ProductDeliveryTime!
-    editProductDeliveryTime(productId: String!, factoryAddress: String!, newTimeFormulaForDelivery: String, newTimeFormulaForPremiumDelivery: String): ProductDeliveryTime
-    deleteProductDeliveryTime(productId: String!, factoryAddress: String!): Boolean!
+    addProductDeliveryTimeAndPrice(productId: String!, factoryAddress: String!, timeFormulaForDelivery: String!, timeFormulaForPremiumDelivery: String!, SHDPriceFormula: String!, SHDPriceSavedWithPremium: Float!, taxRate: Float!): ProductDeliveryTime!
+    editProductDeliveryTimeAndPrice(productId: String!, factoryAddress: String!, newTimeFormulaForDelivery: String, newTimeFormulaForPremiumDelivery: String, newSHDPriceFormula: String, newSHDPriceSavedWithPremium: Float, newTaxRate: Float): ProductDeliveryTime
+    deleteProductDeliveryTimeAndPrice(productId: String!, factoryAddress: String!): Boolean!
 
     addWebsiteRatingAndReview(customer_username: String!, rating: Int!, review: String!, date_time: String!): WebsiteRatingAndReview!
     editWebsiteRatingAndReview(customer_username: String!, rating: Int, review: String, date_time: String!): WebsiteRatingAndReview

@@ -6,14 +6,14 @@ import java.util.Objects;
 import jakarta.persistence.Embeddable;
 
 @Embeddable
-public class ProductDeliveryTimeId implements Serializable {
+public class ProductDeliveryTimeAndPriceId implements Serializable {
     
     private String productId;
     private String factoryAddress;
 
-    public ProductDeliveryTimeId() {}
+    public ProductDeliveryTimeAndPriceId() {}
 
-    public ProductDeliveryTimeId(String productId, String factoryAddress) {
+    public ProductDeliveryTimeAndPriceId(String productId, String factoryAddress) {
         this.productId = productId;
         this.factoryAddress = factoryAddress;
     }

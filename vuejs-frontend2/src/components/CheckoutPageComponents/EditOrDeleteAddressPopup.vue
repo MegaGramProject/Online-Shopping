@@ -135,27 +135,55 @@ import thinGrayXIcon from '@/assets/images/thinGrayXIcon.png';
                     return;
                 }
                 const changesMade = {};
+                
                 if(this.country!==this.propCountry) {
                     changesMade.country = this.country;
                 }
                 if(this.fullName!==this.propFullName) {
                     changesMade.fullName = this.fullName;
                 }
-                if(this.houseOrBuildingNumber!==this.propHouseOrBuildingNumber) {
+
+                if(this.propHouseOrBuildingNumber==null && this.houseOrBuildingNumber.length>0) {
                     changesMade.houseOrBuildingNumber = this.houseOrBuildingNumber;
                 }
+                else if(this.propHouseOrBuildingNumber!==null && this.houseOrBuildingNumber.length==0) {
+                    changesMade.houseOrBuildingNumber = null;
+                }
+                else if(this.propHouseOrBuildingNumber!==null && this.houseOrBuildingNumber.length>0 &&
+                (this.propHouseOrBuildingNumber!==this.houseOrBuildingNumber)) {
+                    changesMade.houseOrBuildingNumber = this.houseOrBuildingNumber;
+                }
+
                 if(this.streetName!==this.propStreetName) {
                     changesMade.streetName = this.streetName;
                 }
-                if(this.apartmentOrSuiteNumber!==this.propApartmentOrSuiteNumber) {
+                
+                if(this.propApartmentOrSuiteNumber==null && this.apartmentOrSuiteNumber.length>0) {
                     changesMade.apartmentOrSuiteNumber = this.apartmentOrSuiteNumber;
                 }
+                else if(this.propApartmentOrSuiteNumber!==null && this.apartmentOrSuiteNumber.length==0) {
+                    changesMade.apartmentOrSuiteNumber = null;
+                }
+                else if(this.propApartmentOrSuiteNumber!==null && this.apartmentOrSuiteNumber.length>0 &&
+                (this.propApartmentOrSuiteNumber!==this.apartmentOrSuiteNumber)) {
+                    changesMade.apartmentOrSuiteNumber = this.apartmentOrSuiteNumber;
+                }
+
                 if(this.townOrCity!==this.propTownOrCity) {
                     changesMade.townOrCity = this.townOrCity;
                 }
-                if(this.stateOrProvince!==this.propStateOrProvince) {
+
+                if(this.propStateOrProvince==null && this.stateOrProvince.length>0) {
                     changesMade.stateOrProvince = this.stateOrProvince;
                 }
+                else if(this.propStateOrProvince!==null && this.stateOrProvince.length==0) {
+                    changesMade.stateOrProvince = null;
+                }
+                else if(this.propStateOrProvince!==null && this.stateOrProvince.length>0 &&
+                (this.propStateOrProvince!==this.stateOrProvince)) {
+                    changesMade.stateOrProvince = this.stateOrProvince;
+                }
+
                 if(this.zipCode!==this.propZipCode) {
                     changesMade.zipCode = this.zipCode;
                 }
@@ -165,6 +193,7 @@ import thinGrayXIcon from '@/assets/images/thinGrayXIcon.png';
                 if(this.isSelected!==this.propIsSelected) {
                     changesMade.isSelected = this.isSelected;
                 }
+
                 this.$emit("saveEditsToThisAddress", changesMade);
             },
 

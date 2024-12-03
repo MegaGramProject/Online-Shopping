@@ -5,23 +5,33 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "productDeliveryTimes")
-public class ProductDeliveryTime {
+@Table(name = "productDeliveryTimesAndPrices")
+public class ProductDeliveryTimeAndPrice {
 
     @EmbeddedId
-    private ProductDeliveryTimeId id;
+    private ProductDeliveryTimeAndPriceId id;
 
     private String timeFormulaForDelivery;
 
     private String timeFormulaForPremiumDelivery;
 
-    public ProductDeliveryTime() {
+    private String SHDPriceFormula;
+
+    private double SHDPriceSavedWithPremium;
+
+    private double taxRate;
+
+    public ProductDeliveryTimeAndPrice() {
     }
 
-    public ProductDeliveryTime(ProductDeliveryTimeId id, String timeFormulaForDelivery, String timeFormulaForPremiumDelivery) {
+    public ProductDeliveryTimeAndPrice(ProductDeliveryTimeAndPriceId id, String timeFormulaForDelivery, String timeFormulaForPremiumDelivery,
+    String SHDPriceFormula, double SHDPriceSavedWithPremium, double taxRate) {
         this.id = id;
         this.timeFormulaForDelivery = timeFormulaForDelivery;
         this.timeFormulaForPremiumDelivery = timeFormulaForPremiumDelivery;
+        this.SHDPriceFormula = SHDPriceFormula;
+        this.SHDPriceSavedWithPremium = SHDPriceSavedWithPremium;
+        this.taxRate = taxRate;
     }
 
     public String getProductId() {
@@ -54,6 +64,30 @@ public class ProductDeliveryTime {
 
     public void setTimeFormulaForPremiumDelivery(String timeFormulaForPremiumDelivery) {
         this.timeFormulaForPremiumDelivery = timeFormulaForPremiumDelivery;
+    }
+
+    public String getSHDPriceFormula() {
+        return this.SHDPriceFormula;
+    }
+
+    public void setSHDPriceFormula(String SHDPriceFormula) {
+        this.SHDPriceFormula = SHDPriceFormula;
+    }
+
+    public double getSHDPriceSavedWithPremium() {
+        return this.SHDPriceSavedWithPremium;
+    }
+
+    public void setSHDPriceSavedWithPremium(double SHDPriceSavedWithPremium) {
+        this.SHDPriceSavedWithPremium = SHDPriceSavedWithPremium;
+    }
+
+    public double getTaxRate() {
+        return this.taxRate;
+    }
+
+    public void setTaxRate(double taxRate) {
+        this.taxRate = taxRate;
     }
 
 }

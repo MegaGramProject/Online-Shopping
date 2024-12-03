@@ -17,16 +17,16 @@
                 @showEditOrDeleteAddressPopup="showEditOrDeleteAddressPopup" :adjustmentsToAddressToEditOrDelete="adjustmentsToAddressToEditOrDelete"
                 @showAddNewDeliveryAddressPopup="toggleAddNewDeliveryAddressPopup" :newAddressToAdd="newAddressToAdd"
                 @showSelectPickupLocationPopup="toggleSelectPickupLocationPopup" :newlySetPickupLocation="newlySetPickupLocation"
-                @notifyParentOfSelectedPickupLocation="receiveSelectedPickupLocation" @showAddDeliveryInstructionsPopup="toggleAddDeliveryInstructionsPopup"
+                @notifyParentToUnselectPickupLocation="unselectPickupLocation" @showAddDeliveryInstructionsPopup="toggleAddDeliveryInstructionsPopup"
                 :addressWithUpdatedDeliveryInstructions="addressWithUpdatedDeliveryInstructions"
                 />
                 <PaymentSection :authenticatedUsername="authenticatedUsername" @notifyParentOfSelectedCard="receiveSelectedPaymentCard"
                 @showAddPaymentCardPopup="toggleAddPaymentCardPopup" :newCardOfUser="newCardOfUser"
                 :promoCodes="promoCodes" @applyPromoCode="applyPromoCode"/>
                 <OrderArrivals v-for="(arrivalTextHeader) in arrivalTextHeaders"
-                    :key="arrivalTextHeader" :getItAsSoonAs="itemsToBeOrderedByUserAsDict[arrivalTextHeader][0].getItAsSoonAs"
+                    :key="arrivalTextHeader" :getItAsSoonAs="arrivalTextHeaderToItemListMappings[arrivalTextHeader][0].getItAsSoonAs"
                     :arrivalTextHeader="arrivalTextHeader"
-                    :hasPremium="hasPremium" :products="itemsToBeOrderedByUserAsDict[arrivalTextHeader]"
+                    :hasPremium="hasPremium" :products="arrivalTextHeaderToItemListMappings[arrivalTextHeader]"
                     @updateItemQuantity="updateItemQuantity" @updateSelectedProductDeal="updateSelectedProductDeal"
                     @productDeliveryDateHasBeenUpdated="updateProductDeliveryDate" :deliveryAreaCountry="deliveryAreaCountry"
                 />
@@ -108,13 +108,13 @@ import '../styles.css';
                 numTimesRouteParamsWasWatched: 0,
                 authenticatedUsername: "",
                 hasPremium: false,
-                itemsSubtotal: "$0.00",
-                shippingHandlingAndDeliverySubtotal: "$0.00",
-                taxSubtotal: "$0.00",
-                orderSubtotal: "$0.00",
-                shippingAndHandlingFeesSavedWithPremium: "$0.00",
-                totalItemDiscounts: "$0.00",
-                priceDifferencesFromSchedulingLater: "$0.00",
+                itemsSubtotal: "",
+                shippingHandlingAndDeliverySubtotal: "",
+                taxSubtotal: "",
+                orderSubtotal: "",
+                shippingAndHandlingFeesSavedWithPremium: "",
+                totalItemDiscounts: "",
+                priceDifferencesFromSchedulingLater: "",
                 quantityTotal: 0,
                 deliveryAreaCountry: "",
                 deliveryZipcode: "",
@@ -142,7 +142,7 @@ import '../styles.css';
                     "MX$": 19.86,      // MXN - Mexican Peso (for Mexico)
                     "£": 0.7709          // GBP - British Pound (for United Kingdom)
                 },
-                itemsToBeOrderedByUserAsDict: {},
+                arrivalTextHeaderToItemListMappings: {},
                 arrivalTextHeaders: [],
                 orderHasBeenPlaced: false,
                 displayDarkScreen: false,
@@ -172,7 +172,9 @@ import '../styles.css';
                 selectedPickupLocation: null,
                 displayAddDeliveryInstructionsPopup: false,
                 addressToAddDeliveryInstructions: null,
-                addressWithUpdatedDeliveryInstructions: null
+                addressWithUpdatedDeliveryInstructions: null,
+                notifyOfSelectedAddressBecomingUnselected: 0,
+                selectedCartItems: null
             }
         },
 
@@ -190,6 +192,10 @@ import '../styles.css';
             AddNewDeliveryAddressPopup,
             SelectPickupLocationPopup,
             AddDeliveryInstructionsPopup
+        },
+
+        mounted() {
+            document.title = "Checkout";
         },
 
         methods: {
@@ -253,7 +259,6 @@ import '../styles.css';
             },
 
             async fetchRelevantDataAtStart() {
-                /*
                 const response = await fetch(`http://localhost:8022/getBasicUserInfo/${this.authenticatedUsername}`);
                 if(!response.ok) {
                     throw new Error('Network response not ok');
@@ -269,165 +274,699 @@ import '../styles.css';
                 }
                 this.deliveryAreaCountry = basicUserInfo.deliveryAreaCountry;
                 this.hasPremium = basicUserInfo.hasPremium == 1 ? true : false;
-                */
+
+
+                let selectedCartItems = localStorage.getItem('selectedCartItems');
+                if(selectedCartItems==null) {
+                    return;
+                }
+                let itemsToBeOrderedByUser = JSON.parse(selectedCartItems);
+                this.selectedCartItems = JSON.parse(selectedCartItems);
+                //above is a dict with two keys: 'fetchDateTime' & 'data'
+                if(itemsToBeOrderedByUser.data.length==0) {
+                    return;
+                }
+
+                const productIdToOptionsListMappings = {};
+                for(let item of itemsToBeOrderedByUser.data) {
+                    if(!(item.productId in productIdToOptionsListMappings)) {
+                        productIdToOptionsListMappings[item.productId] = []
+                    }
+                    productIdToOptionsListMappings[item.productId].push(item.optionsWithoutText);
+                }
+                const productIds = Object.keys(productIdToOptionsListMappings);
+
+                const response1 = await fetch('http://localhost:8027/api/getProductsThatDeliverToLocation', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        zipcode: this.deliveryZipcode,
+                        country: this.deliveryAreaCountry
+                    })
+                });
+                if(!response1.ok) {
+                    throw new Error('Network response not ok');
+                }
+                let idsOfProductsAvailableToUser = await response1.json();
+                idsOfProductsAvailableToUser = idsOfProductsAvailableToUser.map(x=>x.productId);
+                idsOfProductsAvailableToUser = new Set(idsOfProductsAvailableToUser);
+
+                let shdPriceAndTaxAndFastestDeliveryTimeOfProducts = {};
+                if(this.selectedDeliveryAddress!==null) {
+                    const response2 = await fetch('http://localhost:8029/getShippingPricesAndTaxesAndShortestDeliveryTimesOfProducts', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            hasPremium: this.hasPremium,
+                            productIds: productIds,
+                            destinationAddress: this.selectedDeliveryAddress.addressText
+                        })
+                    });
+                    if(!response2.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    shdPriceAndTaxAndFastestDeliveryTimeOfProducts = await response2.json();
+                    /*
+                    above is a dict where keys are productIds in the the list productIds and values are dicts
+                    structured like the following:
+                        {
+                            fastestDeliveryTimeInHours: 120,
+                            shdPrice: 40,
+                            shdPriceSavedWithPremium: 15,
+                            taxRate: 3.8
+                        }
+                    
+                    'shdPrice' stands for shippingHandlingDeliveryPrice for a single product, and 'shdPriceSavedWithPremium'
+                    is present if this.hasPremium is true. Furthermore, taxRate is a percentage on the shdPrice
+                    and represents the tax to be collected for the shippingHandlingAndDelivery of the product as well as the product itself.
+                    */
+                }
+                else {
+                    for(let productId of productIds) {
+                        shdPriceAndTaxAndFastestDeliveryTimeOfProducts[productId] = {
+                            fastestDeliveryTimeInHours: 0,
+                            shdPrice: 0,
+                            taxRate: 0
+                        };
+                        if(this.hasPremium) {
+                            shdPriceAndTaxAndFastestDeliveryTimeOfProducts[productId].shdPriceSavedWithPremium = 0;
+                        }
+                    }
+                }
                 
-
-                this.deliveryZipcode = '53593';
-                this.deliveryAreaCountry = 'the United States';
-                this.hasPremium = true;
-
-                //fetch selected cart items from localStorage(using JSON.parse()) as well as additional-data
-                //the list below is supposed to be ordered in ascending order of getItAsSoonAs
-                //in the deals list, the first deal is always the selected one, and the selected-deal is always the best one(i.e the one that saves the most money)
-                let itemsToBeOrderedByUser = [
-                    {
-                        id: 0,
-                        productId: "0",
-                        productImage: blueCologne,
-                        productName: "Blue Cologne for Men - Spice & Black Vanilla Mens Cologne - An Explosion of Vibrant Spices, Dark Woods and Black Vanilla, 3.4 Fl Oz",
-                        productPrice: "$45.92",
-                        productPricePerUnit: "$6.75/Fl Oz",
-                        productOptions: {Scent: 'Spice & Black Vanilla'},
-                        status: "Available",
-                        quantity: 1,
-                        getItAsSoonAs: 12,
-                        shippingAndHandlingPrice: "$4.40",
-                        tax: "$0.01",
-                        sAndHPriceSavedWithPremium: "$0.40",
-                        unDiscountedPrice: "$45.92",
-                        deals: [
-                            {
-                                discount: "50% off",
-                                prices: ["$45.92", "$22.96", "$22.96"],
-                                requirement: "PREMIUM"
-                            },
-                            {
-                                discount: "2 for 1",
-                                prices: [],
-                                requirement: "NONE"
-                            }
-                        ]
-                    },
-                    {
-                        id: 1,
-                        productId: "1",
-                        productImage: showerCurtains,
-                        productName: "Gibelle Abstract Marble Shower Curtain, Blue Green Purple Jade Texture Gold Stripes Ombre Watercolor Paint, Modern Ink Art Decor Waterproof Fabric Shower Curtain for Bathroom Set with Hooks, 71x71",
-                        productPrice: "$16.99",
-                        productPricePerUnit: null,
-                        productOptions: {Color: 'Green', Size: '71"W x 71"L (Pack of 1)'},
-                        status: "Available",
-                        quantity: 2,
-                        getItAsSoonAs: 32,
-                        shippingAndHandlingPrice: "$5.40",
-                        tax: "$0.05",
-                        sAndHPriceSavedWithPremium: "$0.40",
-                        deals: []
-                    },
-                    {
-                        id: 2,
-                        productId: "2",
-                        productImage: popcorn,
-                        productName: "KUDO Protein Popcorn, Variety 6-Pack | 10g of Protein Per Bag | 100% Whole Grain & Non-GMO Healthy Snacks | Keto Friendly & Gluten Free Kettle Popcorn, 2 oz. Bags",
-                        productPrice: "$29.99",
-                        productPricePerUnit: "$2.50/Ounce",
-                        productOptions: {},
-                        status: "Available",
-                        quantity: 3,
-                        getItAsSoonAs: 48,
-                        shippingAndHandlingPrice: "$7.40",
-                        tax: "$0.036",
-                        sAndHPriceSavedWithPremium: "$0.40",
-                        deals: [
-                            {
-                                discount: "3 for 1",
-                                prices: ["$89.97", "$29.99", "$59.98"],
-                                requirement: "NONE"
-                            }
-                        ]
-                    }
-                ];
-
-                if(itemsToBeOrderedByUser.length>0) {
-                    const itemsToBeOrderedByUserAsDict = {};
-                    /* in the dict above, keys are the values like "Arriving Nov 28, 2024"
-                    and values are lists of products with that delivery-time */
-
-                    let currentCurrency = itemsToBeOrderedByUser[0].productPrice[0];
-                    if(currentCurrency==="A") {
-                        currentCurrency+="$";
-                    }
-                    else if(currentCurrency==="M") {
-                        currentCurrency+="X$";
-                    }
-                    else if(currentCurrency==="C") {
-                        if(itemsToBeOrderedByUser[0].productPrice[1]==="$") {
-                            currentCurrency="C$";
-                        }
-                        else {
-                            currentCurrency="CN¥";
-                        }
-                    }
-
-                    let itemsSubtotal = 0;
-                    let shippingHandlingAndDeliverySubtotal = 0;
-                    let taxSubtotal = 0;
-                    let shippingAndHandlingFeesSavedWithPremium = 0;
-                    let totalItemDiscounts = 0;
-                    let quantityTotal = 0;
-                    let arrivalTextHeaders = [];
-
+                const currentDateTime = new Date();
+                const fetchDateTime = itemsToBeOrderedByUser.fetchDateTime;
+                itemsToBeOrderedByUser = itemsToBeOrderedByUser.data;
+                if(currentDateTime-new Date(fetchDateTime)>(60 * 60 * 1000)) {
+                    const selectedCartItemsInfo = {}; //keys are selected cart-item-ids(not their productIds) and values are dicts that represent relevant info about the cartItem selected for checkout
                     for(let item of itemsToBeOrderedByUser) {
-                        const arrivalTextHeader = this.formatArrivalTextHeader(item.getItAsSoonAs);
-                        if(arrivalTextHeader in itemsToBeOrderedByUserAsDict) {
-                            itemsToBeOrderedByUserAsDict[arrivalTextHeader].push(item);
+                        const id = item.id;
+                        const productId = item.productId;
+                        const optionsWithoutText = item.optionsWithoutText;
+                        selectedCartItemsInfo[id] = {
+                            productId: productId,
+                            options: optionsWithoutText
+                        };
+                    }
+                    
+                    const response0 = await fetch('http://localhost:8022/getNamesAndSpecificPricesOfGivenProducts', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            productIdToOptionsListMappings: productIdToOptionsListMappings
+                        })
+                    });
+                    if(!response0.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const dictOfNamesAndPricesOfCartItems = await response0.json();
+                    /*
+                    above is a dict where keys are productIds of selected items in cart and
+                    values are lists of lists of 3 or 5 elements: first is the options of that product,
+                    second is the product-name, third is the price of the product with
+                    the given options, and fourth & fifth(these two are missing for certain products)
+                    are the price per unit of the product with the given options.
+
+                    an examples of a value of this dict is:
+                    [
+                        [{Size: 0, Color: 2}, "Product-Name", "$35"],
+                        [{Size: 1, 'Color': 0}, "Product-Name", "$20", "$2" "oz"]
+                    ]
+                    */
+
+                    for(let itemIdNotProductId of Object.keys(selectedCartItemsInfo)) {
+                        const productId = selectedCartItemsInfo[itemIdNotProductId].productId;
+                        const options = selectedCartItemsInfo[itemIdNotProductId].options;
+                        const allNamesAndPricesOfCurrProductId = dictOfNamesAndPricesOfCartItems[productId];
+                        let indexCorrespondingToCurrCartItemOptions = 0;
+                        for(let i=0; i<allNamesAndPricesOfCurrProductId.length; i++) {
+                            if(this.areDictsEqual(allNamesAndPricesOfCurrProductId[i][0],options)) {
+                                indexCorrespondingToCurrCartItemOptions = i;
+                                break;
+                            }
+                        }
+                        selectedCartItemsInfo[itemIdNotProductId].productName = allNamesAndPricesOfCurrProductId[indexCorrespondingToCurrCartItemOptions][1];
+                        selectedCartItemsInfo[itemIdNotProductId].productPrice =  allNamesAndPricesOfCurrProductId[indexCorrespondingToCurrCartItemOptions][2];
+                        if(allNamesAndPricesOfCurrProductId[indexCorrespondingToCurrCartItemOptions].length>3) {
+                            selectedCartItemsInfo[itemIdNotProductId].productPricePerUnit = allNamesAndPricesOfCurrProductId[indexCorrespondingToCurrCartItemOptions][3]+"/"+allNamesAndPricesOfCurrProductId[indexCorrespondingToCurrCartItemOptions][4];
                         }
                         else {
-                            itemsToBeOrderedByUserAsDict[arrivalTextHeader] = [item];
-                            arrivalTextHeaders.push(arrivalTextHeader);
+                            selectedCartItemsInfo[itemIdNotProductId].productPricePerUnit = null;
                         }
+                    }
 
-                        if(item.status==='Available') {
-                            quantityTotal+=item.quantity;
-                            itemsSubtotal+=parseFloat(item.productPrice.substring(currentCurrency.length))*item.quantity;
-                            shippingHandlingAndDeliverySubtotal+=parseFloat(item.shippingAndHandlingPrice.substring(currentCurrency.length))*item.quantity;
-                            taxSubtotal+=parseFloat(item.tax.substring(currentCurrency.length))*item.quantity;
+                    const response = await fetch('http://localhost:8026/getNumProductsLeftForListOfProducts', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(productIds)
+                    });
+                    if(!response.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const numProductsLeftForListOfProducts = await response.json();
+
+                    const response1 = await fetch('http://localhost:8030/getPairsOfProductIdsAndOptionsOfThoseInStock', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            numProductsLeftForListOfProducts: numProductsLeftForListOfProducts,
+                            productIdToOptionsListMappings: productIdToOptionsListMappings
+                        })
+                    });
+                    if(!response1.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    let productIdToInStockOptionsMappings = await response1.json();
+                    /*
+                    above is a dict where keys are productIds of selected-cart-items and values are
+                    lists of options of the product that are in the cart and in-stock.
+                    */
+
+                    for(let itemIdNotProductId of Object.keys(selectedCartItemsInfo)) {
+                        const productId = selectedCartItemsInfo[itemIdNotProductId].productId;
+                        const options = selectedCartItemsInfo[itemIdNotProductId].options;
+                        selectedCartItemsInfo[itemIdNotProductId].inStock = productIdToInStockOptionsMappings[productId].some(
+                            (opts) => this.areDictsEqual(opts, options)
+                        );
+                    }
+
+                    const response3 = await fetch('http://localhost:8030/getProductDealsForMany', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            productIds: productIds
+                        })
+                    });
+                    if(!response3.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const productIdToDealsMapping = await response3.json();
+                    /*
+                        above is a dict where keys are productIds in the list productIds,
+                        & values are lists of elements like the following:
+                        {
+                            deal: '50% off',
+                            required: 'PREMIUM'
+                        }
+                    */
+
+                    const idToStatusMappings = {};
+                    for(let item of itemsToBeOrderedByUser) {
+                        if(selectedCartItemsInfo[item.id].inStock==false) {
+                            idToStatusMappings[item.id] = 'Out of stock';
+                        }
+                        else if((idsOfProductsAvailableToUser.has(item.productId)) || (this.selectedDeliveryAddress==null)) {
+                            idToStatusMappings[item.id] = 'Available';
+                        }
+                        else {
+                            idToStatusMappings[item.id] = 'Does not deliver to selected address';
+                        }
+                    }
+
+                    for(let i=0; i<itemsToBeOrderedByUser.length; i++) {
+                        const currItem = itemsToBeOrderedByUser[i];
+                        const newItem = {
+                            id: currItem.id,
+                            productId: currItem.productId,
+                            productImage: currItem.productImage,
+                            productName: selectedCartItemsInfo[currItem.id].productName,
+                            productOptions: currItem.options,
+                            status: idToStatusMappings[currItem.id],
+                            quantity: currItem.quantity,
+                        };
+
+
+                        let currentCurrency = "$";
+                        const targetCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
+
+                        newItem.getItAsSoonAs = shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].fastestDeliveryTimeInHours;
+
+                        if(currentCurrency===targetCurrency) {
+                            newItem.shippingAndHandlingPrice = "$"+shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPrice;
+                            newItem.tax = "$"+(shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].taxRate/100 * shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPrice);
+                            if(this.hasPremium) {
+                                newItem.sAndHPriceSavedWithPremium = "$"+shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPriceSavedWithPremium;
+                            }
+                            newItem.productPrice = selectedCartItemsInfo[currItem.id].productPrice;
+                            newItem.productPricePerUnit = selectedCartItemsInfo[currItem.id].productPricePerUnit;
+                        }
+                        else {
+                            let shippingAndHandlingPrice = shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPrice;
+                            shippingAndHandlingPrice/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                            shippingAndHandlingPrice*=this.currencyToDollarMap[targetCurrency]; //convert from USD to targetCurrency
+                            newItem.shippingAndHandlingPrice= targetCurrency+shippingAndHandlingPrice.toFixed(2);
+
+                            let tax = (shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].taxRate/100 * shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPrice);
+                            tax/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                            tax*=this.currencyToDollarMap[targetCurrency]; //convert from USD to targetCurrency
+                            newItem.tax= targetCurrency+tax.toFixed(2);
 
                             if(this.hasPremium) {
-                                shippingAndHandlingFeesSavedWithPremium+=parseFloat(item.sAndHPriceSavedWithPremium.substring(currentCurrency.length))*item.quantity;
+                                let sAndHPriceSavedWithPremium = shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPriceSavedWithPremium;
+                                sAndHPriceSavedWithPremium/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                                sAndHPriceSavedWithPremium*=this.currencyToDollarMap[targetCurrency]; //convert from USD to targetCurrency
+                                newItem.sAndHPriceSavedWithPremium= targetCurrency+sAndHPriceSavedWithPremium.toFixed(2);
                             }
 
-                            if(item.deals.length>0 && item.deals[0].prices.length==3) {
+                            let productPrice = parseFloat(selectedCartItemsInfo[currItem.id].productPrice.substring(currentCurrency.length));
+                            productPrice/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                            productPrice*=this.currencyToDollarMap[targetCurrency]; //convert from USD to targetCurrency
+                            newItem.productPrice= targetCurrency+productPrice.toFixed(2);
+
+                            if(selectedCartItemsInfo[currItem.id].productPricePerUnit!==null) {
+                                let indexOfSeparator = selectedCartItemsInfo[currItem.id].productPricePerUnit.indexOf("/");
+                                let currItemPricePerUnit = selectedCartItemsInfo[currItem.id].productPricePerUnit.substring(0, indexOfSeparator);
+                                currItemPricePerUnit = parseFloat(currItemPricePerUnit.substring(currentCurrency.length));
+                                currItemPricePerUnit/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                                currItemPricePerUnit*=this.currencyToDollarMap[targetCurrency]; //convert from USD to targetCurrency
+                                newItem.productPricePerUnit = targetCurrency+currItemPricePerUnit.toFixed(2)+ selectedCartItemsInfo[currItem.id].productPricePerUnit.substring(indexOfSeparator);
+                            }
+                            else {
+                                newItem.productPricePerUnit = null;
+                            }
+                        }
+                        
+                        let dealsOfProduct = productIdToDealsMapping[currItem.productId];
+                        const deals = [];
+                        let indexOfBestDeal = -1;
+                        let amountSavedFromBestDeal = 0;
+                        currentCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
+                        for(let i=0; i<dealsOfProduct.length; i++) {
+                            const deal = dealsOfProduct[i];
+                            const pricesArray = this.getPricesAsResultOfDeal(deal.deal, currItem.quantity, parseFloat(newItem.productPrice.substring(currentCurrency.length)), currentCurrency);
+                            deals.push({
+                                discount: deal.deal,
+                                prices: pricesArray,
+                                requirement: deal.required
+                            })
+
+                            if(this.hasPremium==false && deal.required==='PREMIUM') {
+                                continue;
+                            }
+                            let amountSaved = 0;
+                            if(pricesArray.length==3) {
+                                amountSaved+=parseFloat(pricesArray[2].substring(currentCurrency.length));
+                            }
+                            if(indexOfBestDeal==-1 || amountSaved>amountSavedFromBestDeal) {
+                                indexOfBestDeal = i;
+                                amountSavedFromBestDeal = amountSaved;
+                            }
+                        }
+                        
+                        if(indexOfBestDeal>0) {
+                            const bestDeal = deals[indexOfBestDeal];
+                            deals.splice(indexOfBestDeal, 1);
+                            deals.splice(0,0,bestDeal);
+                        }
+                        newItem.deals = deals;
+
+                        itemsToBeOrderedByUser[i] = newItem;
+                    }
+                    
+                }
+                else {
+                    const idToStatusMappings = {};
+                    for(let item of itemsToBeOrderedByUser) {
+                        if(item.inStock==false) {
+                            idToStatusMappings[item.id] = 'Out of stock';
+                        }
+                        else if((idsOfProductsAvailableToUser.has(item.productId)) || (this.selectedDeliveryAddress==null)) {
+                            idToStatusMappings[item.id] = 'Available';
+                        }
+                        else {
+                            idToStatusMappings[item.id] = 'Does not deliver to selected address';
+                        }
+                    }
+
+                    const response3 = await fetch('http://localhost:8030/getProductDealsForMany', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            productIds: productIds
+                        })
+                    });
+                    if(!response3.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    const productIdToDealsMapping = await response3.json();
+                    /*
+                        above is a dict where keys are productIds in the list productIds,
+                        & values are lists of elements like the following:
+                        {
+                            deal: '50% off',
+                            required: 'PREMIUM'
+                        }
+                    */
+
+
+                    for(let i=0; i<itemsToBeOrderedByUser.length; i++) {
+                        const currItem = itemsToBeOrderedByUser[i];
+                        const newItem = {
+                            id: currItem.id,
+                            productId: currItem.productId,
+                            productImage: currItem.productImage,
+                            productName: currItem.productName,
+                            productPrice: currItem.productPrice,
+                            productPricePerUnit: currItem.productPricePerUnit,
+                            productOptions: currItem.options,
+                            status: idToStatusMappings[currItem.id],
+                            quantity: currItem.quantity,
+                        };
+
+                        newItem.getItAsSoonAs = shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].fastestDeliveryTimeInHours;
+
+                        let currentCurrency = "$";
+                        const targetCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
+
+                        if(currentCurrency===targetCurrency) {
+                            newItem.shippingAndHandlingPrice = "$"+shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPrice;
+                            newItem.tax = "$"+(shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].taxRate/100 * shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPrice);
+                            if(this.hasPremium) {
+                                newItem.sAndHPriceSavedWithPremium = "$"+shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPriceSavedWithPremium;
+                            }
+                        }
+                        else {
+                            let shippingAndHandlingPrice = shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPrice;
+                            shippingAndHandlingPrice/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                            shippingAndHandlingPrice*=this.currencyToDollarMap[targetCurrency]; //convert from USD to targetCurrency
+                            newItem.shippingAndHandlingPrice= targetCurrency+shippingAndHandlingPrice.toFixed(2);
+
+                            let tax = (shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].taxRate/100 * shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPrice);
+                            tax/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                            tax*=this.currencyToDollarMap[targetCurrency]; //convert from USD to targetCurrency
+                            newItem.tax= targetCurrency+tax.toFixed(2);
+
+                            if(this.hasPremium) {
+                                let sAndHPriceSavedWithPremium = shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPriceSavedWithPremium;
+                                sAndHPriceSavedWithPremium/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                                sAndHPriceSavedWithPremium*=this.currencyToDollarMap[targetCurrency]; //convert from USD to targetCurrency
+                                newItem.sAndHPriceSavedWithPremium= targetCurrency+sAndHPriceSavedWithPremium.toFixed(2);
+                            }
+                        }
+                    
+                        let dealsOfProduct = productIdToDealsMapping[currItem.productId];
+                        const deals = [];
+                        let indexOfBestDeal = -1;
+                        let amountSavedFromBestDeal = 0;
+                        currentCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
+                        for(let i=0; i<dealsOfProduct.length; i++) {
+                            const deal = dealsOfProduct[i];
+                            const pricesArray = this.getPricesAsResultOfDeal(deal.deal, currItem.quantity, parseFloat(currItem.productPrice.substring(currentCurrency.length)), currentCurrency);
+                            deals.push({
+                                discount: deal.deal,
+                                prices: pricesArray,
+                                requirement: deal.required
+                            })
+
+                            if(this.hasPremium==false && deal.required==='PREMIUM') {
+                                continue;
+                            }
+                            let amountSaved = 0;
+                            if(pricesArray.length==3) {
+                                amountSaved+=parseFloat(pricesArray[2].substring(currentCurrency.length));
+                            }
+                            if(indexOfBestDeal==-1 || amountSaved>amountSavedFromBestDeal) {
+                                indexOfBestDeal = i;
+                                amountSavedFromBestDeal = amountSaved;
+                            }
+                        }
+                        
+                        if(indexOfBestDeal>0) {
+                            const bestDeal = deals[indexOfBestDeal];
+                            deals.splice(indexOfBestDeal, 1);
+                            deals.splice(0,0,bestDeal);
+                        }
+                        newItem.deals = deals;
+
+                        itemsToBeOrderedByUser[i] = newItem;
+                    }
+                }
+
+                itemsToBeOrderedByUser = itemsToBeOrderedByUser.sort((a,b) => a.getItAsSoonAs - b.getItAsSoonAs);
+
+                const arrivalTextHeaderToItemListMappings = {};
+                /* in the dict above, keys are the values like "Arriving Nov 28, 2024"
+                and values are lists of products with that delivery-time */
+
+                const currentCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
+                let itemsSubtotal = 0;
+                let shippingHandlingAndDeliverySubtotal = 0;
+                let taxSubtotal = 0;
+                let shippingAndHandlingFeesSavedWithPremium = 0;
+                let totalItemDiscounts = 0;
+                let quantityTotal = 0;
+                let arrivalTextHeaders = [];
+                let productIdToProductNameMappings = {};
+
+                for(let item of itemsToBeOrderedByUser) {
+                    const arrivalTextHeader = this.formatArrivalTextHeader(item.getItAsSoonAs);
+                    if(arrivalTextHeader in arrivalTextHeaderToItemListMappings) {
+                        arrivalTextHeaderToItemListMappings[arrivalTextHeader].push(item);
+                    }
+                    else {
+                        arrivalTextHeaderToItemListMappings[arrivalTextHeader] = [item];
+                        arrivalTextHeaders.push(arrivalTextHeader);
+                    }
+
+                    if(item.status==='Available') {
+                        quantityTotal+=item.quantity;
+                        itemsSubtotal+=parseFloat(item.productPrice.substring(currentCurrency.length))*item.quantity;
+                        shippingHandlingAndDeliverySubtotal+=parseFloat(item.shippingAndHandlingPrice.substring(currentCurrency.length))*item.quantity;
+                        taxSubtotal+=parseFloat(item.tax.substring(currentCurrency.length))*item.quantity;
+
+                        if(this.hasPremium) {
+                            shippingAndHandlingFeesSavedWithPremium+=parseFloat(item.sAndHPriceSavedWithPremium.substring(currentCurrency.length))*item.quantity;
+                        }
+
+                        if(item.deals.length>0 && item.deals[0].prices.length==3) {
+                            if((this.hasPremium==false && item.deals[0].requirement==='PREMIUM')==false) {
                                 totalItemDiscounts+=parseFloat(item.deals[0].prices[2].substring(currentCurrency.length));
                             }
                         }
                     }
-
-                    this.itemsToBeOrderedByUserAsDict = itemsToBeOrderedByUserAsDict;
-                    this.arrivalTextHeaders = arrivalTextHeaders;
-                    this.quantityTotal = quantityTotal;
-
-                    this.itemsSubtotal= currentCurrency+itemsSubtotal.toFixed(2);
-                    this.shippingHandlingAndDeliverySubtotal = currentCurrency+shippingHandlingAndDeliverySubtotal.toFixed(2);
-                    this.shippingAndHandlingFeesSavedWithPremium = currentCurrency+shippingAndHandlingFeesSavedWithPremium.toFixed(2);
-                    this.taxSubtotal = currentCurrency+taxSubtotal.toFixed(2);
-                    this.totalItemDiscounts = currentCurrency+totalItemDiscounts.toFixed(2);
-                    this.orderSubtotal = this.getTotal(
-                        this.itemsSubtotal,
-                        this.shippingHandlingAndDeliverySubtotal,
-                        this.taxSubtotal,
-                        this.shippingAndHandlingFeesSavedWithPremium,
-                        this.totalItemDiscounts,
-                        this.priceDifferencesFromSchedulingLater
-                    );
-
-                    let promoCodes = {
-                        "GetRichKwik": [["0", "Blue Cologne", "30% off"], ["1", "Shower Curtains", "2 for 1"], ["2", "Kudos Protein Popcorn", "28% off"]],
-                        "SAVEBIG": [["1", "Shower Curtains", "Buy 1, Get 2nd one 36% off"]],
-                        "goBigOrGoHome$$$": [["2", "Kudos Protein Popcorn", "Buy 10, Get 11th one 36% off"]]
-                    };
-                    this.promoCodes = promoCodes;
+                    productIdToProductNameMappings[item.productId] = item.productName;
                 }
+                    
+
+                this.arrivalTextHeaderToItemListMappings = arrivalTextHeaderToItemListMappings;
+                this.arrivalTextHeaders = arrivalTextHeaders;
+                this.quantityTotal = quantityTotal;
+
+                this.itemsSubtotal= currentCurrency+itemsSubtotal.toFixed(2);
+                this.shippingHandlingAndDeliverySubtotal = currentCurrency+shippingHandlingAndDeliverySubtotal.toFixed(2);
+                this.shippingAndHandlingFeesSavedWithPremium = currentCurrency+shippingAndHandlingFeesSavedWithPremium.toFixed(2);
+                this.taxSubtotal = currentCurrency+taxSubtotal.toFixed(2);
+                this.totalItemDiscounts = currentCurrency+totalItemDiscounts.toFixed(2);
+                this.priceDifferencesFromSchedulingLater = `${currentCurrency}0.00`;
+                this.orderSubtotal = this.getTotal(
+                    this.itemsSubtotal,
+                    this.shippingHandlingAndDeliverySubtotal,
+                    this.taxSubtotal,
+                    this.shippingAndHandlingFeesSavedWithPremium,
+                    this.totalItemDiscounts,
+                    this.priceDifferencesFromSchedulingLater
+                );
+
+                const promoCodeDealsResponse = await fetch('http://localhost:8030/getPromoCodeDealsForListOfProducts', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        productIds: Object.keys(productIdToProductNameMappings)
+                    })
+                });
+                if(!promoCodeDealsResponse.ok) {
+                    throw new Error('Network response not ok');
+                }
+                let promoCodes = await promoCodeDealsResponse.json();
+                /*
+                    above is a dict where keys are valid promo-codes and values are lists of elems in the following structure:
+                    [productId, discount] i.e: [productId1, "35% off"] or [productId2, "3 for 1"], or [productId2, "Buy 10, Get 11th one 36% off"], etc.
+                */
+            
+                for(let promoCode of Object.keys(promoCodes)) {
+                    const promoCodeMatches = promoCodes[promoCode];
+                    for(let i=0; i<promoCodeMatches.length; i++) {
+                        promoCodeMatches[i] = [promoCodeMatches[i][0], productIdToProductNameMappings[promoCodeMatches[i][0]], promoCodeMatches[i][1]]
+                    }
+                }
+                this.promoCodes = promoCodes;
+            },
+
+            async updateDataForSelectedDeliveryAddressOrPickupLocation() {
+                const productIds = [];
+                let arrivalTextHeaderToItemListMappings = {...this.arrivalTextHeaderToItemListMappings};
+
+                for(let arrivalTextHeader of Object.keys(arrivalTextHeaderToItemListMappings)) {
+                    for(let item of arrivalTextHeaderToItemListMappings[arrivalTextHeader]) {
+                        productIds.push(item.productId);
+                    }
+                }
+                
+                let shdPriceAndTaxAndFastestDeliveryTimeOfProducts = {};
+                /*
+                    above is a dict where keys are to be productIds in the the list productIds and values are to be dicts
+                    structured like the following:
+                        {
+                            fastestDeliveryTimeInHours: 120,
+                            shdPrice: 40,
+                            shdPriceSavedWithPremium: 15,
+                            tax: 3.8
+                        }
+                    
+                    'shdPrice' stands for shippingHandlingDeliveryPrice for a single product, and 'shdPriceSavedWithPremium'
+                    is present if this.hasPremium is true.
+                */
+            
+                const currency = this.countryCurrencyMap[this.deliveryAreaCountry];
+                if(this.selectedDeliveryAddress!==null || this.selectedPickupLocation!==null) {
+                    const response = await fetch('http://localhost:8029/getShippingPricesAndTaxesAndShortestDeliveryTimesOfProducts', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            hasPremium: this.hasPremium,
+                            productIds: productIds,
+                            destinationAddress: this.selectedDeliveryAddress!==null ? this.selectedDeliveryAddress.addressText : this.selectedPickupLocation.pickupLocationAddress
+                        })
+                    });
+                    if(!response.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    shdPriceAndTaxAndFastestDeliveryTimeOfProducts = await response.json();
+                    if(this.deliveryAreaCountry!=="the United States") {
+                        for(let productId of Object.keys(shdPriceAndTaxAndFastestDeliveryTimeOfProducts)) {
+                            const currValue = shdPriceAndTaxAndFastestDeliveryTimeOfProducts[productId];
+
+                            let shdPrice = currValue.shdPrice;
+                            shdPrice/=this.currencyToDollarMap["$"];
+                            shdPrice*=this.currencyToDollarMap[currency];
+
+                            let shdPriceSavedWithPremium;
+                            if(this.hasPremium) {
+                                shdPriceSavedWithPremium = currValue.shdPriceSavedWithPremium;
+                                shdPriceSavedWithPremium/=this.currencyToDollarMap["$"];
+                                shdPriceSavedWithPremium*=this.currencyToDollarMap[currency];
+                            }
+
+                            let tax = (currValue.taxRate/100 * currValue.shdPrice);
+                            tax/=this.currencyToDollarMap["$"];
+                            tax*=this.currencyToDollarMap[currency];
+
+                            shdPriceAndTaxAndFastestDeliveryTimeOfProducts[productId] = {
+                                fastestDeliveryTimeInHours: currValue.fastestDeliveryTimeInHours,
+                                shdPrice: shdPrice,
+                                tax: tax
+                            };
+                            if(this.hasPremium) {
+                                shdPriceAndTaxAndFastestDeliveryTimeOfProducts[productId].shdPriceSavedWithPremium = shdPriceSavedWithPremium;
+                            }
+                        }
+                    }
+                    else {
+                        for(let productId of Object.keys(shdPriceAndTaxAndFastestDeliveryTimeOfProducts)) {
+                            const currValue = shdPriceAndTaxAndFastestDeliveryTimeOfProducts[productId];
+                            let tax = (currValue.taxRate/100 * currValue.shdPrice);
+                            tax/=this.currencyToDollarMap["$"];
+                            tax*=this.currencyToDollarMap[currency];
+
+                            shdPriceAndTaxAndFastestDeliveryTimeOfProducts[productId].tax = tax;
+                        }
+                    }
+                }
+                else {
+                    for(let productId of productIds) {
+                        shdPriceAndTaxAndFastestDeliveryTimeOfProducts[productId] = {
+                            fastestDeliveryTimeInHours: 0,
+                            shdPrice: 0,
+                            tax: 0
+                        };
+                        if(this.hasPremium) {
+                            shdPriceAndTaxAndFastestDeliveryTimeOfProducts[productId].shdPriceSavedWithPremium = 0;
+                        }
+                    }
+                }
+
+                const response1 = await fetch('http://localhost:8027/api/getProductsThatDeliverToLocation', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        zipcode: this.deliveryZipcode,
+                        country: this.deliveryAreaCountry
+                    })
+                });
+                if(!response1.ok) {
+                    throw new Error('Network response not ok');
+                }
+                let idsOfProductsAvailableToUser = await response1.json();
+                idsOfProductsAvailableToUser = idsOfProductsAvailableToUser.map(x=>x.productId);
+                idsOfProductsAvailableToUser = new Set(idsOfProductsAvailableToUser);
+                
+
+                let itemsSubtotal = 0;
+                let shippingHandlingAndDeliverySubtotal = 0;
+                let taxSubtotal = 0;
+                let shippingAndHandlingFeesSavedWithPremium = 0;
+                let totalItemDiscounts = 0;
+                let quantityTotal = 0;
+
+                for(let arrivalTextHeader of this.arrivalTextHeaders) {
+                    let itemsList = arrivalTextHeaderToItemListMappings[arrivalTextHeader];
+                    for(let i=0; i<itemsList.length; i++) {
+                        const item = itemsList[i];
+                        itemsList[i].getItAsSoonAs = shdPriceAndTaxAndFastestDeliveryTimeOfProducts[item.productId].fastestDeliveryTimeInHours;
+                        if(item.status==='Out of stock') {
+                            //do nothing here
+                        }
+                        else if((idsOfProductsAvailableToUser.has(item.productId)) || (this.selectedDeliveryAddress==null && this.selectedPickupLocation==null)) {
+                            itemsList[i].status = 'Available';
+                        }
+                        else {
+                            if(this.selectedDeliveryAddress!==null) {
+                                itemsList[i].status = 'Does not deliver to selected address';
+                            }
+                            else {
+                                itemsList[i].status = 'Does not deliver to selected pickup-location';
+                            }
+                        }
+                        itemsList[i].shippingAndHandlingPrice = currency+shdPriceAndTaxAndFastestDeliveryTimeOfProducts[item.productId].shdPrice;
+                        itemsList[i].tax = currency+shdPriceAndTaxAndFastestDeliveryTimeOfProducts[item.productId].tax;
+                        if(this.hasPremium) {
+                            itemsList[i].sAndHPriceSavedWithPremium = currency+shdPriceAndTaxAndFastestDeliveryTimeOfProducts[item.productId].shdPriceSavedWithPremium;
+                        }
+                        if(item.status==='Available') {
+                            quantityTotal+=item.quantity;
+                            itemsSubtotal+=parseFloat(item.productPrice.substring(currency.length))*item.quantity;
+                            shippingHandlingAndDeliverySubtotal+=shdPriceAndTaxAndFastestDeliveryTimeOfProducts[item.productId].shdPrice*item.quantity;
+                            taxSubtotal+=shdPriceAndTaxAndFastestDeliveryTimeOfProducts[item.productId].tax*item.quantity;
+                            if(this.hasPremium) {
+                                shippingAndHandlingFeesSavedWithPremium+=shdPriceAndTaxAndFastestDeliveryTimeOfProducts[item.productId].shdPriceSavedWithPremium*item.quantity;
+                            }
+                            if(item.deals.length>0 && item.deals[0].prices.length==3) {
+                                if((this.hasPremium==false && item.deals[0].requirement==='PREMIUM')==false) {
+                                    totalItemDiscounts+=parseFloat(item.deals[0].prices[2].substring(currency.length));
+                                }
+                            }
+                        }
+                        
+                    }
+                    arrivalTextHeaderToItemListMappings[arrivalTextHeader] = itemsList;
+                }
+
+                this.arrivalTextHeaderToItemListMappings = {...arrivalTextHeaderToItemListMappings};
+                
+                this.quantityTotal = quantityTotal;
+                this.itemsSubtotal = currency+itemsSubtotal.toFixed(2);
+                this.totalItemDiscounts = currency+totalItemDiscounts.toFixed(2);
+                this.shippingHandlingAndDeliverySubtotal = currency+shippingHandlingAndDeliverySubtotal.toFixed(2);
+                this.taxSubtotal = currency+taxSubtotal.toFixed(2);
+                this.shippingAndHandlingFeesSavedWithPremium = currency+shippingAndHandlingFeesSavedWithPremium.toFixed(2);
+                this.orderSubtotal = this.getTotal(
+                    this.itemsSubtotal,
+                    this.shippingHandlingAndDeliverySubtotal,
+                    this.taxSubtotal,
+                    this.shippingAndHandlingFeesSavedWithPremium,
+                    this.totalItemDiscounts,
+                    this.priceDifferencesFromSchedulingLater
+                );
             },
 
             formatArrivalTextHeader(getItAsSoonAs) {
@@ -443,7 +982,7 @@ import '../styles.css';
 
             updateCurrencies(currentCurrency, newCurrency) {
                 for(let arrivalTextHeader of this.arrivalTextHeaders) {
-                    for(let product of this.itemsToBeOrderedByUserAsDict[arrivalTextHeader]) {
+                    for(let product of this.arrivalTextHeaderToItemListMappings[arrivalTextHeader]) {
                         let productPrice = parseFloat(product.productPrice.substring(currentCurrency.length));
                         productPrice/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
                         productPrice*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
@@ -483,13 +1022,40 @@ import '../styles.css';
                         if('deliveryDate' in product) {
                             let priceDifference = product.deliveryDate[2];
                             const firstChar = priceDifference[0]; //either '+' or '-'
-                    
+
                             priceDifference = parseFloat(priceDifference.substring(currentCurrency.length+1));
                             priceDifference/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
                             priceDifference*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
                             product.deliveryDate[2] = firstChar+newCurrency+priceDifference.toFixed(2);
                         }
                     }
+                }
+
+                if(this.selectedCartItems!==null) {
+                    let data = this.selectedCartItems.data;
+                    for(let i=0; i<data.length; i++) {
+                        let itemPrice = parseFloat(data[i].productPrice.substring(currentCurrency.length));
+                        itemPrice/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                        itemPrice*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
+                        data[i].productPrice = newCurrency+itemPrice.toFixed(2);
+
+                        if(data[i].productPricePerUnit!==null) {
+                            const indexOfSeparator = data[i].productPricePerUnit.indexOf("/");
+                            const perUnitSection = data[i].productPricePerUnit.substring(indexOfSeparator);
+                            let priceSection = data[i].productPricePerUnit.substring(0, indexOfSeparator);
+                            priceSection = parseFloat(priceSection.substring(currentCurrency.length));
+                            priceSection/=this.currencyToDollarMap[currentCurrency];
+                            priceSection*=this.currencyToDollarMap[newCurrency];
+                            data[i].productPricePerUnit= newCurrency+priceSection.toFixed(2)+perUnitSection;
+                        }
+                    }
+
+                    localStorage.setItem("selectedCartItems",
+                        JSON.stringify({
+                            fetchDateTime: this.selectedCartItems.fetchDateTime,
+                            data: data
+                        })
+                    );
                 }
 
                 let itemsSubtotal = parseFloat(this.itemsSubtotal.substring(currentCurrency.length));
@@ -528,8 +1094,48 @@ import '../styles.css';
                 this.orderSubtotal = newCurrency+orderSubtotal.toFixed(2);
             },
 
-            receiveSelectedDeliveryAddress(selectedDeliveryAddress) {
-                this.selectedDeliveryAddress = selectedDeliveryAddress;
+            async receiveSelectedDeliveryAddress(selectedDeliveryAddressInfo) {
+                this.selectedDeliveryAddress = selectedDeliveryAddressInfo[1];
+
+                if(selectedDeliveryAddressInfo[0]==='CHANGED') {
+                    const selectedDeliveryAddress = this.selectedDeliveryAddress;
+                    let patchRequestBody = {};
+                    
+                    if(selectedDeliveryAddress==null) {
+                        patchRequestBody = {
+                            hasPremium: this.hasPremium,
+                            deliveryAreaCountry: this.deliveryAreaCountry,
+                            townOrCity: null,
+                            zipCode: null
+                        };
+                    }
+                    else {
+                        patchRequestBody = {
+                            hasPremium: this.hasPremium,
+                            deliveryAreaCountry: selectedDeliveryAddress.country,
+                            townOrCity: selectedDeliveryAddress.townOrCity,
+                            zipCode: selectedDeliveryAddress.zipCode
+                        };
+                    }
+                    const response = await fetch(`http://localhost:8022/editBasicUserInfo/${this.authenticatedUsername}`, {
+                        method: 'PATCH',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(patchRequestBody)
+                    });
+                    if(!response.ok) {
+                        throw new Error('Network response not ok');
+                    }
+
+                    if(selectedDeliveryAddress!==null) {
+                        this.deliveryAreaCountry = selectedDeliveryAddress.country;
+                        this.deliveryZipcode = selectedDeliveryAddress.zipCode;
+                    }
+                    else {
+                        this.deliveryZipcode = null;
+                    }
+
+                    this.updateDataForSelectedDeliveryAddressOrPickupLocation();
+                }
             },
 
             receiveSelectedPaymentCard(selectedPaymentCard) {
@@ -562,12 +1168,40 @@ import '../styles.css';
                 }
                 orderTotal-=parseFloat(totalItemDiscounts.substring(currencySymbol.length));
                 orderTotal+=parseFloat(priceDifferencesFromSchedulingLater.substring(currencySymbol.length));
+
                 return currencySymbol + orderTotal.toFixed(2);
             },
 
             async updateDeliveryAreaCountry(newDeliveryAreaCountry) {
-                //make API-request to update delivery area country
-                this.deliveryAreaCountry = newDeliveryAreaCountry;
+                if(newDeliveryAreaCountry!==this.deliveryAreaCountry) {
+                    const response = await fetch(`http://localhost:8022/editBasicUserInfo/${this.authenticatedUsername}`, {
+                        method: 'PATCH',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            hasPremium: this.hasPremium,
+                            deliveryAreaCountry: newDeliveryAreaCountry,
+                            townOrCity: null,
+                            zipCode: null
+                        })
+                    });
+                    if(!response.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    this.deliveryZipcode = null;
+                    this.deliveryAreaCountry = newDeliveryAreaCountry;
+
+                    if(this.selectedDeliveryAddress!==null) {
+                        const response1 = await fetch(`http://localhost:8026/unselectSelectedAddressOfUser/${this.authenticatedUsername}`, {
+                            method: 'PATCH'
+                        });
+                        if(!response1.ok) {
+                            throw new Error('Network response not ok');
+                        }
+                        this.selectedDeliveryAddress = null;
+                        this.notifyOfSelectedAddressBecomingUnselected++;
+                        this.updateDataForSelectedDeliveryAddressOrPickupLocation();
+                    }
+                }
             },
 
             toggleOrderHasBeenPlaced() {
@@ -643,13 +1277,13 @@ import '../styles.css';
                 const idOfItem = info.id;
                 const newQuantityOfItem = info.newQuantity;
 
-                for(let i=0; i< this.itemsToBeOrderedByUserAsDict[arrivalTextHeaderOfItem].length; i++) {
-                    const product = this.itemsToBeOrderedByUserAsDict[arrivalTextHeaderOfItem][i];
+                for(let i=0; i< this.arrivalTextHeaderToItemListMappings[arrivalTextHeaderOfItem].length; i++) {
+                    const product = this.arrivalTextHeaderToItemListMappings[arrivalTextHeaderOfItem][i];
                     if(product.id==idOfItem) {
                         const differenceInQuantities = newQuantityOfItem-product.quantity;
                         if (newQuantityOfItem==0) {
-                            this.itemsToBeOrderedByUserAsDict[arrivalTextHeaderOfItem].splice(i, 1);
-                            if(this.itemsToBeOrderedByUserAsDict[arrivalTextHeaderOfItem].length==0) {
+                            this.arrivalTextHeaderToItemListMappings[arrivalTextHeaderOfItem].splice(i, 1);
+                            if(this.arrivalTextHeaderToItemListMappings[arrivalTextHeaderOfItem].length==0) {
                                 this.arrivalTextHeaders.splice(this.arrivalTextHeaders.indexOf(arrivalTextHeaderOfItem), 1);
                             }
                         }
@@ -671,9 +1305,11 @@ import '../styles.css';
                         taxSubtotal+=differenceInQuantities*parseFloat(product.tax.substring(currentCurrency.length));
                         this.taxSubtotal = currentCurrency+taxSubtotal.toFixed(2);
                         
-                        let shippingAndHandlingFeesSavedWithPremium = parseFloat(this.shippingAndHandlingFeesSavedWithPremium.substring(currentCurrency.length));
-                        shippingAndHandlingFeesSavedWithPremium+=differenceInQuantities*parseFloat(product.sAndHPriceSavedWithPremium.substring(currentCurrency.length));
-                        this.shippingAndHandlingFeesSavedWithPremium = currentCurrency+shippingAndHandlingFeesSavedWithPremium.toFixed(2);
+                        if(this.hasPremium) {
+                            let shippingAndHandlingFeesSavedWithPremium = parseFloat(this.shippingAndHandlingFeesSavedWithPremium.substring(currentCurrency.length));
+                            shippingAndHandlingFeesSavedWithPremium+=differenceInQuantities*parseFloat(product.sAndHPriceSavedWithPremium.substring(currentCurrency.length));
+                            this.shippingAndHandlingFeesSavedWithPremium = currentCurrency+shippingAndHandlingFeesSavedWithPremium.toFixed(2);
+                        }
 
                         if('deliveryDate' in product) {
                             let priceDiffForProduct = product.deliveryDate[2]
@@ -700,7 +1336,9 @@ import '../styles.css';
                             let originalAmountSaved = 0;
 
                             if(product.deals[0].prices.length==3) {
-                                originalAmountSaved = parseFloat(product.deals[0].prices[2].substring(currentCurrency.length));
+                                if((this.hasPremium==false && product.deals[0].requirement==='PREMIUM')==false) {
+                                    originalAmountSaved = parseFloat(product.deals[0].prices[2].substring(currentCurrency.length));
+                                }
                             }
 
                             if(product.quantity==0) {
@@ -743,11 +1381,16 @@ import '../styles.css';
                 let indexOfBestDeal = 0;
                 let amountSavedFromBestDeal = 0;
                 if(bestDeal.prices.length==3) {
-                    amountSavedFromBestDeal = parseFloat(bestDeal.prices[2].substring(currentCurrency.length));
+                    if((this.hasPremium==false && bestDeal.requirement==='PREMIUM')==false) {
+                        amountSavedFromBestDeal = parseFloat(bestDeal.prices[2].substring(currentCurrency.length));
+                    }
                 }
 
                 for(let i=1; i<productDeals.length; i++) {
                     const deal = productDeals[i];
+                    if((this.hasPremium==false && deal.requirement==='PREMIUM')) {
+                        continue;
+                    }
                     const prices = deal.prices;
                     if(prices.length==3) {
                         const amountSavedFromDeal = parseFloat(prices[2].substring(currentCurrency.length));
@@ -759,6 +1402,9 @@ import '../styles.css';
                     }
                 }
 
+                if(productDeals[indexOfBestDeal].requirement==='PREMIUM' && this.hasPremium==false) {
+                    return;
+                }
                 const differenceInAmountSaved = amountSavedFromBestDeal - originalAmountSaved;
                     
                 let totalItemDiscounts = this.totalItemDiscounts;
@@ -799,16 +1445,21 @@ import '../styles.css';
                 const newlySelectedProductDeal = info.newlySelectedProductDeal;
                 const currentCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
 
-                for(let i=0; i<this.itemsToBeOrderedByUserAsDict[arrivalTextHeaderOfItem].length; i++) {
-                    const product = this.itemsToBeOrderedByUserAsDict[arrivalTextHeaderOfItem][i];
+                for(let i=0; i<this.arrivalTextHeaderToItemListMappings[arrivalTextHeaderOfItem].length; i++) {
+                    const product = this.arrivalTextHeaderToItemListMappings[arrivalTextHeaderOfItem][i];
                     if(product.id==idOfItem) {
                         let originalAmountSaved = 0;
                         if(product.deals[0].prices.length==3) {
-                            originalAmountSaved = parseFloat(product.deals[0].prices[2].substring(currentCurrency.length));
+                            if((this.hasPremium==false && product.deals[0]==='PREMIUM')==false) {
+                                originalAmountSaved = parseFloat(product.deals[0].prices[2].substring(currentCurrency.length));
+                            }
                         }
                         for(let j=1; j<product.deals.length; j++) {
                             const currentProductDeal = product.deals[j];
                             if(this.formatProductDealText(currentProductDeal)===newlySelectedProductDeal) {
+                                if(this.hasPremium==false && currentProductDeal.requirement==='PREMIUM') {
+                                    return;
+                                }
                                 let amountSavedFromNewlySelectedDeal = 0;
                                 if(currentProductDeal.prices.length==3) {
                                     amountSavedFromNewlySelectedDeal = parseFloat(currentProductDeal.prices[2].substring(currentCurrency.length));
@@ -850,13 +1501,15 @@ import '../styles.css';
 
                 const currentCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
 
-                for(let arrivalTextHeader of Object.keys(this.itemsToBeOrderedByUserAsDict)) {
-                    for(let i=0; i<this.itemsToBeOrderedByUserAsDict[arrivalTextHeader].length; i++) {
-                        const product = this.itemsToBeOrderedByUserAsDict[arrivalTextHeader][i];
+                for(let arrivalTextHeader of Object.keys(this.arrivalTextHeaders)) {
+                    for(let i=0; i<this.arrivalTextHeaderToItemListMappings[arrivalTextHeader].length; i++) {
+                        const product = this.arrivalTextHeaderToItemListMappings[arrivalTextHeader][i];
                         if(product.status==='Available' && product.productId in productIdToPromoCodeDiscountMappings) {
                             let originalAmountSaved = 0;
                             if(product.deals.length>0 && product.deals[0].prices.length==3) {
-                                originalAmountSaved = parseFloat(product.deals[0].prices[2].substring(currentCurrency.length));
+                                if((this.hasPremium==false && product.deals[0].requirement==='PREMIUM')==false) {
+                                    originalAmountSaved = parseFloat(product.deals[0].prices[2].substring(currentCurrency.length));
+                                }
                             }
                             for(let promoCodeDiscount of productIdToPromoCodeDiscountMappings[product.productId]) {
                                 product.deals.push({
@@ -931,12 +1584,16 @@ import '../styles.css';
             setPickupLocation(newlySetPickupLocation) {
                 this.newlySetPickupLocation = newlySetPickupLocation;
                 this.selectedPickupLocation = newlySetPickupLocation;
+                this.selectedDeliveryAddress = null;
+                this.deliveryAreaCountry = newlySetPickupLocation.country;
+                this.deliveryZipcode = newlySetPickupLocation.zipCode;
                 this.displaySelectPickupLocationPopup = false;
                 this.displayDarkScreen = false;
+                this.updateDataForSelectedDeliveryAddressOrPickupLocation();
             },
 
-            receiveSelectedPickupLocation(newlySelectedPickupLocation) {
-                this.selectedPickupLocation = newlySelectedPickupLocation;
+            unselectPickupLocation() {
+                this.selectedPickupLocation = null;
             },
 
             convertDistancesFromOneUnitToAnother(desiredUnit) {
@@ -972,8 +1629,8 @@ import '../styles.css';
                 const newPriceDifference = info.newPriceDifference;
                 const newYear = info.newYear;
 
-                for(let i=0; i<this.itemsToBeOrderedByUserAsDict[arrivalTextHeader].length; i++) {
-                    const product = this.itemsToBeOrderedByUserAsDict[arrivalTextHeader][i];
+                for(let i=0; i<this.arrivalTextHeaderToItemListMappings[arrivalTextHeader].length; i++) {
+                    const product = this.arrivalTextHeaderToItemListMappings[arrivalTextHeader][i];
                     if(product.id==id) {
                         const currentCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
 
@@ -1012,6 +1669,23 @@ import '../styles.css';
                         return;
                     }
                 }
+            },
+
+            areDictsEqual(dict1, dict2) {
+                const keys1 = Object.keys(dict1);
+                const keys2 = Object.keys(dict2);
+
+                if (keys1.length !== keys2.length) {
+                    return false;
+                }
+
+                for (const key of keys1) {
+                    if (dict1[key] !== dict2[key]) {
+                    return false;
+                    }
+                }
+
+                return true;
             }
         },
 
@@ -1038,10 +1712,10 @@ import '../styles.css';
             },
 
             deliveryAreaCountry(newVal) {
-                if(newVal==null) {
+                if(newVal==null || this.orderSubtotal==="") {
                     return;
                 }
-                let currentCurrency = this.itemsSubtotal[0];
+                let currentCurrency = this.orderSubtotal[0];
                 if(currentCurrency==="A") {
                     currentCurrency+="$";
                 }
@@ -1049,7 +1723,7 @@ import '../styles.css';
                     currentCurrency+="X$";
                 }
                 else if(currentCurrency==="C") {
-                    if(this.itemsSubtotal[1]==="$") {
+                    if(this.orderSubtotal[1]==="$") {
                         currentCurrency="C$";
                     }
                     else {
@@ -1057,7 +1731,7 @@ import '../styles.css';
                     }
                 }
                 const newCurrency = this.countryCurrencyMap[newVal];
-
+            
                 if(currentCurrency!==newCurrency) {
                     this.updateCurrencies(currentCurrency, newCurrency);
                 }

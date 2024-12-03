@@ -56,7 +56,8 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
             adjustmentsToAddressToEditOrDelete: Object,
             newAddressToAdd: Object,
             newlySetPickupLocation: Object,
-            addressWithUpdatedDeliveryInstructions: Object
+            addressWithUpdatedDeliveryInstructions: Object,
+            notifyOfSelectedAddressBecomingUnselected: Number
         },
 
         components: {
@@ -132,17 +133,18 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                 this.addressesOfUser = addressesOfUser;
 
                 if(this.addressesOfUser.length>0 && this.addressesOfUser[0].isSelected==true) {
-                    this.$emit("notifyParentOfSelectedDeliveryAddress", this.addressesOfUser[0]);
+                    this.$emit("notifyParentOfSelectedDeliveryAddress", ["ORIGINAL", this.addressesOfUser[0]]);
                 }
                 else {
-                    this.$emit("notifyParentOfSelectedDeliveryAddress", null);
+                    this.$emit("notifyParentOfSelectedDeliveryAddress", ["ORIGINAL", null]);
                 }
-                this.$emit("notifyParentOfSelectedPickupLocation", null);
             },
-
+            
             async toggleSelectSingleAddress(indexOfSingleAddressToToggle) {
-                this.selectedPickupLocationOfUser = null;
-                this.$emit("notifyParentOfSelectedPickupLocation", null);
+                if(this.selectedPickupLocationOfUser!==null) {
+                    this.selectedPickupLocationOfUser = null;
+                    this.$emit("notifyParentToUnselectPickupLocation");
+                }
                 if(indexOfSingleAddressToToggle==0) {
                     const response = await fetch(`http://localhost:8026/toggleSelectCustomerAddress/${this.addressesOfUser[0].id}`, {
                         method: 'PATCH'
@@ -153,10 +155,10 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
 
                     this.addressesOfUser[0].isSelected = !this.addressesOfUser[0].isSelected;
                     if(this.addressesOfUser[0].isSelected) {
-                        this.$emit("notifyParentOfSelectedDeliveryAddress", this.addressesOfUser[0]);
+                        this.$emit("notifyParentOfSelectedDeliveryAddress", ["CHANGED", this.addressesOfUser[0]]);
                     }
                     else {
-                        this.$emit("notifyParentOfSelectedDeliveryAddress", null);
+                        this.$emit("notifyParentOfSelectedDeliveryAddress", ["CHANGED", null]);
                     }
                 }
                 else {
@@ -181,7 +183,7 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                     newlySelectedAddress.isSelected = true;
                     this.addressesOfUser.splice(indexOfSingleAddressToToggle, 1);
                     this.addressesOfUser.splice(0, 0, newlySelectedAddress);
-                    this.$emit("notifyParentOfSelectedDeliveryAddress", newlySelectedAddress);
+                    this.$emit("notifyParentOfSelectedDeliveryAddress", ["CHANGED", newlySelectedAddress]);
                 }
             },
 
@@ -263,6 +265,10 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                 }
             },
 
+            notifyOfSelectedAddressBecomingUnselected() {
+                this.addressesOfUser[0].isSelected = false;
+            },
+
             async adjustmentsToAddressToEditOrDelete(newVal) {
                 if(newVal==null) {
                     return;
@@ -284,8 +290,8 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                         throw new Error('Network response not ok');
                     }
 
-                    if(indexToEditOrDelete==0) {
-                        this.$emit("notifyParentOfSelectedDeliveryAddress", null);
+                    if(indexToEditOrDelete==0 && this.addressesOfUser[0].isSelected==true) {
+                        this.$emit("notifyParentOfSelectedDeliveryAddress", ["CHANGED", null]);
                     }
                     this.addressesOfUser.splice(indexToEditOrDelete, 1);
                 }
@@ -324,6 +330,17 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                         }
                     }
                     patchRequestBody.id = idOfAddressToEditOrDelete;
+                    const addressToEdit = this.addressesOfUser[indexToEditOrDelete];
+                    if(('house_or_building_number' in patchRequestBody)==false) {
+                        patchRequestBody.house_or_building_number = addressToEdit.houseOrBuildingNumber;
+                    }
+                    if(('apartment_or_suite' in patchRequestBody)==false) {
+                        patchRequestBody.apartment_or_suite = addressToEdit.apartmentOrSuiteNumber;
+                    }
+                    if(('state_or_province' in patchRequestBody)==false) {
+                        patchRequestBody.state_or_province = addressToEdit.stateOrProvince;
+                    }
+
 
                     if(patchRequestBody.is_selected==true && this.addressesOfUser[0].isSelected==true) {
                         const response0 = await fetch(`http://localhost:8026/unselectSelectedAddressOfUser/${this.authenticatedUsername}`, {
@@ -363,18 +380,23 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                     this.addressesOfUser[indexToEditOrDelete].addressText = this.getAddressText(this.addressesOfUser[indexToEditOrDelete]);
 
                     if(newVal.isSelected==true) {
-                        this.selectedPickupLocationOfUser = null;
-                        this.$emit("notifyParentOfSelectedPickupLocation", null);
+                        if(this.selectedPickupLocationOfUser!==null) {
+                            this.selectedPickupLocationOfUser = null;
+                            this.$emit("notifyParentToUnselectPickupLocation");
+                        }
                         this.addressesOfUser[0].isSelected = false;
                         this.addressesOfUser[indexToEditOrDelete].isSelected = true;
                         const newlySelectedAddress = this.addressesOfUser[indexToEditOrDelete];
                         this.addressesOfUser.splice(indexToEditOrDelete, 1);
                         this.addressesOfUser.splice(0,0,newlySelectedAddress);
-                        this.$emit("notifyParentOfSelectedDeliveryAddress", this.addressesOfUser[0]);
+                        this.$emit("notifyParentOfSelectedDeliveryAddress", ["CHANGED", newlySelectedAddress]);
                     }
                     else if(newVal.isSelected==false) {
                         this.addressesOfUser[indexToEditOrDelete].isSelected = false;
-                        this.$emit("notifyParentOfSelectedDeliveryAddress", null);
+                        this.$emit("notifyParentOfSelectedDeliveryAddress", ["CHANGED", null]);
+                    }
+                    else if(this.addressesOfUser[indexToEditOrDelete].isSelected==true) {
+                        this.$emit("notifyParentOfSelectedDeliveryAddress", ["CHANGED", this.addressesOfUser[indexToEditOrDelete]]);
                     }
                 }
             },
@@ -450,6 +472,7 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                         this.addressesOfUser[0].isSelected = false;
                     }
                     this.addressesOfUser.splice(0,0, newAddress);
+                    this.$emit("notifyParentOfSelectedDeliveryAddress", ["CHANGED", newAddress]);
                 }
                 else {
                     this.addressesOfUser = [...this.addressesOfUser, newAddress];
@@ -466,7 +489,7 @@ import SelectSingleAddress from './SelectSingleAddress.vue';
                         throw new Error('Network response not ok');
                     }
                     this.addressesOfUser[0].isSelected = false;
-                    this.$emit("notifyParentOfSelectedDeliveryAddress", null);
+                    //no need to notify CheckoutPage since the CheckoutPage will have already set selectedDeliveryAddress to null on its own
                 }
             },
 

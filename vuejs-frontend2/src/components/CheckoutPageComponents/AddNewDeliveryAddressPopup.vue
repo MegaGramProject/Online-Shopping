@@ -118,6 +118,7 @@ import thinGrayXIcon from '@/assets/images/thinGrayXIcon.png';
                 if(!this.fieldsAreValidated()) {
                     return;
                 }
+                
                 this.$emit("addNewAddress",
                     {
                         country: this.country,

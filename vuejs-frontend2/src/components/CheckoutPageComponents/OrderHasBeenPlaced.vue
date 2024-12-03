@@ -47,6 +47,10 @@ import checkmarkInGreenCircle from '@/assets/images/checkmarkInGreenCircle.webp'
             }
         },
 
+        mounted() {
+            localStorage.setItem("selectedCartItems", "[]");
+        },
+
         methods: {
             cancelPlacingOrder() {
                 this.$emit("cancelPlacingOrder");

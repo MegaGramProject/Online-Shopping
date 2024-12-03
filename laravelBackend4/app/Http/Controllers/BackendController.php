@@ -130,6 +130,8 @@ class BackendController extends Controller {
                         'openingHours' => $pickupLocation->openingHours,
                         'pickupLocationAddress' => $pickupLocation->address,
                         'pickupDirections' => $pickupLocation->pickupDirections,
+                        'country' => $country,
+                        'zipCode' => $pickupLocation->zipcode
                     ];
                 }
             }

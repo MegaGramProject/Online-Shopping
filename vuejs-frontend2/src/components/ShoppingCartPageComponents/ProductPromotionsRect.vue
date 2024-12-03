@@ -492,12 +492,15 @@ import SingleProductPromotion from './SingleProductPromotion.vue';
 
             //Customers who viewed items in your browsing history also viewed
             async fetchDiv2Products() {
+                if(this.idsOfProductsAvailableToUser.length==0) {
+                    return;
+                }
                 const response = await fetch(`http://localhost:8034/getIdsOfProductsMostViewedByCustomersWhoAlsoViewed/${this.authenticatedUsername}`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         idsToInclude: this.idsOfProductsAvailableToUser,
-                    //    idsToExclude: this.idsOfUserBoughtProducts,
+                        //idsToExclude: this.idsOfUserBoughtProducts,
                         //productIdsViewed: this.browsingHistoryOfUser.map(x=>x.productId)
                         idsToExclude: [],
                         productIdsViewed: this.idsOfProductsAvailableToUser.slice(0,5)

@@ -24,6 +24,7 @@ public class LocalCorsConfiguration {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/graphql", config);
         source.registerCorsConfiguration("/getFastestDeliveryTimesForProducts", config);
+        source.registerCorsConfiguration("/getShippingPricesAndTaxesAndShortestDeliveryTimesOfProducts", config);
         
         return new CorsFilter(source);
     }

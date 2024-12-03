@@ -1,5 +1,5 @@
 <template>
-    <div class="miniSection" :style="{display: 'flex', alignItems: 'center', backgroundColor: 'white', padding: '1.5em 1em', gap: '1em'}">
+    <div v-if="orderSubtotal.length>0" class="miniSection" :style="{display: 'flex', alignItems: 'center', backgroundColor: 'white', padding: '1.5em 1em', gap: '1em'}">
         <button @click="placeOrder" :style="{border: 'none', padding: '0.7em 1.2em', cursor: (this.selectedDeliveryAddress==null && this.selectedPickupLocation==null) || this.selectedPaymentCard==null ? 'auto' : 'pointer', borderRadius: '2em',
         backgroundColor:'#ffe359', opacity: (this.selectedDeliveryAddress==null && this.selectedPickupLocation==null) || this.selectedPaymentCard==null ? '0.3' : '1'}">Place your order</button>
 
