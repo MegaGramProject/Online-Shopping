@@ -1,8 +1,14 @@
 package megagram.springBootBackend5;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
@@ -269,6 +275,187 @@ public class backendController {
         ProductDeliveryTimeAndPrice productDeliveryTimeAndPriceToDelete = optionalProductDeliveryTimeAndPriceToDelete.get();
         productDeliveryTimeAndPriceRepository.delete(productDeliveryTimeAndPriceToDelete);
         return true;
+    }
+
+    @PostMapping("/getLaterSchedulingOptionsForProduct")
+    public ResponseEntity<HashMap<String, Object>[]> getLaterSchedulingOptionsForProduct(@RequestBody HashMap<String, Object> request) {
+        if(request.containsKey("productId") && request.containsKey("defaultDeliveryDate") && request.containsKey("defaultSHDPrice") &&
+        request.containsKey("defaultTax") && request.containsKey("destinationAddress")) {
+            String productId = (String) request.get("productId");
+            List<Object> defaultDeliveryDate = (List<Object>) request.get("defaultDeliveryDate");
+            /*
+                an example for a value above is ["Monday", "Nov 25", 2025]
+             */
+            double defaultSHDPrice = (double) request.get("defaultSHDPrice");
+            double defaultTax = (double) request.get("defaultTax");
+            boolean hasPremium = false;
+            double defaultSHDPriceSavedWithPremium = 0.0;
+            if(request.containsKey("defaultSHDPriceSavedWithPremium")) {
+                hasPremium = true;
+                defaultSHDPriceSavedWithPremium = (double) request.get("defaultSHDPriceSavedWithPremium");
+            }
+            String destinationAddress = (String) request.get("destinationAddress");
+
+            List<List<Object>> allDeliveryTimesAndPricesOfProduct;
+            if(!hasPremium) {
+                allDeliveryTimesAndPricesOfProduct = productDeliveryTimeAndPriceRepository.getAllPossibleStandardDeliveryTimesAndPricesOfSpecificProduct(productId);
+            }
+            else {
+                allDeliveryTimesAndPricesOfProduct = productDeliveryTimeAndPriceRepository.getAllPossiblePremiumDeliveryTimesAndPricesOfSpecificProduct(productId);
+            }
+
+            List<List<Object>> nextFiveDatesAfterDefaultDeliveryDate = getNextFiveDatesAfterGivenDate(defaultDeliveryDate);
+
+            @SuppressWarnings("unchecked")
+            HashMap<String, Object>[] output = (HashMap<String, Object>[]) new HashMap[5];
+            HashMap<String, Integer> dateStringToOutputIndexMappings = new HashMap<String, Integer>();
+            /*
+                in the dict above, keys are strings like "Thursday, Nov 28 2025" and values are integers like 0 or 1 or 2 or 3 or 4,
+                which represent indices in output that correspond to the position in the output.
+
+                the output is a list of 5 chronologically-ordered items(for each of the elements in nextFiveDatesAfterDefaultDeliveryDate),
+                with each item looking something like this:
+                    {
+                        year: 2025,
+                        weekday: 'Tuesday',
+                        monthAndDay: 'Dec 3',
+                        shdPriceDifference: '-9.5',
+                        taxDifference: '+0.5',
+                        shdPriceSavedWithPremiumDifference: '+1' (this key only is there if the hasPremium is true)
+                        priceDifference: '-10',
+                    }
+             */
+            for(int i=0; i<5; i++) {
+                String dateAsString = nextFiveDatesAfterDefaultDeliveryDate.get(i).get(0) + ", " +
+                nextFiveDatesAfterDefaultDeliveryDate.get(i).get(1)
+                + " " + nextFiveDatesAfterDefaultDeliveryDate.get(i).get(2);
+
+                dateStringToOutputIndexMappings.put(dateAsString, i);
+            }
+
+            for(List<Object> productDeliveryTimeAndPrice : allDeliveryTimesAndPricesOfProduct) {
+                String factoryAddress = (String) productDeliveryTimeAndPrice.get(0);
+                String timeFormulaForDelivery = (String) productDeliveryTimeAndPrice.get(1);
+                String shdPriceFormula = (String) productDeliveryTimeAndPrice.get(2);
+                double shdPriceSavedWithPremium = 0.0;
+                double taxRate = 0.0;
+                if(!hasPremium) {
+                    taxRate = (double) productDeliveryTimeAndPrice.get(3);
+                }
+                else {
+                    shdPriceSavedWithPremium = (double) productDeliveryTimeAndPrice.get(3);
+                    taxRate = (double) productDeliveryTimeAndPrice.get(4);
+                }
+
+                double deliveryTimeInHours = calculateDeliveryTime(factoryAddress, destinationAddress, timeFormulaForDelivery);
+                String dateStringForDelivery = getDateStringAfterNumHours(deliveryTimeInHours);
+
+                if(dateStringToOutputIndexMappings.containsKey(dateStringForDelivery)) {
+                    int outputIndex = dateStringToOutputIndexMappings.get(dateStringForDelivery);
+                    double shdPrice = calculateSHDPrice(factoryAddress, destinationAddress, shdPriceFormula);
+                    double tax = (taxRate/100)*shdPrice;
+                    double shdPriceDifference = shdPrice-defaultSHDPrice;
+                    double taxDifference = tax-defaultTax;
+                    double shdPriceSavedWithPremiumDifference = 0;
+                    if(hasPremium) {
+                        shdPriceSavedWithPremiumDifference = shdPriceSavedWithPremium-defaultSHDPriceSavedWithPremium;
+                    }
+                    double priceDifference = 0;
+                    priceDifference+=shdPriceDifference;
+                    priceDifference+=taxDifference;
+                    if(hasPremium) {
+                        priceDifference-=shdPriceSavedWithPremiumDifference;
+                    }
+                    HashMap<String, Object> relevantInfo = new HashMap<String, Object>();
+                    relevantInfo.put("shdPriceDifference", convertDifferenceFromDoubleToString(shdPriceDifference));
+                    relevantInfo.put("taxDifference", convertDifferenceFromDoubleToString(taxDifference));
+                    if(hasPremium) {
+                        relevantInfo.put("shdPriceSavedWithPremium", convertDifferenceFromDoubleToString(shdPriceSavedWithPremium));
+                    }
+                    relevantInfo.put("priceDifference", convertDifferenceFromDoubleToString(priceDifference));
+                    
+                    for(int i = outputIndex; i<5; i++) {
+                        if(output[i]==null) {
+                            relevantInfo.put("weekday", nextFiveDatesAfterDefaultDeliveryDate.get(i).get(0));
+                            relevantInfo.put("monthAndDay", nextFiveDatesAfterDefaultDeliveryDate.get(i).get(1));
+                            relevantInfo.put("year", nextFiveDatesAfterDefaultDeliveryDate.get(i).get(2));
+                            output[i] = new HashMap<String, Object>(relevantInfo);
+                        }
+                        else {
+                            String stringifiedPriceDiff = (String) output[i].get("priceDifference");
+                            double priceDiff = 0.0;
+                            if(stringifiedPriceDiff.charAt(0) == '-') {
+                                priceDiff = Double.parseDouble(stringifiedPriceDiff);
+                            }
+                            else {
+                                priceDiff = Double.parseDouble(stringifiedPriceDiff.substring(1));
+                            }
+                            if(priceDifference<priceDiff) {
+                                relevantInfo.put("weekday", nextFiveDatesAfterDefaultDeliveryDate.get(i).get(0));
+                                relevantInfo.put("monthAndDay", nextFiveDatesAfterDefaultDeliveryDate.get(i).get(1));
+                                relevantInfo.put("year", nextFiveDatesAfterDefaultDeliveryDate.get(i).get(2));
+                                output[i] = new HashMap<String, Object>(relevantInfo);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return new ResponseEntity<>(output, HttpStatus.OK);
+        }
+        else {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    private List<List<Object>> getNextFiveDatesAfterGivenDate(List<Object> givenDate) {
+        /*
+            an example for a value of givenDate is ["Monday", "Nov 25", 2025]
+        */
+
+        DateTimeFormatter monthDayFormatter = DateTimeFormatter.ofPattern("MMM d", Locale.ENGLISH);
+        LocalDate defaultDate = LocalDate.parse(
+            givenDate.get(2) + " " + givenDate.get(1),
+            DateTimeFormatter.ofPattern("yyyy MMM d", Locale.ENGLISH)
+        );
+
+
+        List<List<Object>> nextFiveDatesAfterDefaultDeliveryDate = new ArrayList<>();
+
+        for (int i = 1; i <= 5; i++) {
+            LocalDate nextDate = defaultDate.plusDays(i);
+
+            String dayOfWeek = nextDate.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH);
+            String monthAndDay = nextDate.format(monthDayFormatter);
+            int year = nextDate.getYear();
+
+            List<Object> dateComponents = new ArrayList<>();
+            dateComponents.add(dayOfWeek);
+            dateComponents.add(monthAndDay);
+            dateComponents.add(year);
+
+            nextFiveDatesAfterDefaultDeliveryDate.add(dateComponents);
+        }
+
+        return nextFiveDatesAfterDefaultDeliveryDate;
+    }
+
+    private String getDateStringAfterNumHours(double numHours) {
+        LocalDateTime now = LocalDateTime.now();
+        
+        LocalDateTime futureDateTime = now.plusHours((long) numHours);
+        
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMM d yyyy", Locale.ENGLISH);
+        return futureDateTime.format(formatter);
+    }
+
+    private String convertDifferenceFromDoubleToString(double difference) {
+        if(difference<0) {
+            return "-"+(-1*difference);
+        }
+        else {
+            return "+"+difference;
+        }
     }
 
     @QueryMapping

@@ -149,7 +149,7 @@
                 <p v-for="optionKey in Object.keys(product.productOptions)" :key="optionKey" :style="{fontSize:'0.88em', marginBottom:'0em'}"><b>{{ optionKey }}:</b> <span :style="{color: 'gray'}">{{ product.productOptions[optionKey] }}</span></p>
             </div>
 
-            <div v-if="product.status==='Available'" :style="{display: 'flex', flexDirection: 'column'}">
+            <div v-if="selectedDestination!==null && product.status==='Available'" :style="{display: 'flex', flexDirection: 'column'}">
                 <form @change="productDeliveryScheduleTypeChanged(product)">
                     <input v-model="this.productScheduleTypes[product.id]" type="radio" name="scheduleDelivery" value="default" :style="{marginBottom:'1em'}" checked><b>{{ formatArrivalText() }}</b><br>
                     <input v-model="this.productScheduleTypes[product.id]" type="radio" name="scheduleDelivery" value="scheduleLater">Schedule <b>later</b><br>
@@ -168,8 +168,8 @@
 
                     <template v-if="productToDisplayOtherSchedulingOptionsMappings[product.id]==true">
                         <br/>
-                        <div v-for="schedulingOption in productToOtherSchedulingOptionsMappings[product.id]" :key="schedulingOption.monthAndDay"
-                        @click="updateScheduleAheadDate(product, schedulingOption.weekday, schedulingOption.monthAndDay, schedulingOption.priceDifference, schedulingOption.year)"
+                        <div v-for="(schedulingOption, index) in productToOtherSchedulingOptionsMappings[product.id]" :key="schedulingOption.monthAndDay"
+                        @click="updateScheduleAheadDate(product, index)"
                         :style="{position: 'relative', cursor: 'pointer',
                         fontSize:'0.9em'}">
                             <template v-if="productSchedules[product.id]==null || schedulingOption.monthAndDay!==productSchedules[product.id][1]">
@@ -203,7 +203,8 @@ import showerCurtains from '@/assets/images/showerCurtains.jpg';
             getItAsSoonAs: Number,
             hasPremium: Boolean,
             products: Array,
-            deliveryAreaCountry: String
+            deliveryAreaCountry: String,
+            selectedDestination: Object
         },
 
         mounted() {
@@ -211,7 +212,7 @@ import showerCurtains from '@/assets/images/showerCurtains.jpg';
 
             for(let product of this.products) {
                 this.productScheduleTypes[product.id] = 'default';
-                this.productSchedules[product.id] = [this.defaultWeekday, this.defaultMonthAndDay, '-$0', this.defaultYear];
+                this.productSchedules[product.id] = [this.defaultWeekday, this.defaultMonthAndDay, '-0', this.defaultYear];
                 this.productToDisplayOtherSchedulingOptionsMappings[product.id] = false;
             }
         },
@@ -221,7 +222,7 @@ import showerCurtains from '@/assets/images/showerCurtains.jpg';
                 showerCurtains,
                 checkmark,
                 productScheduleTypes: {}, //keys are the ids(not product-id, but cart-item-id) and values are either 'default' or 'scheduleLater'
-                productSchedules: {}, //keys are ids(not product-id, but cart-item-id) and values are either [this.defaultWeekday, this.defaultMonthAndDay, '-$0', this.defaultYear](if default) or something like this otherwise: ['Thurs, Nov 28', '+$12', 2024]
+                productSchedules: {}, //keys are ids(not product-id, but cart-item-id) and values are either [this.defaultWeekday, this.defaultMonthAndDay, '-0', this.defaultYear](if default) or something like this otherwise: ['Thurs, Nov 28', '+12', 2024]
                 productToDisplayOtherSchedulingOptionsMappings: {}, //keys are ids(not product-id, but cart-item-id) and values are booleans that are true if other scheduling options are shown, false otherwise
                 productToOtherSchedulingOptionsMappings: {}, //keys are ids(not product-id, but cart-item-id) and values are lists of scheduling options available for the product upto 5 days ahead of the default scheduled date.
                 defaultWeekday: "",
@@ -323,84 +324,153 @@ import showerCurtains from '@/assets/images/showerCurtains.jpg';
             toggleDisplayOtherSchedulingOptions(product) {
                 this.productToDisplayOtherSchedulingOptionsMappings[product.id] = !this.productToDisplayOtherSchedulingOptionsMappings[product.id];
                 if(product.id in this.productToOtherSchedulingOptionsMappings==false) {
-                    this.getOtherSchedulingOptions(product);
+                    this.getLaterDeliveryOptions(product);
                 }
             },
 
-            getOtherSchedulingOptions(product) {
-                const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-                const months = [
-                    { name: "Jan", days: 31 },
-                    { name: "Feb", days: 28 },
-                    { name: "Mar", days: 31 },
-                    { name: "Apr", days: 30 },
-                    { name: "May", days: 31 },
-                    { name: "Jun", days: 30 },
-                    { name: "Jul", days: 31 },
-                    { name: "Aug", days: 31 },
-                    { name: "Sep", days: 30 },
-                    { name: "Oct", days: 31 },
-                    { name: "Nov", days: 30 },
-                    { name: "Dec", days: 31 }
-                ];
-                const priceDifferences = ["+"+this.countryCurrencyMap[this.deliveryAreaCountry]+"10", "+"+this.countryCurrencyMap[this.deliveryAreaCountry]+"5", "-"+this.countryCurrencyMap[this.deliveryAreaCountry]+"0", "-"+this.countryCurrencyMap[this.deliveryAreaCountry]+"19", "-"+this.countryCurrencyMap[this.deliveryAreaCountry]+"22"];
+            async getLaterDeliveryOptions(product) {
+                const currency = this.countryCurrencyMap[this.deliveryAreaCountry];
 
-                const isLeapYear = (year) => (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+                let defaultSHDPrice = parseFloat(product.shippingAndHandlingPrice.substring(currency.length));
+                let defaultTax = parseFloat(product.tax.substring(currency.length));
+                let defaultSHDPriceSavedWithPremium = 0;
+                if(this.hasPremium) {
+                    defaultSHDPriceSavedWithPremium = parseFloat(product.shdPriceSavedWithPremium.substring(currency.length));
+                }
 
-                const updateLeapYearDays = (year) => {
-                    months[1].days = isLeapYear(year) ? 29 : 28;
+                if(currency!=="$") {
+                    defaultSHDPrice/=this.currencyToDollarMap[currency];
+                    defaultSHDPrice*=this.currencyToDollarMap["$"];
+                    defaultSHDPrice = defaultSHDPrice.toFixed(2);
+
+                    defaultTax/=this.currencyToDollarMap[currency];
+                    defaultTax*=this.currencyToDollarMap["$"];
+                    defaultTax = defaultTax.toFixed(2);
+
+                    if(this.hasPremium) {
+                        defaultSHDPriceSavedWithPremium/=this.currencyToDollarMap[currency];
+                        defaultSHDPriceSavedWithPremium*=this.currencyToDollarMap["$"];
+                        defaultSHDPriceSavedWithPremium = defaultSHDPriceSavedWithPremium.toFixed(2);
+                    }
+                }
+
+                const postRequestBody = {
+                    productId: product.productId,
+                    defaultDeliveryDate: [this.defaultWeekday, this.defaultMonthAndDay, this.defaultYear],
+                    defaultSHDPrice: defaultSHDPrice,
+                    defaultTax: defaultTax
                 };
+                if(this.hasPremium) {
+                    postRequestBody.defaultSHDPriceSavedWithPremium = defaultSHDPriceSavedWithPremium;
+                }
+                if(this.selectedDestination.type==='delivery') {
+                    postRequestBody.destinationAddress = this.selectedDestination.data.addressText;
+                }
+                else {
+                    postRequestBody.destinationAddress = this.selectedDestination.data.pickupLocationAddress;
+                }
+                
+                const response = await fetch('http://localhost:8029/getLaterSchedulingOptionsForProduct', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(postRequestBody)
+                });
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+                let laterSchedulingOptionsForProduct = await response.json();
+                /*
+                    above is a list of 5 chronologically-ordered items, with each item looking something like this:
+                    {
+                        year: 2025,
+                        weekday: 'Tuesday',
+                        monthAndDay: 'Dec 3',
+                        shdPriceDifference: '-9.5',
+                        taxDifference: '+0.5',
+                        priceDifference: '-10',
+                        shdPriceSavedWithPremiumDifference: '+1' (this key only is there if the this.hasPremium is true)
+                    }
+                */
+                laterSchedulingOptionsForProduct = laterSchedulingOptionsForProduct.filter(x=>x!==null);
 
-                const getIndex = (array, value) => array.findIndex(item => item.name === value || item === value);
+                const currentCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
+                if(currentCurrency!=="$") {
+                    for(let laterOption of laterSchedulingOptionsForProduct) {
+                        let shdPriceDifference = laterOption.shdPriceDifference;
+                        let firstChar = shdPriceDifference[0]; //either '+' or '-'
+                        shdPriceDifference = parseFloat(shdPriceDifference.substring(1));
+                        shdPriceDifference*=this.currencyToDollarMap[currentCurrency];
+                        if(firstChar==='-') {
+                            laterOption.shdPriceDifference = "-"+(-1*shdPriceDifference).toFixed(2);
+                        }
+                        else {
+                            laterOption.shdPriceDifference = "+"+shdPriceDifference.toFixed(2);
+                        }
 
-                const startWeekdayIndex = getIndex(weekdays, this.defaultWeekday);
-                const [startMonth, startDay] = this.defaultMonthAndDay.split(" ");
-                const startMonthIndex = getIndex(months, startMonth);
-                const startDayNumber = parseInt(startDay);
-                let currentYear = this.defaultYear;
+                        let taxDifference = laterOption.taxDifference;
+                        firstChar = taxDifference[0]; //either '+' or '-'
+                        taxDifference = parseFloat(taxDifference.substring(1));
+                        taxDifference*=this.currencyToDollarMap[currentCurrency];
+                        if(firstChar==='-') {
+                            laterOption.taxDifference = "-"+(-1*taxDifference).toFixed(2);
+                        }
+                        else {
+                            laterOption.taxDifference = "+"+taxDifference.toFixed(2);
+                        }
 
-                updateLeapYearDays(currentYear);
+                        if(this.hasPremium) {
+                            let shdPriceSavedWithPremiumDifference = laterOption.shdPriceSavedWithPremiumDifference;
+                            firstChar = shdPriceSavedWithPremiumDifference[0]; //either '+' or '-'
+                            shdPriceSavedWithPremiumDifference = parseFloat(shdPriceSavedWithPremiumDifference.substring(1));
+                            shdPriceSavedWithPremiumDifference*=this.currencyToDollarMap[currentCurrency];
+                            if(firstChar==='-') {
+                                laterOption.shdPriceSavedWithPremiumDifference = "-"+(-1*shdPriceSavedWithPremiumDifference).toFixed(2);
+                            }
+                            else {
+                                laterOption.shdPriceSavedWithPremiumDifference = "+"+shdPriceSavedWithPremiumDifference.toFixed(2);
+                            }
+                        }
 
-                const schedulingOptions = [];
-                let currentWeekdayIndex = startWeekdayIndex;
-                let currentMonthIndex = startMonthIndex;
-                let currentDay = startDayNumber;
-
-                for (let i = 0; i < 5; i++) {
-                    currentWeekdayIndex = (currentWeekdayIndex + 1) % 7;
-                    currentDay++;
-
-                    if (currentDay > months[currentMonthIndex].days) {
-                        currentDay = 1;
-                        currentMonthIndex = (currentMonthIndex + 1) % months.length;
-
-                        if (currentMonthIndex === 0) {
-                            currentYear++;
-                            updateLeapYearDays(currentYear);
+                        let priceDifference = laterOption.priceDifference;
+                        firstChar = priceDifference[0]; //either '+' or '-'
+                        priceDifference = parseFloat(priceDifference.substring(1));
+                        priceDifference*=this.currencyToDollarMap[currentCurrency];
+                        if(firstChar==='-') {
+                            laterOption.priceDifference = "-"+(-1*priceDifference).toFixed(2);
+                        }
+                        else {
+                            laterOption.priceDifference = "+"+priceDifference.toFixed(2);
                         }
                     }
-
-                    schedulingOptions.push({
-                        year: currentYear,
-                        weekday: weekdays[currentWeekdayIndex],
-                        monthAndDay: `${months[currentMonthIndex].name} ${currentDay}`,
-                        priceDifference: priceDifferences[i]
-                    });
                 }
-
-                this.productToOtherSchedulingOptionsMappings[product.id] = schedulingOptions;
+                
+                this.productToOtherSchedulingOptionsMappings[product.id] = laterSchedulingOptionsForProduct;
             },
 
-            updateScheduleAheadDate(product, newWeekday, newMonthAndDay, newPriceDifference, newYear) {
+            updateScheduleAheadDate(product, indexOfNewScheduleAheadDate) {
+                const newWeekday = this.productToOtherSchedulingOptionsMappings[product.id][indexOfNewScheduleAheadDate].weekday;
+                const newMonthAndDay = this.productToOtherSchedulingOptionsMappings[product.id][indexOfNewScheduleAheadDate].monthAndDay;
+                const newPriceDifference = this.productToOtherSchedulingOptionsMappings[product.id][indexOfNewScheduleAheadDate].priceDifference;
+                const newYear = this.productToOtherSchedulingOptionsMappings[product.id][indexOfNewScheduleAheadDate].year;
+                const newSHDPriceDifference = this.productToOtherSchedulingOptionsMappings[product.id][indexOfNewScheduleAheadDate].shdPriceDifference;
+                const newTaxDifference = this.productToOtherSchedulingOptionsMappings[product.id][indexOfNewScheduleAheadDate].taxDifference;
+                let newSHDPriceSavedForPremiumDifference;
+                if(this.hasPremium) {
+                    newSHDPriceSavedForPremiumDifference = this.productToOtherSchedulingOptionsMappings[product.id][indexOfNewScheduleAheadDate].shdPriceSavedWithPremiumDifference;
+                }
+
                 this.productSchedules[product.id] = [newWeekday, newMonthAndDay, newPriceDifference, newYear];
                 this.$emit("productDeliveryDateHasBeenUpdated",
                     {
                         arrivalTextHeader: this.arrivalTextHeader,
-                        id: product.id,
+                        itemIdNotProductId: product.id,
                         newWeekday: newWeekday,
                         newMonthAndDay: newMonthAndDay,
                         newPriceDifference: newPriceDifference,
-                        newYear: newYear
+                        newYear: newYear,
+                        newSHDPriceDifference: newSHDPriceDifference,
+                        newTaxDifference: newTaxDifference,
+                        newSHDPriceSavedForPremiumDifference: newSHDPriceSavedForPremiumDifference
                     }
                 );
             },
@@ -426,15 +496,18 @@ import showerCurtains from '@/assets/images/showerCurtains.jpg';
             productDeliveryScheduleTypeChanged(product) {
                 if(this.productScheduleTypes[product.id]==='default') {
                     this.productToDisplayOtherSchedulingOptionsMappings[product.id] = false;
-                    this.productSchedules[product.id] = [this.defaultWeekday, this.defaultMonthAndDay, '-'+this.countryCurrencyMap[this.deliveryAreaCountry]+'0'];
+                    this.productSchedules[product.id] = [this.defaultWeekday, this.defaultMonthAndDay, '-0', this.defaultYear];
                     this.$emit("productDeliveryDateHasBeenUpdated",
                         {
                             arrivalTextHeader: this.arrivalTextHeader,
-                            id: product.id,
+                            itemIdNotProductId: product.id,
                             newWeekday: this.defaultWeekday,
                             newMonthAndDay: this.defaultMonthAndDay,
-                            newPriceDifference: '-'+this.countryCurrencyMap[this.deliveryAreaCountry]+'0',
-                            newYear: this.defaultYear
+                            newPriceDifference: '-0',
+                            newYear: this.defaultYear,
+                            newSHDPriceDifference: '-0',
+                            newTaxDifference: '-0',
+                            newSHDPriceSavedForPremiumDifference: '-0'
                         }
                     );
                 }
@@ -443,23 +516,70 @@ import showerCurtains from '@/assets/images/showerCurtains.jpg';
             updateCurrencies(currentCurrency, newCurrency) {
                 for(let id of Object.keys(this.productSchedules)) {
                     const productSchedule = this.productSchedules[id];
-                    let priceDifferenceInProductSchedule = productSchedule[2]; //something like '+$20' or '-$12' etc
+                    let priceDifferenceInProductSchedule = productSchedule[2]; //something like '+20' or '-12' etc
                     const firstChar = priceDifferenceInProductSchedule[0]; //either '+' or '-'
                     
-                    priceDifferenceInProductSchedule = parseFloat(priceDifferenceInProductSchedule.substring(currentCurrency.length+1));
+                    priceDifferenceInProductSchedule = parseFloat(priceDifferenceInProductSchedule.substring(1));
                     priceDifferenceInProductSchedule/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
                     priceDifferenceInProductSchedule*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
-                    this.productSchedules[id][2] = firstChar+newCurrency+priceDifferenceInProductSchedule.toFixed(2);
+                    if(firstChar==='-') {
+                        this.productSchedules[id][2] = "-"+(-1*priceDifferenceInProductSchedule).toFixed(2);
+                    }
+                    else {
+                        this.productSchedules[id][2] = "+"+priceDifferenceInProductSchedule.toFixed(2);
+                    }
 
                     if(id in this.productToOtherSchedulingOptionsMappings) {
                         for(let otherSchedulingOption of this.productToOtherSchedulingOptionsMappings[id]) {
                             let priceDifference = otherSchedulingOption.priceDifference;
-                            const firstChar = priceDifference[0]; //either '+' or '-'
-                        
-                            priceDifference = parseFloat(priceDifference.substring(currentCurrency.length+1));
+                            let firstChar = priceDifference[0]; //either '+' or '-'
+                            priceDifference = parseFloat(priceDifference.substring(1));
                             priceDifference/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
                             priceDifference*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
-                            otherSchedulingOption.priceDifference = firstChar+newCurrency+priceDifference.toFixed(2);
+                            if(firstChar==='-') {
+                                otherSchedulingOption.priceDifference = "-"+(-1*priceDifference).toFixed(2);
+                            }
+                            else {
+                                otherSchedulingOption.priceDifference = "+"+priceDifference.toFixed(2);
+                            }
+
+                            let shdPriceDifference = otherSchedulingOption.shdPriceDifference;
+                            firstChar = shdPriceDifference[0]; //either '+' or '-'
+                            shdPriceDifference = parseFloat(shdPriceDifference.substring(1));
+                            shdPriceDifference/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                            shdPriceDifference*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
+                            if(firstChar==='-') {
+                                otherSchedulingOption.shdPriceDifference = "-"+(-1*shdPriceDifference).toFixed(2);
+                            }
+                            else {
+                                otherSchedulingOption.shdPriceDifference = "+"+shdPriceDifference.toFixed(2);
+                            }
+
+                            let taxDifference = otherSchedulingOption.taxDifference;
+                            firstChar = taxDifference[0]; //either '+' or '-'
+                            taxDifference = parseFloat(taxDifference.substring(1));
+                            taxDifference/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                            taxDifference*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
+                            if(firstChar==='-') {
+                                otherSchedulingOption.taxDifference = "-"+(-1*taxDifference).toFixed(2);
+                            }
+                            else {
+                                otherSchedulingOption.taxDifference = "+"+taxDifference.toFixed(2);
+                            }
+
+                            if(this.hasPremium) {
+                                let shdPriceSavedWithPremiumDifference = otherSchedulingOption.shdPriceSavedWithPremiumDifference;
+                                let firstChar = shdPriceSavedWithPremiumDifference[0]; //either '+' or '-'
+                                shdPriceSavedWithPremiumDifference = parseFloat(shdPriceSavedWithPremiumDifference.substring(1));
+                                shdPriceSavedWithPremiumDifference/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                                shdPriceSavedWithPremiumDifference*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
+                                if(firstChar==='-') {
+                                    otherSchedulingOption.shdPriceSavedWithPremiumDifference = "-"+(-1*shdPriceSavedWithPremiumDifference).toFixed(2);
+                                }
+                                else {
+                                    otherSchedulingOption.shdPriceSavedWithPremiumDifference = "+"+shdPriceSavedWithPremiumDifference.toFixed(2);
+                                }
+                            }
                         }
                     }
                 }
@@ -467,19 +587,33 @@ import showerCurtains from '@/assets/images/showerCurtains.jpg';
 
             getTotalPriceDifferenceWithQuantity(priceDifference, quantity) {
                 const currentCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
-                let priceDiff = priceDifference; //something like '+$10', '-$5', etc.
-                priceDiff = parseFloat(priceDiff.substring(currentCurrency.length+1));
+                let priceDiff = priceDifference; //something like '+10', '-5', etc.
+                priceDiff = parseFloat(priceDiff.substring(1));
                 priceDiff*=quantity;
-                return priceDifference[0]+currentCurrency+priceDiff.toFixed(2);
+                if(priceDifference[0]==='-') {
+                    return "-"+currentCurrency+priceDiff.toFixed(2);
+                }
+                return "+"+currentCurrency+priceDiff.toFixed(2);
             }
+
         },
 
         watch: {
-
             deliveryAreaCountry(newVal, oldVal) {
                 let currentCurrency = this.countryCurrencyMap[oldVal];
                 let newCurrency = this.countryCurrencyMap[newVal];
                 this.updateCurrencies(currentCurrency, newCurrency);
+            },
+
+            selectedDestination() {
+                for(let product of this.products) {
+                    delete this.productToOtherSchedulingOptionsMappings[product.id];
+                    if(this.productScheduleTypes[product.id]!=='default') {
+                        this.productScheduleTypes[product.id] = 'default';
+                        this.productSchedules[product.id] = [this.defaultWeekday, this.defaultMonthAndDay, '-0', this.defaultYear];
+                        this.productToDisplayOtherSchedulingOptionsMappings[product.id] = false;
+                    }
+                }
             }
         }
 

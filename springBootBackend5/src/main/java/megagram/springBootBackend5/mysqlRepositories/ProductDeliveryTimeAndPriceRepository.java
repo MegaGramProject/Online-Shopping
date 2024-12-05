@@ -25,4 +25,10 @@ public interface ProductDeliveryTimeAndPriceRepository extends JpaRepository<Pro
 
     @Query("SELECT p.id.productId, p.id.factoryAddress, p.timeFormulaForPremiumDelivery, p.SHDPriceFormula, p.SHDPriceSavedWithPremium, p.taxRate FROM ProductDeliveryTimeAndPrice p WHERE p.id.productId IN :productIds")
     List<List<Object>> getAllPremiumDeliveryTimesAndPricesOfProducts(@Param("productIds") List<String> productIds);
+
+    @Query("SELECT p.id.factoryAddress, p.timeFormulaForDelivery, p.SHDPriceFormula, p.taxRate FROM ProductDeliveryTimeAndPrice p WHERE p.id.productId = :productId")
+    List<List<Object>> getAllPossibleStandardDeliveryTimesAndPricesOfSpecificProduct(@Param("productId") String productId);
+
+    @Query("SELECT p.id.factoryAddress, p.timeFormulaForPremiumDelivery, p.SHDPriceFormula, p.SHDPriceSavedWithPremium, p.taxRate FROM ProductDeliveryTimeAndPrice p WHERE p.id.productId = :productId")
+    List<List<Object>> getAllPossiblePremiumDeliveryTimesAndPricesOfSpecificProduct(@Param("productId") String productId);
 }

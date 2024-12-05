@@ -25,7 +25,8 @@ public class LocalCorsConfiguration {
         source.registerCorsConfiguration("/graphql", config);
         source.registerCorsConfiguration("/getFastestDeliveryTimesForProducts", config);
         source.registerCorsConfiguration("/getShippingPricesAndTaxesAndShortestDeliveryTimesOfProducts", config);
-        
+        source.registerCorsConfiguration("/getLaterSchedulingOptionsForProduct", config);
+
         return new CorsFilter(source);
     }
 }

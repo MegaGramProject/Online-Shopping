@@ -5,41 +5,43 @@
 
         <div v-if="orderHasBeenPlaced" :style="{display: 'flex', alignItems: 'start', justifyContent: 'center', marginTop:'1em'}">
             <OrderHasBeenPlaced v-if="orderHasBeenPlaced" @cancelPlacingOrder="toggleOrderHasBeenPlaced"
-            :selectedDeliveryAddress="selectedDeliveryAddress" :selectedPaymentCard="selectedPaymentCard"
-            :selectedPickupLocation="selectedPickupLocation" :shippingAndHandlingFeesSavedWithPremium="shippingAndHandlingFeesSavedWithPremium"
-            :totalItemDiscounts="totalItemDiscounts"
+                :selectedDeliveryAddress="selectedDeliveryAddress" :selectedPaymentCard="selectedPaymentCard"
+                :selectedPickupLocation="selectedPickupLocation" :shippingAndHandlingFeesSavedWithPremium="shippingAndHandlingFeesSavedWithPremium"
+                :totalItemDiscounts="totalItemDiscounts"
             />
         </div>
 
         <div :style="{display: !orderHasBeenPlaced ? 'flex' : 'none', alignItems: 'start', justifyContent: 'center', gap: '1em', marginTop:'1em'}">
             <div :style="{display: 'flex', flexDirection: 'column', gap: '1em'}">
                 <SelectADeliveryAddress :authenticatedUsername="authenticatedUsername" @notifyParentOfSelectedDeliveryAddress="receiveSelectedDeliveryAddress"
-                @showEditOrDeleteAddressPopup="showEditOrDeleteAddressPopup" :adjustmentsToAddressToEditOrDelete="adjustmentsToAddressToEditOrDelete"
-                @showAddNewDeliveryAddressPopup="toggleAddNewDeliveryAddressPopup" :newAddressToAdd="newAddressToAdd"
-                @showSelectPickupLocationPopup="toggleSelectPickupLocationPopup" :newlySetPickupLocation="newlySetPickupLocation"
-                @notifyParentToUnselectPickupLocation="unselectPickupLocation" @showAddDeliveryInstructionsPopup="toggleAddDeliveryInstructionsPopup"
-                :addressWithUpdatedDeliveryInstructions="addressWithUpdatedDeliveryInstructions"
+                    @showEditOrDeleteAddressPopup="showEditOrDeleteAddressPopup" :adjustmentsToAddressToEditOrDelete="adjustmentsToAddressToEditOrDelete"
+                    @showAddNewDeliveryAddressPopup="toggleAddNewDeliveryAddressPopup" :newAddressToAdd="newAddressToAdd"
+                    @showSelectPickupLocationPopup="toggleSelectPickupLocationPopup" :newlySetPickupLocation="newlySetPickupLocation"
+                    @notifyParentToUnselectPickupLocation="unselectPickupLocation" @showAddDeliveryInstructionsPopup="toggleAddDeliveryInstructionsPopup"
+                    :addressWithUpdatedDeliveryInstructions="addressWithUpdatedDeliveryInstructions"
                 />
                 <PaymentSection :authenticatedUsername="authenticatedUsername" @notifyParentOfSelectedCard="receiveSelectedPaymentCard"
-                @showAddPaymentCardPopup="toggleAddPaymentCardPopup" :newCardOfUser="newCardOfUser"
-                :promoCodes="promoCodes" @applyPromoCode="applyPromoCode"/>
+                    @showAddPaymentCardPopup="toggleAddPaymentCardPopup" :newCardOfUser="newCardOfUser"
+                    :promoCodes="promoCodes" @applyPromoCode="applyPromoCode"/>
                 <OrderArrivals v-for="(arrivalTextHeader) in arrivalTextHeaders"
                     :key="arrivalTextHeader" :getItAsSoonAs="arrivalTextHeaderToItemListMappings[arrivalTextHeader][0].getItAsSoonAs"
                     :arrivalTextHeader="arrivalTextHeader"
                     :hasPremium="hasPremium" :products="arrivalTextHeaderToItemListMappings[arrivalTextHeader]"
                     @updateItemQuantity="updateItemQuantity" @updateSelectedProductDeal="updateSelectedProductDeal"
                     @productDeliveryDateHasBeenUpdated="updateProductDeliveryDate" :deliveryAreaCountry="deliveryAreaCountry"
+                    :selectedDestination="selectedDestination"
                 />
                 <PlaceYourOrder :orderSubtotal="orderSubtotal" :selectedDeliveryAddress="selectedDeliveryAddress"
-                :selectedPickupLocation="selectedPickupLocation"
-                :selectedPaymentCard="selectedPaymentCard" @placeOrder="toggleOrderHasBeenPlaced"/>
+                    :selectedPickupLocation="selectedPickupLocation"
+                    :selectedPaymentCard="selectedPaymentCard" @placeOrder="toggleOrderHasBeenPlaced"
+                />
             </div>
             <SubtotalAndPlaceOrder :itemsSubtotal="itemsSubtotal" :shippingHandlingAndDeliverySubtotal="shippingHandlingAndDeliverySubtotal"
-            :taxSubtotal="taxSubtotal" :orderSubtotal="orderSubtotal" :selectedDeliveryAddress="selectedDeliveryAddress" :selectedPickupLocation="selectedPickupLocation"
-            :selectedPaymentCard="selectedPaymentCard" @placeOrder="toggleOrderHasBeenPlaced" :quantityTotal="quantityTotal"
-            :shippingAndHandlingFeesSavedWithPremium="shippingAndHandlingFeesSavedWithPremium"
-            :totalItemDiscounts="totalItemDiscounts" :priceDifferencesFromSchedulingLater="priceDifferencesFromSchedulingLater"
-            :hasPremium="hasPremium"
+                :taxSubtotal="taxSubtotal" :orderSubtotal="orderSubtotal" :selectedDeliveryAddress="selectedDeliveryAddress" :selectedPickupLocation="selectedPickupLocation"
+                :selectedPaymentCard="selectedPaymentCard" @placeOrder="toggleOrderHasBeenPlaced" :quantityTotal="quantityTotal"
+                :shippingAndHandlingFeesSavedWithPremium="shippingAndHandlingFeesSavedWithPremium"
+                :totalItemDiscounts="totalItemDiscounts" :priceDifferencesFromSchedulingLater="priceDifferencesFromSchedulingLater"
+                :hasPremium="hasPremium"
             />
         </div>
 
@@ -51,27 +53,30 @@
     position: 'absolute', top: '0%', left: '0%', height: '250%', width: '105%', objectFit: 'cover'}">
 
     <AddPaymentCardPopup v-if="displayAddPaymentCardPopup" @closePopup="toggleAddPaymentCardPopup"
-    @addPaymentCard="addPaymentCard"/>
+        @addPaymentCard="addPaymentCard"
+    />
 
     <EditOrDeleteAddressPopup v-if="displayEditOrDeleteAddressPopup" @closePopup="closeEditOrDeleteAddressPopup"
-    :indexOfAddressToEditOrDelete="addressToEditOrDelete.index" :propCountry="addressToEditOrDelete.country"
-    :propFullName="addressToEditOrDelete.fullName" :propHouseOrBuildingNumber="addressToEditOrDelete.houseOrBuildingNumber"
-    :propStreetName="addressToEditOrDelete.streetName" :propApartmentOrSuiteNumber="addressToEditOrDelete.apartmentOrSuiteNumber"
-    :propTownOrCity="addressToEditOrDelete.townOrCity" :propStateOrProvince="addressToEditOrDelete.stateOrProvince"
-    :propZipCode="addressToEditOrDelete.zipCode" :propPhoneNumber="addressToEditOrDelete.phoneNumber"
-    :propIsSelected="addressToEditOrDelete.isSelected" @deleteThisAddress="deleteThisAddress"
-    @saveEditsToThisAddress="saveEditsToThisAddress"
+        :indexOfAddressToEditOrDelete="addressToEditOrDelete.index" :propCountry="addressToEditOrDelete.country"
+        :propFullName="addressToEditOrDelete.fullName" :propHouseOrBuildingNumber="addressToEditOrDelete.houseOrBuildingNumber"
+        :propStreetName="addressToEditOrDelete.streetName" :propApartmentOrSuiteNumber="addressToEditOrDelete.apartmentOrSuiteNumber"
+        :propTownOrCity="addressToEditOrDelete.townOrCity" :propStateOrProvince="addressToEditOrDelete.stateOrProvince"
+        :propZipCode="addressToEditOrDelete.zipCode" :propPhoneNumber="addressToEditOrDelete.phoneNumber"
+        :propIsSelected="addressToEditOrDelete.isSelected" @deleteThisAddress="deleteThisAddress"
+        @saveEditsToThisAddress="saveEditsToThisAddress"
     />
 
     <AddNewDeliveryAddressPopup v-if="displayAddNewDeliveryAddressPopup" @closePopup="toggleAddNewDeliveryAddressPopup"
-    @addNewAddress="addNewAddress"
+        @addNewAddress="addNewAddress"
     />
 
     <SelectPickupLocationPopup v-if="displaySelectPickupLocationPopup" @closePopup="toggleSelectPickupLocationPopup"
-    @setPickupLocation="setPickupLocation" :deliveryAreaCountry="deliveryAreaCountry"/>
+        @setPickupLocation="setPickupLocation" :deliveryAreaCountry="deliveryAreaCountry"
+    />
 
     <AddDeliveryInstructionsPopup v-if="displayAddDeliveryInstructionsPopup" @closePopup="toggleAddDeliveryInstructionsPopup"
-    :addressToAddDeliveryInstructions="addressToAddDeliveryInstructions" @saveDeliveryInstructions="saveDeliveryInstructions"/>
+        :addressToAddDeliveryInstructions="addressToAddDeliveryInstructions" @saveDeliveryInstructions="saveDeliveryInstructions"
+    />
 
 
 </template>
@@ -174,7 +179,12 @@ import '../styles.css';
                 addressToAddDeliveryInstructions: null,
                 addressWithUpdatedDeliveryInstructions: null,
                 notifyOfSelectedAddressBecomingUnselected: 0,
-                selectedCartItems: null
+                selectedCartItems: null,
+                selectedDestination: {type: null, data: null}
+                /*
+                    in the dict above, type is either 'delivery', 'pickup', or null. data is the actual
+                    selectedDeliveryAddress/selectedPickupLocation if applicable, null otherwise.
+                */
             }
         },
 
@@ -505,7 +515,7 @@ import '../styles.css';
                             newItem.shippingAndHandlingPrice = "$"+shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPrice;
                             newItem.tax = "$"+(shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].taxRate/100 * shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPrice);
                             if(this.hasPremium) {
-                                newItem.sAndHPriceSavedWithPremium = "$"+shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPriceSavedWithPremium;
+                                newItem.shdPriceSavedWithPremium = "$"+shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPriceSavedWithPremium;
                             }
                             newItem.productPrice = selectedCartItemsInfo[currItem.id].productPrice;
                             newItem.productPricePerUnit = selectedCartItemsInfo[currItem.id].productPricePerUnit;
@@ -522,10 +532,10 @@ import '../styles.css';
                             newItem.tax= targetCurrency+tax.toFixed(2);
 
                             if(this.hasPremium) {
-                                let sAndHPriceSavedWithPremium = shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPriceSavedWithPremium;
-                                sAndHPriceSavedWithPremium/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
-                                sAndHPriceSavedWithPremium*=this.currencyToDollarMap[targetCurrency]; //convert from USD to targetCurrency
-                                newItem.sAndHPriceSavedWithPremium= targetCurrency+sAndHPriceSavedWithPremium.toFixed(2);
+                                let shdPriceSavedWithPremium = shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPriceSavedWithPremium;
+                                shdPriceSavedWithPremium/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                                shdPriceSavedWithPremium*=this.currencyToDollarMap[targetCurrency]; //convert from USD to targetCurrency
+                                newItem.shdPriceSavedWithPremium= targetCurrency+shdPriceSavedWithPremium.toFixed(2);
                             }
 
                             let productPrice = parseFloat(selectedCartItemsInfo[currItem.id].productPrice.substring(currentCurrency.length));
@@ -642,7 +652,7 @@ import '../styles.css';
                             newItem.shippingAndHandlingPrice = "$"+shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPrice;
                             newItem.tax = "$"+(shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].taxRate/100 * shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPrice);
                             if(this.hasPremium) {
-                                newItem.sAndHPriceSavedWithPremium = "$"+shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPriceSavedWithPremium;
+                                newItem.shdPriceSavedWithPremium = "$"+shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPriceSavedWithPremium;
                             }
                         }
                         else {
@@ -657,10 +667,10 @@ import '../styles.css';
                             newItem.tax= targetCurrency+tax.toFixed(2);
 
                             if(this.hasPremium) {
-                                let sAndHPriceSavedWithPremium = shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPriceSavedWithPremium;
-                                sAndHPriceSavedWithPremium/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
-                                sAndHPriceSavedWithPremium*=this.currencyToDollarMap[targetCurrency]; //convert from USD to targetCurrency
-                                newItem.sAndHPriceSavedWithPremium= targetCurrency+sAndHPriceSavedWithPremium.toFixed(2);
+                                let shdPriceSavedWithPremium = shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPriceSavedWithPremium;
+                                shdPriceSavedWithPremium/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                                shdPriceSavedWithPremium*=this.currencyToDollarMap[targetCurrency]; //convert from USD to targetCurrency
+                                newItem.shdPriceSavedWithPremium= targetCurrency+shdPriceSavedWithPremium.toFixed(2);
                             }
                         }
                     
@@ -735,7 +745,7 @@ import '../styles.css';
                         taxSubtotal+=parseFloat(item.tax.substring(currentCurrency.length))*item.quantity;
 
                         if(this.hasPremium) {
-                            shippingAndHandlingFeesSavedWithPremium+=parseFloat(item.sAndHPriceSavedWithPremium.substring(currentCurrency.length))*item.quantity;
+                            shippingAndHandlingFeesSavedWithPremium+=parseFloat(item.shdPriceSavedWithPremium.substring(currentCurrency.length))*item.quantity;
                         }
 
                         if(item.deals.length>0 && item.deals[0].prices.length==3) {
@@ -794,10 +804,12 @@ import '../styles.css';
 
             async updateDataForSelectedDeliveryAddressOrPickupLocation() {
                 const productIds = [];
+                let itemsToBeOrderedByUser = [];
                 let arrivalTextHeaderToItemListMappings = {...this.arrivalTextHeaderToItemListMappings};
 
                 for(let arrivalTextHeader of Object.keys(arrivalTextHeaderToItemListMappings)) {
                     for(let item of arrivalTextHeaderToItemListMappings[arrivalTextHeader]) {
+                        itemsToBeOrderedByUser.push(item);
                         productIds.push(item.productId);
                     }
                 }
@@ -865,9 +877,6 @@ import '../styles.css';
                         for(let productId of Object.keys(shdPriceAndTaxAndFastestDeliveryTimeOfProducts)) {
                             const currValue = shdPriceAndTaxAndFastestDeliveryTimeOfProducts[productId];
                             let tax = (currValue.taxRate/100 * currValue.shdPrice);
-                            tax/=this.currencyToDollarMap["$"];
-                            tax*=this.currencyToDollarMap[currency];
-
                             shdPriceAndTaxAndFastestDeliveryTimeOfProducts[productId].tax = tax;
                         }
                     }
@@ -900,57 +909,67 @@ import '../styles.css';
                 idsOfProductsAvailableToUser = idsOfProductsAvailableToUser.map(x=>x.productId);
                 idsOfProductsAvailableToUser = new Set(idsOfProductsAvailableToUser);
                 
-
                 let itemsSubtotal = 0;
                 let shippingHandlingAndDeliverySubtotal = 0;
                 let taxSubtotal = 0;
                 let shippingAndHandlingFeesSavedWithPremium = 0;
                 let totalItemDiscounts = 0;
                 let quantityTotal = 0;
+                const arrivalTextHeaders = [];
+                arrivalTextHeaderToItemListMappings = {};
+                itemsToBeOrderedByUser = itemsToBeOrderedByUser.map(item => ({
+                    ...item,
+                    getItAsSoonAs: shdPriceAndTaxAndFastestDeliveryTimeOfProducts[item.productId].fastestDeliveryTimeInHours
+                }));
+                itemsToBeOrderedByUser = itemsToBeOrderedByUser.sort((a,b) => a.getItAsSoonAs - b.getItAsSoonAs);
 
-                for(let arrivalTextHeader of this.arrivalTextHeaders) {
-                    let itemsList = arrivalTextHeaderToItemListMappings[arrivalTextHeader];
-                    for(let i=0; i<itemsList.length; i++) {
-                        const item = itemsList[i];
-                        itemsList[i].getItAsSoonAs = shdPriceAndTaxAndFastestDeliveryTimeOfProducts[item.productId].fastestDeliveryTimeInHours;
-                        if(item.status==='Out of stock') {
-                            //do nothing here
-                        }
-                        else if((idsOfProductsAvailableToUser.has(item.productId)) || (this.selectedDeliveryAddress==null && this.selectedPickupLocation==null)) {
-                            itemsList[i].status = 'Available';
+                for(let item of itemsToBeOrderedByUser) {
+                    delete item.deliveryDate;
+                    const arrivalTextHeader = this.formatArrivalTextHeader(item.getItAsSoonAs);
+                    if(arrivalTextHeader in arrivalTextHeaderToItemListMappings) {
+                        arrivalTextHeaderToItemListMappings[arrivalTextHeader].push(item);
+                    }
+                    else {
+                        arrivalTextHeaderToItemListMappings[arrivalTextHeader] = [item];
+                        arrivalTextHeaders.push(arrivalTextHeader);
+                    }
+
+                    if(item.status==='Out of stock') {
+                        //do nothing here
+                    }
+                    else if((idsOfProductsAvailableToUser.has(item.productId)) || (this.selectedDeliveryAddress==null && this.selectedPickupLocation==null)) {
+                        item.status = 'Available';
+                    }
+                    else {
+                        if(this.selectedDeliveryAddress!==null) {
+                            item.status = 'Does not deliver to selected address';
                         }
                         else {
-                            if(this.selectedDeliveryAddress!==null) {
-                                itemsList[i].status = 'Does not deliver to selected address';
-                            }
-                            else {
-                                itemsList[i].status = 'Does not deliver to selected pickup-location';
-                            }
+                            item.status = 'Does not deliver to selected pickup-location';
                         }
-                        itemsList[i].shippingAndHandlingPrice = currency+shdPriceAndTaxAndFastestDeliveryTimeOfProducts[item.productId].shdPrice;
-                        itemsList[i].tax = currency+shdPriceAndTaxAndFastestDeliveryTimeOfProducts[item.productId].tax;
-                        if(this.hasPremium) {
-                            itemsList[i].sAndHPriceSavedWithPremium = currency+shdPriceAndTaxAndFastestDeliveryTimeOfProducts[item.productId].shdPriceSavedWithPremium;
-                        }
-                        if(item.status==='Available') {
-                            quantityTotal+=item.quantity;
-                            itemsSubtotal+=parseFloat(item.productPrice.substring(currency.length))*item.quantity;
-                            shippingHandlingAndDeliverySubtotal+=shdPriceAndTaxAndFastestDeliveryTimeOfProducts[item.productId].shdPrice*item.quantity;
-                            taxSubtotal+=shdPriceAndTaxAndFastestDeliveryTimeOfProducts[item.productId].tax*item.quantity;
-                            if(this.hasPremium) {
-                                shippingAndHandlingFeesSavedWithPremium+=shdPriceAndTaxAndFastestDeliveryTimeOfProducts[item.productId].shdPriceSavedWithPremium*item.quantity;
-                            }
-                            if(item.deals.length>0 && item.deals[0].prices.length==3) {
-                                if((this.hasPremium==false && item.deals[0].requirement==='PREMIUM')==false) {
-                                    totalItemDiscounts+=parseFloat(item.deals[0].prices[2].substring(currency.length));
-                                }
-                            }
-                        }
-                        
                     }
-                    arrivalTextHeaderToItemListMappings[arrivalTextHeader] = itemsList;
+                    item.shippingAndHandlingPrice = currency+shdPriceAndTaxAndFastestDeliveryTimeOfProducts[item.productId].shdPrice;
+                    item.tax = currency+shdPriceAndTaxAndFastestDeliveryTimeOfProducts[item.productId].tax;
+                    if(this.hasPremium) {
+                        item.shdPriceSavedWithPremium = currency+shdPriceAndTaxAndFastestDeliveryTimeOfProducts[item.productId].shdPriceSavedWithPremium;
+                    }
+                    if(item.status==='Available') {
+                        quantityTotal+=item.quantity;
+                        itemsSubtotal+=parseFloat(item.productPrice.substring(currency.length))*item.quantity;
+                        shippingHandlingAndDeliverySubtotal+=shdPriceAndTaxAndFastestDeliveryTimeOfProducts[item.productId].shdPrice*item.quantity;
+                        taxSubtotal+=shdPriceAndTaxAndFastestDeliveryTimeOfProducts[item.productId].tax*item.quantity;
+                        if(this.hasPremium) {
+                            shippingAndHandlingFeesSavedWithPremium+=shdPriceAndTaxAndFastestDeliveryTimeOfProducts[item.productId].shdPriceSavedWithPremium*item.quantity;
+                        }
+                        if(item.deals.length>0 && item.deals[0].prices.length==3) {
+                            if((this.hasPremium==false && item.deals[0].requirement==='PREMIUM')==false) {
+                                totalItemDiscounts+=parseFloat(item.deals[0].prices[2].substring(currency.length));
+                            }
+                        }
+                    }
                 }
 
+                this.arrivalTextHeaders = [...arrivalTextHeaders];
                 this.arrivalTextHeaderToItemListMappings = {...arrivalTextHeaderToItemListMappings};
                 
                 this.quantityTotal = quantityTotal;
@@ -959,6 +978,7 @@ import '../styles.css';
                 this.shippingHandlingAndDeliverySubtotal = currency+shippingHandlingAndDeliverySubtotal.toFixed(2);
                 this.taxSubtotal = currency+taxSubtotal.toFixed(2);
                 this.shippingAndHandlingFeesSavedWithPremium = currency+shippingAndHandlingFeesSavedWithPremium.toFixed(2);
+                this.priceDifferencesFromSchedulingLater = currency+'0.00';
                 this.orderSubtotal = this.getTotal(
                     this.itemsSubtotal,
                     this.shippingHandlingAndDeliverySubtotal,
@@ -1021,12 +1041,35 @@ import '../styles.css';
 
                         if('deliveryDate' in product) {
                             let priceDifference = product.deliveryDate[2];
-                            const firstChar = priceDifference[0]; //either '+' or '-'
-
-                            priceDifference = parseFloat(priceDifference.substring(currentCurrency.length+1));
+                            let firstChar = priceDifference[0]; //either '+' or '-'
+                            priceDifference = parseFloat(priceDifference.substring(1));
                             priceDifference/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
                             priceDifference*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
-                            product.deliveryDate[2] = firstChar+newCurrency+priceDifference.toFixed(2);
+                            product.deliveryDate[2] = firstChar+priceDifference.toFixed(2);
+
+                            let shdPriceDifference = product.deliveryDate[4];
+                            firstChar = shdPriceDifference[0]; //either '+' or '-'
+                            shdPriceDifference = parseFloat(shdPriceDifference.substring(1));
+                            shdPriceDifference/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                            shdPriceDifference*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
+                            product.deliveryDate[4] = firstChar+shdPriceDifference.toFixed(2);
+
+                            let taxDifference = product.deliveryDate[5];
+                            firstChar = taxDifference[0]; //either '+' or '-'
+                            taxDifference = parseFloat(taxDifference.substring(1));
+                            taxDifference/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                            taxDifference*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
+                            product.deliveryDate[5] = firstChar+taxDifference.toFixed(2);
+
+                            if(this.hasPremium) {
+                                let shdPriceSavedForPremiumDifference = product.deliveryDate[6];
+                                firstChar = shdPriceSavedForPremiumDifference[0]; //either '+' or '-'
+                                shdPriceSavedForPremiumDifference = parseFloat(shdPriceSavedForPremiumDifference.substring(1));
+                                shdPriceSavedForPremiumDifference/=this.currencyToDollarMap[currentCurrency];  //convert from currentCurrency to USD
+                                shdPriceSavedForPremiumDifference*=this.currencyToDollarMap[newCurrency]; //convert from USD to newCurrency
+                                product.deliveryDate[6] = firstChar+shdPriceSavedForPremiumDifference.toFixed(2);
+                            }
+
                         }
                     }
                 }
@@ -1127,14 +1170,29 @@ import '../styles.css';
                     }
 
                     if(selectedDeliveryAddress!==null) {
+                        this.selectedDestination = {
+                            type: "delivery",
+                            data: this.selectedDeliveryAddress
+                        };
                         this.deliveryAreaCountry = selectedDeliveryAddress.country;
                         this.deliveryZipcode = selectedDeliveryAddress.zipCode;
                     }
                     else {
+                        this.selectedDestination = {
+                            type: null,
+                            data: null
+                        };
                         this.deliveryZipcode = null;
                     }
 
                     this.updateDataForSelectedDeliveryAddressOrPickupLocation();
+                }
+                else {
+                    // selectedDeliveryAddressInfo[0] is 'ORIGINAL'
+                    this.selectedDestination = {
+                        type: "delivery",
+                        data: this.selectedDeliveryAddress
+                    };
                 }
             },
 
@@ -1198,14 +1256,28 @@ import '../styles.css';
                             throw new Error('Network response not ok');
                         }
                         this.selectedDeliveryAddress = null;
+                        this.selectedDestination = {
+                            type: null,
+                            data: null
+                        };
                         this.notifyOfSelectedAddressBecomingUnselected++;
                         this.updateDataForSelectedDeliveryAddressOrPickupLocation();
+                    }
+                    else if(this.selectedPickupLocation!==null) {
+                        this.selectedPickupLocation = null;
+                        this.selectedDestination = {
+                            type: null,
+                            data: null
+                        };
                     }
                 }
             },
 
             toggleOrderHasBeenPlaced() {
                 this.orderHasBeenPlaced = !this.orderHasBeenPlaced;
+                if(this.orderHasBeenPlaced) {
+                    console.log(this.arrivalTextHeaderToItemListMappings);
+                }
             },
 
             toggleDisplayDarkScreen() {
@@ -1307,13 +1379,13 @@ import '../styles.css';
                         
                         if(this.hasPremium) {
                             let shippingAndHandlingFeesSavedWithPremium = parseFloat(this.shippingAndHandlingFeesSavedWithPremium.substring(currentCurrency.length));
-                            shippingAndHandlingFeesSavedWithPremium+=differenceInQuantities*parseFloat(product.sAndHPriceSavedWithPremium.substring(currentCurrency.length));
+                            shippingAndHandlingFeesSavedWithPremium+=differenceInQuantities*parseFloat(product.shdPriceSavedWithPremium.substring(currentCurrency.length));
                             this.shippingAndHandlingFeesSavedWithPremium = currentCurrency+shippingAndHandlingFeesSavedWithPremium.toFixed(2);
                         }
 
                         if('deliveryDate' in product) {
                             let priceDiffForProduct = product.deliveryDate[2]
-                            priceDiffForProduct = parseFloat(priceDiffForProduct.substring(currentCurrency.length+1));
+                            priceDiffForProduct = parseFloat(priceDiffForProduct.substring(1));
                             if(product.deliveryDate[2][0]==='-') {
                                 priceDiffForProduct*=-1;
                             }
@@ -1589,10 +1661,18 @@ import '../styles.css';
                 this.deliveryZipcode = newlySetPickupLocation.zipCode;
                 this.displaySelectPickupLocationPopup = false;
                 this.displayDarkScreen = false;
+                this.selectedDestination = {
+                    type: 'pickup',
+                    data: this.selectedPickupLocation
+                };
                 this.updateDataForSelectedDeliveryAddressOrPickupLocation();
             },
 
             unselectPickupLocation() {
+                this.selectedDestination = {
+                    type: null,
+                    data: null
+                };
                 this.selectedPickupLocation = null;
             },
 
@@ -1623,15 +1703,18 @@ import '../styles.css';
 
             updateProductDeliveryDate(info) {
                 const arrivalTextHeader = info.arrivalTextHeader;
-                const id = info.id;
+                const itemIdNotProductId = info.itemIdNotProductId;
                 const newWeekday = info.newWeekday;
                 const newMonthAndDay = info.newMonthAndDay;
                 const newPriceDifference = info.newPriceDifference;
                 const newYear = info.newYear;
+                const newSHDPriceDifference = info.newSHDPriceDifference;
+                const newTaxDifference = info.newTaxDifference;
+                const newSHDPriceSavedForPremiumDifference = info.newSHDPriceSavedForPremiumDifference;
 
                 for(let i=0; i<this.arrivalTextHeaderToItemListMappings[arrivalTextHeader].length; i++) {
                     const product = this.arrivalTextHeaderToItemListMappings[arrivalTextHeader][i];
-                    if(product.id==id) {
+                    if(product.id==itemIdNotProductId) {
                         const currentCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
 
                         let orderSubtotal = this.orderSubtotal;
@@ -1643,29 +1726,29 @@ import '../styles.css';
                         if('deliveryDate' in product) {
                             let originalPriceDifference = product.deliveryDate[2];
                             if(originalPriceDifference[0]==='-') {
-                                originalPriceDifference = parseFloat(originalPriceDifference.substring(currentCurrency.length+1))*product.quantity;
+                                originalPriceDifference = parseFloat(originalPriceDifference.substring(1))*product.quantity;
                                 priceDifferencesFromSchedulingLater+=originalPriceDifference;
                                 orderSubtotal+=originalPriceDifference;
                             }
                             else {
-                                originalPriceDifference = parseFloat(originalPriceDifference.substring(currentCurrency.length+1))*product.quantity;
+                                originalPriceDifference = parseFloat(originalPriceDifference.substring(1))*product.quantity;
                                 priceDifferencesFromSchedulingLater-=originalPriceDifference;
                                 orderSubtotal-=originalPriceDifference;
                             }
                         }
 
                         if(newPriceDifference[0]==='-') {
-                            priceDifferencesFromSchedulingLater-=parseFloat(newPriceDifference.substring(currentCurrency.length+1))*product.quantity;
-                            orderSubtotal-=parseFloat(newPriceDifference.substring(currentCurrency.length+1))*product.quantity;
+                            priceDifferencesFromSchedulingLater-=parseFloat(newPriceDifference.substring(1))*product.quantity;
+                            orderSubtotal-=parseFloat(newPriceDifference.substring(1))*product.quantity;
                         }
                         else {
-                            priceDifferencesFromSchedulingLater+=parseFloat(newPriceDifference.substring(currentCurrency.length+1))*product.quantity;
-                            orderSubtotal+=parseFloat(newPriceDifference.substring(currentCurrency.length+1))*product.quantity;
+                            priceDifferencesFromSchedulingLater+=parseFloat(newPriceDifference.substring(1))*product.quantity;
+                            orderSubtotal+=parseFloat(newPriceDifference.substring(1))*product.quantity;
                         }
 
                         this.priceDifferencesFromSchedulingLater = currentCurrency + priceDifferencesFromSchedulingLater.toFixed(2);
                         this.orderSubtotal = currentCurrency + orderSubtotal.toFixed(2);
-                        product.deliveryDate = [newWeekday, newMonthAndDay, newPriceDifference, newYear];
+                        product.deliveryDate = [newWeekday, newMonthAndDay, newPriceDifference, newYear, newSHDPriceDifference, newTaxDifference, newSHDPriceSavedForPremiumDifference];
                         return;
                     }
                 }
