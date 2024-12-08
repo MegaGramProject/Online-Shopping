@@ -44,6 +44,7 @@ def editPastOrder(request):
     try:
         pastOrderToEdit = PastOrder.objects.get(
             productId=request.data['productId'],
+            optionsChosen = request.data['optionsChosen'],
             customerUsername=request.data['customerUsername'],
             dateTimeOfPurchase=request.data['dateTimeOfPurchase']
         )
@@ -62,6 +63,7 @@ def deletePastOrder(request):
     try:
         pastOrderToDelete = PastOrder.objects.get(
             productId=request.data['productId'],
+            optionsChosen = request.data['optionsChosen'],
             customerUsername=request.data['customerUsername'],
             dateTimeOfPurchase=request.data['dateTimeOfPurchase']
         )
@@ -129,27 +131,27 @@ def getNumBuyersInPastMonthForSpecificOptionsOfManyProducts(request):
         )
 
         output = {}
-        for elem in pastOrdersOfGivenProductsInPastMonth:
-            productId = elem['productId']
-            listOfOptionsChosen = elem['optionsChosen']
-            customerUsername = elem['customerUsername']
+        for pastOrder in pastOrdersOfGivenProductsInPastMonth:
+            productId = pastOrder['productId']
+            optionsChosen = pastOrder['optionsChosen']
+            customerUsername = pastOrder['customerUsername']
 
             textOptionsListForProductId = productIdToTextOptionsListMappings.get(productId)
 
-            for optionsChosen in listOfOptionsChosen:
-                if optionsChosen in textOptionsListForProductId:
-                    if productId not in output:
-                        output[productId] = []
-                    
-                    optionsChosenFound = False
-                    for outputElem in output[productId]:
-                        if outputElem[0] == optionsChosen:
-                            outputElem[1].add(customerUsername)
-                            optionsChosenFound = True
-                            break
-                    
-                    if not optionsChosenFound:
-                        output[productId].append([optionsChosen, {customerUsername}])
+            if optionsChosen in textOptionsListForProductId:
+                if productId not in output:
+                    output[productId] = []
+                
+                optionsChosenFound = False
+                for outputElem in output[productId]:
+                    if outputElem[0] == optionsChosen:
+                        outputElem[1].add(customerUsername)
+                        optionsChosenFound = True
+                        break
+                
+                if not optionsChosenFound:
+                    output[productId].append([optionsChosen, {customerUsername}])
+            
 
         for productId, optionsList in output.items():
             for elem in optionsList:
@@ -201,7 +203,7 @@ def editProductRatingAndReview(request):
     except ProductRatingAndReview.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
     
-    productRatingAndReviewToEdit = PastOrderSerializer(productRatingAndReviewToEdit, data=request.data, partial=True)
+    productRatingAndReviewToEdit = ProductRatingAndReviewSerializer(productRatingAndReviewToEdit, data=request.data, partial=True)
     if productRatingAndReviewToEdit.is_valid():
         productRatingAndReviewToEdit.save()
         return Response(productRatingAndReviewToEdit.data)
@@ -256,6 +258,7 @@ def getPurchasesOfUserWithNoOr4PlusRating(request, username):
 
         idsOfPurchasedProductsWithRatings = set(
             ProductRatingAndReview.objects
+            .filter(reviewer_username=username)
             .values_list('product_id', flat=True)
             .distinct()
         )

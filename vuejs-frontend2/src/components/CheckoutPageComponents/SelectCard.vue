@@ -6,6 +6,7 @@
         
         <p :style="{fontSize:'0.9em', marginTop:'0em', maxWidth: '15%', position: 'absolute', left: '55.5%'}">{{ fullNameOnCard }}</p>
         <p :style="{fontSize:'0.9em', marginTop:'0em', maxWidth: '15%', position: 'absolute', left: '89.5%'}">{{cardExpiration}}</p>
+        <img @click="removeThisCard" :src="trashIcon" :style="{height: '1em', width: '1em', cursor: 'pointer', position: 'absolute', left: '-1%'}"/>
     </div>
 </template>
 
@@ -16,6 +17,7 @@ import mastercard from '@/assets/images/mastercard.png';
 import chaseCard from '@/assets/images/chaseCard.png';
 import amexCard from '@/assets/images/amexCard.png';
 import discoverCard from '@/assets/images/discoverCard.avif';
+import trashIcon from '@/assets/images/trashIcon.png';
 
     export default {
         props: {
@@ -36,6 +38,7 @@ import discoverCard from '@/assets/images/discoverCard.avif';
                 chaseCard,
                 amexCard,
                 discoverCard,
+                trashIcon,
                 cardImages: {
                     "Visa": visaCard,
                     "MasterCard": mastercard,
@@ -43,7 +46,13 @@ import discoverCard from '@/assets/images/discoverCard.avif';
                     "American Express": amexCard,
                     "Discover": discoverCard
                 },
-                mutableIsSelected: this.isSelected
+                mutableIsSelected: this.isSelected,
+            }
+        },
+
+        methods: {
+            removeThisCard() {
+                this.$emit("removeThisCard", this.index);
             }
         },
 

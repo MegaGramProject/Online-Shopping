@@ -24,8 +24,11 @@ public class LocalCorsConfiguration {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/graphql", config);
         source.registerCorsConfiguration("/getFastestDeliveryTimesForProducts", config);
-        source.registerCorsConfiguration("/getShippingPricesAndTaxesAndShortestDeliveryTimesOfProducts", config);
+        source.registerCorsConfiguration("/getFactoryAddressesAndShippingPricesAndTaxesAndShortestDeliveryTimesOfProducts", config);
         source.registerCorsConfiguration("/getLaterSchedulingOptionsForProduct", config);
+        source.registerCorsConfiguration("/getDataOfManyShoppingCartItems", config);
+        source.registerCorsConfiguration("/deleteManyItemsFromShoppingCart", config);
+        source.registerCorsConfiguration("/addManyShoppingCartItems", config);
 
         return new CorsFilter(source);
     }

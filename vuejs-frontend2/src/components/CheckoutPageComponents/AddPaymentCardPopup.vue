@@ -9,80 +9,25 @@
             <img @click="closePopup" :src="thinGrayXIcon" class="iconToBeAdjustedForDarkMode" :style="{cursor: 'pointer', height: '1.4em', width: '1.4em'}"/>
         </div>
 
+        <div id="cardElement" :style="{width: '80%', marginLeft: '2em'}">
+        </div>
 
-        <div :style="{display: 'flex', borderStyle: 'solid', borderColor: 'lightgray', borderTop: 'none', borderLeft: 'none',
-        borderRight: 'none', paddingBottom:'3em', justifyContent: 'center', alignItems: 'start', gap: '1em'}">
+        <div :style="{display: 'flex', alignItems: 'center', gap: '2em', position: 'relative', marginLeft: '2em', width: '80%'}">
+            <b>Name on card</b>
+            <textarea v-model="nameOnCard"
+            :style="{fontFamily: 'Arial', resize: 'none', paddingLeft: '1em', paddingTop: '0.7em', width: '100%'}"></textarea>
+        </div>
 
-            <div :style="{display: 'flex', flexDirection: 'column', gap: '0.6em', borderStyle: 'solid', borderTop: 'none',
-            borderLeft: 'none', borderBottom: 'none', borderColor: 'lightgray', paddingRight:'5em', borderWidth:'0.08em'}">
-                <div :style="{display: 'flex', alignItems: 'center', gap: '1em', position: 'relative'}">
-                    <b>Card number</b>
-                    <textarea @input="onChangeOfCardNumberTextarea" v-model="cardNumber"
-                    :style="{fontFamily: 'Arial', resize: 'none', paddingLeft: '1em', paddingTop: '0.7em'}"></textarea>
-                </div>
-                <div :style="{display: 'flex', alignItems: 'center', gap: '1em', position: 'relative', marginLeft: '-0.4em'}">
-                    <b>Name on card</b>
-                    <textarea v-model="nameOnCard"
-                    :style="{fontFamily: 'Arial', resize: 'none', paddingLeft: '1em', paddingTop: '0.7em'}"></textarea>
-                </div>
-                <div :style="{display: 'flex', alignItems: 'center', gap: '1em', position: 'relative', marginLeft: '-1em'}">
-                    <b>Expiration date</b>
-                    <select v-model="cardExpirationMonth" :style="{backgroundColor: '#ededed', padding: '0.3em 0.3em', cursor: 'pointer'}">
-                        <option value="">Month</option>
-                        <option value="01">01</option>
-                        <option value="02">02</option>
-                        <option value="03">03</option>
-                        <option value="04">04</option>
-                        <option value="05">05</option>
-                        <option value="06">06</option>
-                        <option value="07">07</option>
-                        <option value="08">08</option>
-                        <option value="09">09</option>
-                        <option value="10">10</option>
-                        <option value="11">11</option>
-                        <option value="12">12</option>
-                    </select>
-
-                    <select v-model="cardExpirationYear" :style="{backgroundColor: '#ededed', padding: '0.3em 0.3em', cursor: 'pointer'}">
-                        <option value="">Year</option>
-                        <option value="2024">2024</option>
-                        <option value="2025">2025</option>
-                        <option value="2026">2026</option>
-                        <option value="2027">2027</option>
-                        <option value="2028">2028</option>
-                        <option value="2029">2029</option>
-                        <option value="2030">2030</option>
-                        <option value="2031">2031</option>
-                        <option value="2032">2032</option>
-                        <option value="2033">2033</option>
-                        <option value="2034">2034</option>
-                        <option value="2035">2035</option>
-                        <option value="2036">2036</option>
-                        <option value="2037">2037</option>
-                        <option value="2038">2038</option>
-                        <option value="2039">2039</option>
-                        <option value="2040">2040</option>
-                        <option value="2041">2041</option>
-                        <option value="2042">2042</option>
-                        <option value="2043">2043</option>
-                        <option value="2044">2044</option>
-                    </select>
-
-                </div>
+        <div :style="{display: 'flex', flexDirection: 'column', gap: '0.75em', fontSize: '0.9em', alignItems: 'center'}">
+            <p :style="{maxWidth:'18em'}">Megagram accepts all major credit and debit cards:</p>
+            <div :style="{display: 'flex', alignItems: 'center', gap:'0.85em', width: '18em', marginBottom:'0em', marginTop:'-1em'}">
+                <img :src="amexCard" :style="{height: '5.5em', width: '19%', objectFit: 'contain', pointerEvents:'none'}"/>
+                <img :src="chaseCard" :style="{height: '5.5em', width: '19%', objectFit: 'contain', pointerEvents:'none'}"/>
+                <img :src="discoverCard" :style="{height: '5.5em', width: '19%', objectFit: 'contain', pointerEvents:'none'}"/>
+                <img :src="mastercard" :style="{height: '5.5em', width: '19%', objectFit: 'contain', pointerEvents:'none'}"/>
+                <img :src="visaCard" :style="{height: '5.5em', width: '19%', objectFit: 'contain', pointerEvents:'none'}"/>
             </div>
-
-            <div :style="{display: 'flex', flexDirection: 'column', gap: '0.75em', fontSize: '0.9em'}">
-                <p :style="{maxWidth:'18em'}">Megagram accepts all major credit and debit cards:</p>
-                <div :style="{display: 'flex', alignItems: 'center', gap:'0.85em', width: '18em', marginBottom:'0em', marginTop:'-1em'}">
-                    <img :src="amexCard" :style="{height: '5.5em', width: '19%', objectFit: 'contain', pointerEvents:'none'}"/>
-                    <img :src="chaseCard" :style="{height: '5.5em', width: '19%', objectFit: 'contain', pointerEvents:'none'}"/>
-                    <img :src="discoverCard" :style="{height: '5.5em', width: '19%', objectFit: 'contain', pointerEvents:'none'}"/>
-                    <img :src="mastercard" :style="{height: '5.5em', width: '19%', objectFit: 'contain', pointerEvents:'none'}"/>
-                    <img :src="visaCard" :style="{height: '5.5em', width: '19%', objectFit: 'contain', pointerEvents:'none'}"/>
-                </div>
-                <p :style="{marginTop:'-1em'}">& more!</p>
-            </div>
-
+            <p :style="{marginTop:'-1em'}">& more!</p>
         </div>
 
         <div class="popupHeader" :style="{backgroundColor: '#ededed', marginTop:'-1em', borderRadius: '0em 0em 0.8em 0.8em',
@@ -90,7 +35,7 @@
         gap: '1em'}">
             <button @click="closePopup" :style="{padding: '0.5em 1em', backgroundColor: 'white', cursor: 'pointer',
             borderRadius:'2em', borderWidth:'0.07em'}">Cancel</button>
-            <button v-if="fieldsAreValidated()" @click="addYourCard" :style="{border: 'none', padding: '0.7em 1.2em', cursor: 'pointer', borderRadius: '2em',
+            <button @click="addYourCard" :style="{border: 'none', padding: '0.7em 1.2em', cursor: 'pointer', borderRadius: '2em',
             backgroundColor:'#ffe359'}">Add your card</button>
         </div>
 
@@ -106,8 +51,11 @@ import mastercard from '@/assets/images/mastercard.png';
 import thinGrayXIcon from '@/assets/images/thinGrayXIcon.png';
 import visaCard from '@/assets/images/visaCard.png';
 
-
     export default {
+
+        props: {
+            stripeCustomerId: String
+        },
 
         data() {
             return {
@@ -120,8 +68,19 @@ import visaCard from '@/assets/images/visaCard.png';
                 cardNumber: "",
                 nameOnCard: "",
                 cardExpirationMonth: "",
-                cardExpirationYear: ""
+                cardExpirationYear: "",
+                stripe: null,
+                cardElement: null,
+                addYourCardMethodIsRunning: false
             }
+        },
+
+        mounted() {
+            /* global Stripe */
+            this.stripe = Stripe('pk_test_51QTEYTEAJQccq0qD0jJ7bdyFvNWWIr4tN7Z1Q2FMmGWRP3Qs3XequpT0YoeqnI4xr3MdazAsWODlW4LfruaShaYD00ydVl1AkC'); //no security concerns here, since this is the publishable key!
+            const elements = this.stripe.elements();
+            this.cardElement = elements.create('card');
+            this.cardElement.mount('#cardElement');
         },
 
         methods: {
@@ -215,26 +174,76 @@ import visaCard from '@/assets/images/visaCard.png';
                     }
                 }
 
-                return "Unknown Card Company";
+                return "Lesser Known Card Company";
             },
 
             async addYourCard() {
-                const cardNumberWithoutSpaces = this.cardNumber.replaceAll(" ", "");
-                const newCardOfUser = {
-                    id: Math.floor(Math.random()*5000)+123,
-                    cardCompany: this.getCardCompany(),
-                    cardType: ["Debit", "Credit", "Prepaid"][Math.floor(Math.random()*3)],
-                    last4Digits: cardNumberWithoutSpaces.slice(-4),
-                    fullNameOnCard: this.nameOnCard,
-                    cardExpiration: `${this.cardExpirationMonth}/${this.cardExpirationYear}`
+                if(this.addYourCardMethodIsRunning==true) {
+                    false;
+                }
+
+                this.addYourCardMethodIsRunning = true;
+                const response = await fetch(`http://localhost:8036/createSetupIntent`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        customerId: this.stripeCustomerId
+                    })
+                });
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+                const { clientSecret } = await response.json();
+
+                const {paymentMethod, error: paymentMethodError} = await this.stripe.createPaymentMethod({
+                    type: 'card',
+                    card: this.cardElement,
+                    billing_details: {
+                        name: this.nameOnCard
+                    }
+                });
+
+                if (paymentMethodError) {
+                    console.error(paymentMethodError.message);
+                    return;
+                }
+
+                const newPaymentMethod = paymentMethod;
+
+                const { _, error } = await this.stripe.confirmSetupIntent(clientSecret, {
+                    payment_method: newPaymentMethod.id
+                });
+
+                _;
+                if(error) {
+                    console.error(error.message);
+                    return;
+                }
+
+                const cardBrandMappings = {
+                    visa: 'Visa',
+                    mastercard: 'Mastercard',
+                    amex: 'Amex',
+                    discover: 'Discover',
+                    jcb: 'Jcb',
+                    diners_club: 'Diners Club',
+                    unionpay: 'UnionPay',
+                    unknown: 'Unknown'
                 };
 
-                this.cardNumber = "";
-                this.nameOnCard = "";
-                this.cardExpirationMonth = "";
-                this.cardExpirationYear = "";
+                const newCardOfUser = {
+                    id: newPaymentMethod.id,
+                    cardCompany: cardBrandMappings[newPaymentMethod.card.brand],
+                    cardType: newPaymentMethod.card.funding.charAt(0).toUpperCase() + newPaymentMethod.card.funding.slice(1),
+                    last4Digits: newPaymentMethod.card.last4,
+                    fullNameOnCard: newPaymentMethod.billing_details.name,
+                    cardExpiration: `${newPaymentMethod.card.exp_month}/${newPaymentMethod.card.exp_year}`,
+                    isSelected: false
+                };
 
+                this.nameOnCard = "";
                 this.$emit("addPaymentCard", newCardOfUser);
+                this.addYourCardMethodIsRunning = false;
             }
         }
 

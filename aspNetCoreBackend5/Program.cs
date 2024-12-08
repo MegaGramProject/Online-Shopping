@@ -14,7 +14,7 @@ builder.Services.AddCors(options =>
 
 
 builder.Services.AddControllers();
-builder.Services.AddSingleton(new GoogleCloudStorageService("/Users/rishavr/Downloads/megagram-428802-476264306d3b.json"));
+builder.Services.AddSingleton(new GoogleCloudStorageService("/Users/rishavr/Downloads/megagram-428802-9481f000861d.json"));
 
 var app = builder.Build();
 

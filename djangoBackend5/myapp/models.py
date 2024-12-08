@@ -6,11 +6,12 @@ class PastOrder(models.Model):
     dateTimeOfPurchase = models.DateTimeField()
     optionsChosen = models.JSONField()
     countryOfPurchase = models.CharField(max_length=100)
+    quantity = models.IntegerField()
 
     class Meta:
         app_label = 'use-default'
         db_table = 'pastOrders'
-        unique_together = (('productId', 'customerUsername', 'dateTimeOfPurchase'))
+        unique_together = (('productId', 'optionsChosen', 'customerUsername', 'dateTimeOfPurchase'))
     
 
 

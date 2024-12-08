@@ -215,6 +215,10 @@ import showerCurtains from '@/assets/images/showerCurtains.jpg';
                 this.productSchedules[product.id] = [this.defaultWeekday, this.defaultMonthAndDay, '-0', this.defaultYear];
                 this.productToDisplayOtherSchedulingOptionsMappings[product.id] = false;
             }
+
+            if(this.products.length>0) {
+                this.defaultFactoryAddress = this.products[0].factoryAddress;
+            }
         },
 
         data() {
@@ -249,7 +253,8 @@ import showerCurtains from '@/assets/images/showerCurtains.jpg';
                     "CN¥": 7.1198,   // CNY - Chinese Yuan (for China)
                     "MX$": 19.86,      // MXN - Mexican Peso (for Mexico)
                     "£": 0.7709          // GBP - British Pound (for United Kingdom)
-                }
+                },
+                defaultFactoryAddress: ""
             }
         },
 
@@ -382,6 +387,7 @@ import showerCurtains from '@/assets/images/showerCurtains.jpg';
                 /*
                     above is a list of 5 chronologically-ordered items, with each item looking something like this:
                     {
+                        factoryAddress: "1234 Industrial Park Road, Building 5, Suite 200, Springfield, IL 62704, United States",
                         year: 2025,
                         weekday: 'Tuesday',
                         monthAndDay: 'Dec 3',
@@ -454,6 +460,7 @@ import showerCurtains from '@/assets/images/showerCurtains.jpg';
                 const newYear = this.productToOtherSchedulingOptionsMappings[product.id][indexOfNewScheduleAheadDate].year;
                 const newSHDPriceDifference = this.productToOtherSchedulingOptionsMappings[product.id][indexOfNewScheduleAheadDate].shdPriceDifference;
                 const newTaxDifference = this.productToOtherSchedulingOptionsMappings[product.id][indexOfNewScheduleAheadDate].taxDifference;
+                const newFactoryAddress = this.productToOtherSchedulingOptionsMappings[product.id][indexOfNewScheduleAheadDate].factoryAddress;
                 let newSHDPriceSavedForPremiumDifference;
                 if(this.hasPremium) {
                     newSHDPriceSavedForPremiumDifference = this.productToOtherSchedulingOptionsMappings[product.id][indexOfNewScheduleAheadDate].shdPriceSavedWithPremiumDifference;
@@ -470,7 +477,8 @@ import showerCurtains from '@/assets/images/showerCurtains.jpg';
                         newYear: newYear,
                         newSHDPriceDifference: newSHDPriceDifference,
                         newTaxDifference: newTaxDifference,
-                        newSHDPriceSavedForPremiumDifference: newSHDPriceSavedForPremiumDifference
+                        newSHDPriceSavedForPremiumDifference: newSHDPriceSavedForPremiumDifference,
+                        newFactoryAddress: newFactoryAddress
                     }
                 );
             },
@@ -507,7 +515,8 @@ import showerCurtains from '@/assets/images/showerCurtains.jpg';
                             newYear: this.defaultYear,
                             newSHDPriceDifference: '-0',
                             newTaxDifference: '-0',
-                            newSHDPriceSavedForPremiumDifference: '-0'
+                            newSHDPriceSavedForPremiumDifference: '-0',
+                            newFactoryAddress: this.defaultFactoryAddress
                         }
                     );
                 }

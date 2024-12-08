@@ -8,7 +8,7 @@
             <div :style="{display: 'flex', flexDirection: 'column', borderStyle: 'solid', borderColor: 'lightgray',
             padding: '1em 1em', gap: '1em'}">
                 <h4>Your credit and debit cards</h4>
-                <div :style="{display: 'flex', width: '100%', justifyContent: 'end', gap: '22%',
+                <div v-if="cardsOfUser.length>0" :style="{display: 'flex', width: '100%', justifyContent: 'end', gap: '22%',
                 color: 'gray', fontSize:'0.9em', marginTop:'-1em'}">
                     <p>Name on card</p>
                     <p :style="{marginRight:'1em'}">Expires on</p>
@@ -16,7 +16,7 @@
                 <SelectCard v-for="(card, index) in cardsOfUser" :key="card.id" :index="index"
                 :cardType="card.cardType" :last4Digits="card.last4Digits" :fullNameOnCard="card.fullNameOnCard"
                 :cardExpiration="card.cardExpiration" :isSelected="index==0 && card.isSelected==true"
-                @toggleSelectCard="toggleSelectCard" :cardCompany="card.cardCompany"
+                @toggleSelectCard="toggleSelectCard" :cardCompany="card.cardCompany" @removeThisCard="removeCard"
                 />
                 <div :style="{display: 'flex', alignItems: 'center', paddingLeft: '1em', gap: '1em'}">
                     <img @click="showAddPaymentCardPopup" :src="plusIcon" class="iconToBeAdjustedForDarkMode" :style="{height: '1.2em', width: '1.2em', cursor: 'pointer'}">
@@ -87,7 +87,9 @@ import SelectCard from './SelectCard.vue';
                 invalidPromoCode: false,
                 promoCodeInput: "",
                 promoCodeMatches: [],
-                promoCodesAlreadyApplied: new Set()
+                promoCodesAlreadyApplied: new Set(),
+                stripeCustomerId: null,
+                paymentMethods: []
             }
         },
 
@@ -99,56 +101,125 @@ import SelectCard from './SelectCard.vue';
 
         methods: {
             async fetchCardsOfUser() {
-                //make API-request to get cards of user
-                let cardsOfUser = [
-                    {
-                        id: 0,
-                        cardCompany: "DasherDirect",
-                        cardType: "Prepaid",
-                        last4Digits: "3506",
-                        fullNameOnCard: "Rishav Ray",
-                        cardExpiration: "05/2025",
-                        isSelected: true
-                    },
-                    {
-                        id: 1,
-                        cardCompany: "Visa",
-                        cardType: "Credit",
-                        last4Digits: "4800",
-                        fullNameOnCard: "Rishav Ray",
-                        cardExpiration: "07/2026"
-                    },
-                    {
-                        id: 2,
-                        cardCompany: "Discover",
-                        cardType: "Debit",
-                        last4Digits: "1155",
-                        fullNameOnCard: "Rishav Ray",
-                        cardExpiration: "01/2026"
+                const response = await fetch(`http://localhost:8036/listStripePaymentMethodsOfUser?username=${this.authenticatedUsername}`);
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+                const stripeInfoOfUser = await response.json();
+                this.stripeCustomerId = stripeInfoOfUser.customerId;
+                this.$emit('giveParentTheStripeCustomerId', this.stripeCustomerId);
+                this.paymentMethods = stripeInfoOfUser.paymentMethods;
+
+                const cardBrandMappings = {
+                    visa: 'Visa',
+                    mastercard: 'Mastercard',
+                    amex: 'Amex',
+                    discover: 'Discover',
+                    jcb: 'Jcb',
+                    diners_club: 'Diners Club',
+                    unionpay: 'UnionPay',
+                    unknown: 'Unknown'
+                };
+
+                let cardsOfUser = [];
+                let indexOfSelectedCard = -1;
+                for(let i=0; i<this.paymentMethods.length; i++) {
+                    const paymentMethod = this.paymentMethods[i];
+                    if(paymentMethod.isDefault==true) {
+                        indexOfSelectedCard = i;
                     }
-                ];
-                this.cardsOfUser = cardsOfUser;
-                this.$emit("notifyParentOfSelectedCard", this.cardsOfUser[0]);
+                    cardsOfUser.push({
+                        id: paymentMethod.id,
+                        cardCompany: cardBrandMappings[paymentMethod.card.brand],
+                        cardType: paymentMethod.card.funding.charAt(0).toUpperCase() + paymentMethod.card.funding.slice(1),
+                        last4Digits: paymentMethod.card.last4,
+                        fullNameOnCard: paymentMethod.billing_details.name,
+                        cardExpiration: `${paymentMethod.card.exp_month}/${paymentMethod.card.exp_year}`,
+                        isSelected: paymentMethod.isDefault
+                    })
+                }
+
+                if(indexOfSelectedCard>0) {
+                    const selectedCard = cardsOfUser[indexOfSelectedCard];
+                    cardsOfUser.splice(indexOfSelectedCard, 1);
+                    cardsOfUser.splice(0, 0, selectedCard);
+                }
+                this.cardsOfUser = [...cardsOfUser];
+                if(indexOfSelectedCard>-1) {
+                    this.$emit("notifyParentOfSelectedCard", this.cardsOfUser[indexOfSelectedCard]);
+                }
             },
 
-            toggleSelectCard(indexOfCardToToggle) {
+            async toggleSelectCard(indexOfCardToToggle) {
                 if(indexOfCardToToggle==0) {
-                    this.cardsOfUser[0].isSelected = !this.cardsOfUser[0].isSelected;
-                    if(this.cardsOfUser[0].isSelected) {
+                    if(this.cardsOfUser[0].isSelected==false) {
+                        const response = await fetch('http://localhost:8036/setDefaultPayment', {
+                            method: 'PATCH',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                customerId: this.stripeCustomerId,
+                                paymentMethodID: this.cardsOfUser[indexOfCardToToggle].id
+                            })
+                        });
+                        if(!response.ok) {
+                            throw new Error('Network response not ok');
+                        }
+                        this.cardsOfUser[0].isSelected = true;
                         this.$emit("notifyParentOfSelectedCard", this.cardsOfUser[0]);
                     }
                     else {
+                        const response = await fetch('http://localhost:8036/setDefaultPayment', {
+                            method: 'PATCH',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                customerId: this.stripeCustomerId,
+                                paymentMethodID: null
+                            })
+                        });
+                        if(!response.ok) {
+                            throw new Error('Network response not ok');
+                        }
+                        this.cardsOfUser[0].isSelected = false;
                         this.$emit("notifyParentOfSelectedCard", null);
                     }
                 }
                 else {
-                    delete this.cardsOfUser[0].isSelected;
+                    const response = await fetch('http://localhost:8036/setDefaultPayment', {
+                        method: 'PATCH',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            customerId: this.stripeCustomerId,
+                            paymentMethodID: this.cardsOfUser[indexOfCardToToggle].id
+                        })
+                    });
+                    if(!response.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    this.cardsOfUser[0].isSelected = false;
                     const newlySelectedCard = this.cardsOfUser[indexOfCardToToggle];
                     newlySelectedCard.isSelected = true;
                     this.cardsOfUser.splice(indexOfCardToToggle, 1);
                     this.cardsOfUser.splice(0, 0, newlySelectedCard);
                     this.$emit("notifyParentOfSelectedCard", newlySelectedCard);
                 }
+
+            },
+
+            async removeCard(indexOfCardToRemove) {
+                const cardToRemove = this.cardsOfUser[indexOfCardToRemove];
+                const paymentMethodId = cardToRemove.id;
+                
+                const response = await fetch('http://localhost:8036/removePaymentMethod', {
+                    method: 'DELETE',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        paymentMethodId: paymentMethodId
+                    })
+                });
+                if(!response.ok) {
+                    throw new Error('Network response not ok');
+                }
+                this.cardsOfUser.splice(indexOfCardToRemove, 1);
             },
 
             toggleIsMinimized() {

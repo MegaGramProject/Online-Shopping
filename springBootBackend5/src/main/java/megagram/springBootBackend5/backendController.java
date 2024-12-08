@@ -19,6 +19,7 @@ import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -91,6 +92,42 @@ public class backendController {
         return true;
     }
 
+    @PostMapping("/getDataOfManyShoppingCartItems")
+    public ResponseEntity<List<ShoppingCart>> getDataOfManyShoppingCartItems(@RequestBody Map<String, List<Integer>> request) {
+        if(request.containsKey("ids")) {
+            List<Integer> ids = request.get("ids");
+            List<ShoppingCart> output = shoppingCartRepository.findByListOfIds(ids);
+            return new ResponseEntity<>(output, HttpStatus.OK);
+        }
+        else {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @DeleteMapping("/deleteManyItemsFromShoppingCart")
+    public ResponseEntity<Integer> deleteManyItemsFromShoppingCart(@RequestBody Map<String, List<Integer>> request) {
+        if(request.containsKey("ids")) {
+            List<Integer> ids = request.get("ids");
+            int numberOfDeletedRows = shoppingCartRepository.deleteByListOfIds(ids);
+            return new ResponseEntity<>(numberOfDeletedRows, HttpStatus.OK);
+        }
+        else {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PostMapping("/addManyShoppingCartItems")
+    public ResponseEntity<Integer> addManyShoppingCartItems(@RequestBody Map<String, List<ShoppingCart>> request) {
+        if(request.containsKey("listOfCartItemsToAdd")) {
+            List<ShoppingCart> listOfCartItemsToAdd = request.get("listOfCartItemsToAdd");
+            List<ShoppingCart> savedItems = shoppingCartRepository.saveAll(listOfCartItemsToAdd);
+            return new ResponseEntity<>(savedItems.size(), HttpStatus.OK);
+        }
+        else {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
     @QueryMapping
     public List<ProductDeliveryTimeAndPrice> getAllProductDeliveryTimesAndPrices() {
         List<ProductDeliveryTimeAndPrice> allProductDeliveryTimesAndPrices = productDeliveryTimeAndPriceRepository.findAll();
@@ -145,8 +182,8 @@ public class backendController {
         }
     }
 
-    @PostMapping("/getShippingPricesAndTaxesAndShortestDeliveryTimesOfProducts")
-    public ResponseEntity<HashMap<String, HashMap<String, Double>>> getShippingPricesAndTaxesAndShortestDeliveryTimesOfProducts(@RequestBody HashMap<String, Object> request) {
+    @PostMapping("/getFactoryAddressesAndShippingPricesAndTaxesAndShortestDeliveryTimesOfProducts")
+    public ResponseEntity<HashMap<String, HashMap<String, Object>>> getShippingPricesAndTaxesAndShortestDeliveryTimesOfProducts(@RequestBody HashMap<String, Object> request) {
         if(request.containsKey("productIds") && request.containsKey("destinationAddress")) {
             List<String> productIds = (List<String>) request.get("productIds");
             String destinationAddress = (String) request.get("destinationAddress");
@@ -160,10 +197,11 @@ public class backendController {
                 allDeliveryTimesAndPricesOfProducts =  productDeliveryTimeAndPriceRepository.getAllPremiumDeliveryTimesAndPricesOfProducts(productIds);
             }
 
-            HashMap<String, HashMap<String, Double>> shdPriceAndTaxAndQuickestDeliveryTimeForProducts = new HashMap<String, HashMap<String, Double>>();
+            HashMap<String, HashMap<String, Object>> shdPriceAndTaxAndQuickestDeliveryTimeForProducts = new HashMap<String, HashMap<String, Object>>();
             /*
                 the dict above is structured as such: the keys are productIds
                 and values are dicts such as the following: {
+                    factoryAddress: "1234 Industrial Park Road, Building 5, Suite 200, Springfield, IL 62704, United States",
                     fastestDeliveryTimeInHours: 120,
                     shdPrice: 123,
                     shdPriceSavedWithPremium: 12, //this key exists if hasPremium is true
@@ -188,19 +226,20 @@ public class backendController {
 
                 double deliveryTimeInHours = calculateDeliveryTime(factoryAddress, destinationAddress, timeFormulaForDelivery);
                 double shdPrice = calculateSHDPrice(factoryAddress, destinationAddress, shdPriceFormula);
-                HashMap<String, Double> relevantProductInfo = new HashMap<String, Double>();
+                HashMap<String, Object> relevantProductInfo = new HashMap<String, Object>();
                 relevantProductInfo.put("fastestDeliveryTimeInHours", deliveryTimeInHours);
                 relevantProductInfo.put("shdPrice", shdPrice);
                 if(hasPremium) {
                     relevantProductInfo.put("shdPriceSavedWithPremium", shdPriceSavedWithPremium);
                 }
                 relevantProductInfo.put("taxRate", taxRate);
+                relevantProductInfo.put("factoryAddress", factoryAddress);
 
                 if(!shdPriceAndTaxAndQuickestDeliveryTimeForProducts.containsKey(productId)) {
                     shdPriceAndTaxAndQuickestDeliveryTimeForProducts.put(productId, relevantProductInfo);
                 }
                 else {
-                    double fastestDeliveryTimeInHours = shdPriceAndTaxAndQuickestDeliveryTimeForProducts.get(productId).get("fastestDeliveryTimeInHours");
+                    double fastestDeliveryTimeInHours = (double) shdPriceAndTaxAndQuickestDeliveryTimeForProducts.get(productId).get("fastestDeliveryTimeInHours");
                     if(deliveryTimeInHours < fastestDeliveryTimeInHours) {
                         shdPriceAndTaxAndQuickestDeliveryTimeForProducts.put(productId, relevantProductInfo);
                     }
@@ -316,6 +355,7 @@ public class backendController {
                 the output is a list of 5 chronologically-ordered items(for each of the elements in nextFiveDatesAfterDefaultDeliveryDate),
                 with each item looking something like this:
                     {
+                        factoryAddress: "1234 Industrial Park Road, Building 5, Suite 200, Springfield, IL 62704, United States",
                         year: 2025,
                         weekday: 'Tuesday',
                         monthAndDay: 'Dec 3',
@@ -373,6 +413,7 @@ public class backendController {
                         relevantInfo.put("shdPriceSavedWithPremium", convertDifferenceFromDoubleToString(shdPriceSavedWithPremium));
                     }
                     relevantInfo.put("priceDifference", convertDifferenceFromDoubleToString(priceDifference));
+                    relevantInfo.put("factoryAddress", factoryAddress);
                     
                     for(int i = outputIndex; i<5; i++) {
                         if(output[i]==null) {

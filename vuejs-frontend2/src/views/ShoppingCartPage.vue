@@ -515,7 +515,7 @@ import '../styles.css';
 
                     An example of key-value pair in the dict: "dfe93de6-1eac-4ea7-ba9b-cec5528325a1"-> "Color"
                     */
-
+                    
                     const response8b = await fetch('http://localhost:8031/getSpecificImagesOfProductOptionsForMany', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},

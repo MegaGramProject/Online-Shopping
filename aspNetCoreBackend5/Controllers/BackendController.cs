@@ -107,13 +107,12 @@ public class BackendController : ControllerBase
         return Ok(mainProductImagesOfProducts);
     }
 
+
     [HttpPost("getSpecificImagesOfProductOptionsForMany")]
     public IActionResult getSpecificImagesOfProductOptionsForMany([FromBody] BodyForSpecificImagesOfProductOptionsForMany requestBody) {
         var specificImagesOfProductOptionsForMany = _gcsService.getSpecificImagesOfProductOptionsForMany(requestBody.productIdToOptionsListMappingsAsJE, requestBody.productIdToImageOptionMappings);
         return Ok(specificImagesOfProductOptionsForMany);
     }
-
-
 
 
 }

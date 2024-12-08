@@ -22,7 +22,8 @@
                 />
                 <PaymentSection :authenticatedUsername="authenticatedUsername" @notifyParentOfSelectedCard="receiveSelectedPaymentCard"
                     @showAddPaymentCardPopup="toggleAddPaymentCardPopup" :newCardOfUser="newCardOfUser"
-                    :promoCodes="promoCodes" @applyPromoCode="applyPromoCode"/>
+                    :promoCodes="promoCodes" @applyPromoCode="applyPromoCode" @giveParentTheStripeCustomerId="receiveStripeCustomerId"
+                />
                 <OrderArrivals v-for="(arrivalTextHeader) in arrivalTextHeaders"
                     :key="arrivalTextHeader" :getItAsSoonAs="arrivalTextHeaderToItemListMappings[arrivalTextHeader][0].getItAsSoonAs"
                     :arrivalTextHeader="arrivalTextHeader"
@@ -53,7 +54,7 @@
     position: 'absolute', top: '0%', left: '0%', height: '250%', width: '105%', objectFit: 'cover'}">
 
     <AddPaymentCardPopup v-if="displayAddPaymentCardPopup" @closePopup="toggleAddPaymentCardPopup"
-        @addPaymentCard="addPaymentCard"
+        @addPaymentCard="addPaymentCard" :stripeCustomerId="stripeCustomerId"
     />
 
     <EditOrDeleteAddressPopup v-if="displayEditOrDeleteAddressPopup" @closePopup="closeEditOrDeleteAddressPopup"
@@ -99,6 +100,7 @@ import SelectADeliveryAddress from '@/components/CheckoutPageComponents/SelectAD
 import SelectPickupLocationPopup from '@/components/CheckoutPageComponents/SelectPickupLocationPopup.vue';
 import SubtotalAndPlaceOrder from '@/components/CheckoutPageComponents/SubtotalAndPlaceOrder.vue';
 import TopSection from '@/components/CheckoutPageComponents/TopSection.vue';
+import { v4 as uuidv4 } from 'uuid';
 
 import '../styles.css';
 
@@ -180,11 +182,16 @@ import '../styles.css';
                 addressWithUpdatedDeliveryInstructions: null,
                 notifyOfSelectedAddressBecomingUnselected: 0,
                 selectedCartItems: null,
-                selectedDestination: {type: null, data: null}
+                selectedDestination: {type: null, data: null},
                 /*
                     in the dict above, type is either 'delivery', 'pickup', or null. data is the actual
                     selectedDeliveryAddress/selectedPickupLocation if applicable, null otherwise.
                 */
+                orderId: "",
+                displayOrderCancelErrorMessage: false,
+                orderCancelErrorMessage: "",
+                dataOfOrderedCartItems: null,
+                stripeCustomerId: null
             }
         },
 
@@ -323,7 +330,7 @@ import '../styles.css';
 
                 let shdPriceAndTaxAndFastestDeliveryTimeOfProducts = {};
                 if(this.selectedDeliveryAddress!==null) {
-                    const response2 = await fetch('http://localhost:8029/getShippingPricesAndTaxesAndShortestDeliveryTimesOfProducts', {
+                    const response2 = await fetch('http://localhost:8029/getFactoryAddressesAndShippingPricesAndTaxesAndShortestDeliveryTimesOfProducts', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({
@@ -340,6 +347,7 @@ import '../styles.css';
                     above is a dict where keys are productIds in the the list productIds and values are dicts
                     structured like the following:
                         {
+                            factoryAddress: "1234 Industrial Park Road, Building 5, Suite 200, Springfield, IL 62704, United States",
                             fastestDeliveryTimeInHours: 120,
                             shdPrice: 40,
                             shdPriceSavedWithPremium: 15,
@@ -354,6 +362,7 @@ import '../styles.css';
                 else {
                     for(let productId of productIds) {
                         shdPriceAndTaxAndFastestDeliveryTimeOfProducts[productId] = {
+                            factoryAddress: "",
                             fastestDeliveryTimeInHours: 0,
                             shdPrice: 0,
                             taxRate: 0
@@ -501,6 +510,7 @@ import '../styles.css';
                             productImage: currItem.productImage,
                             productName: selectedCartItemsInfo[currItem.id].productName,
                             productOptions: currItem.options,
+                            productOptionsWithoutText: currItem.optionsWithoutText,
                             status: idToStatusMappings[currItem.id],
                             quantity: currItem.quantity,
                         };
@@ -510,6 +520,7 @@ import '../styles.css';
                         const targetCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
 
                         newItem.getItAsSoonAs = shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].fastestDeliveryTimeInHours;
+                        newItem.factoryAddress = shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].factoryAddress;
 
                         if(currentCurrency===targetCurrency) {
                             newItem.shippingAndHandlingPrice = "$"+shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].shdPrice;
@@ -639,11 +650,13 @@ import '../styles.css';
                             productPrice: currItem.productPrice,
                             productPricePerUnit: currItem.productPricePerUnit,
                             productOptions: currItem.options,
+                            productOptionsWithoutText: currItem.optionsWithoutText,
                             status: idToStatusMappings[currItem.id],
                             quantity: currItem.quantity,
                         };
 
                         newItem.getItAsSoonAs = shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].fastestDeliveryTimeInHours;
+                        newItem.factoryAddress = shdPriceAndTaxAndFastestDeliveryTimeOfProducts[currItem.productId].factoryAddress;
 
                         let currentCurrency = "$";
                         const targetCurrency = this.countryCurrencyMap[this.deliveryAreaCountry];
@@ -819,6 +832,7 @@ import '../styles.css';
                     above is a dict where keys are to be productIds in the the list productIds and values are to be dicts
                     structured like the following:
                         {
+                            factoryAddress: "1234 Industrial Park Road, Building 5, Suite 200, Springfield, IL 62704, United States",
                             fastestDeliveryTimeInHours: 120,
                             shdPrice: 40,
                             shdPriceSavedWithPremium: 15,
@@ -831,7 +845,7 @@ import '../styles.css';
             
                 const currency = this.countryCurrencyMap[this.deliveryAreaCountry];
                 if(this.selectedDeliveryAddress!==null || this.selectedPickupLocation!==null) {
-                    const response = await fetch('http://localhost:8029/getShippingPricesAndTaxesAndShortestDeliveryTimesOfProducts', {
+                    const response = await fetch('http://localhost:8029/getFactoryAddressesAndShippingPricesAndTaxesAndShortestDeliveryTimesOfProducts', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({
@@ -864,6 +878,7 @@ import '../styles.css';
                             tax*=this.currencyToDollarMap[currency];
 
                             shdPriceAndTaxAndFastestDeliveryTimeOfProducts[productId] = {
+                                factoryAddress: currValue.factoryAddress,
                                 fastestDeliveryTimeInHours: currValue.fastestDeliveryTimeInHours,
                                 shdPrice: shdPrice,
                                 tax: tax
@@ -884,6 +899,7 @@ import '../styles.css';
                 else {
                     for(let productId of productIds) {
                         shdPriceAndTaxAndFastestDeliveryTimeOfProducts[productId] = {
+                            factoryAddress: "",
                             fastestDeliveryTimeInHours: 0,
                             shdPrice: 0,
                             tax: 0
@@ -1273,11 +1289,123 @@ import '../styles.css';
                 }
             },
 
-            toggleOrderHasBeenPlaced() {
-                this.orderHasBeenPlaced = !this.orderHasBeenPlaced;
-                if(this.orderHasBeenPlaced) {
-                    console.log(this.arrivalTextHeaderToItemListMappings);
+            async toggleOrderHasBeenPlaced() {
+                if(this.displayOrderCancelErrorMessage==true) {
+                    return;
                 }
+
+                const orderedItemIds = [];
+                const orderedItems = [];
+                for(let arrivalTextHeader of this.arrivalTextHeaders) {
+                    for(let item of this.arrivalTextHeaderToItemListMappings[arrivalTextHeader]) {
+                        if(item.status!=='Available') {
+                            continue;
+                        }
+                        orderedItemIds.push(item.id);
+                        const newItem = {...item};
+                        delete newItem.id;
+                        delete newItem.productOptions;
+                        delete newItem.productImage;
+                        delete newItem.status;
+                        delete newItem.productPricePerUnit;
+                        delete newItem.productName;
+                        delete newItem.getItAsSoonAs;
+                        if(('deliveryDate' in newItem) == false) {
+                            newItem.scheduled_for = arrivalTextHeader;
+                        }
+                        orderedItems.push(newItem);
+                    }
+                }
+                
+                if(orderedItemIds.length==0) {
+                    return;
+                }
+
+                let orderHasBeenPlaced = this.orderHasBeenPlaced;
+                orderHasBeenPlaced = !orderHasBeenPlaced;
+
+                if(orderHasBeenPlaced==true) {
+                    this.orderId = uuidv4();
+                    const response = await fetch(`http://localhost:8036/placeNewOrders/${this.orderId}`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            username: this.authenticatedUsername,
+                            date_time_of_purchase: new Date(),
+                            orderedItems: orderedItems,
+                            country_of_purchase: this.deliveryAreaCountry,
+                            has_premium: this.hasPremium,
+                            delivery_address: this.selectedDeliveryAddress!==null ? this.selectedDeliveryAddress.addressText : this.selectedPickupLocation.pickupLocationAddress,
+                            is_pickup: this.selectedPickupLocation!==null ? true : false,
+                            payment_method_id: this.selectedPaymentCard.id
+                        })
+                    });
+                    if(!response.ok) {
+                        throw new Error('Network response not ok');
+                    }
+
+                    if(this.dataOfOrderedCartItems==null) {
+                        const response1a = await fetch('http://localhost:8029/getDataOfManyShoppingCartItems', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                ids: orderedItemIds
+                            })
+                        });
+                        if(!response1a.ok) {
+                            throw new Error('Network response not ok');
+                        }
+                        const dataOfOrderedCartItems = await response1a.json();
+                        this.dataOfOrderedCartItems = dataOfOrderedCartItems;
+                    }
+
+                    const response1b = await fetch('http://localhost:8029/deleteManyItemsFromShoppingCart', {
+                        method: 'DELETE',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            ids: orderedItemIds
+                        })
+                    });
+                    if(!response1b.ok) {
+                        throw new Error('Network response not ok');
+                    }
+
+                    localStorage.setItem("selectedCartItems", null);
+                }
+                else {
+                    const response = await fetch(`http://localhost:8036/cancelPlacedOrders/${this.orderId}`, {
+                        method: 'PATCH'
+                    });
+                    if(!response.ok) {
+                        const responseData = await response.json();
+                        if('numIndividualOrdersTooLateToCancel' in responseData) {
+                            this.displayOrderCancelErrorMessage = true;
+                            this.orderCancelErrorMessage = `${responseData.numIndividualOrdersTooLateToCancel} orders couldn't be cancelled because they were already at or past the shipping-stage.`;
+                            //in a later iteration perhaps work on the frontend for this(i.e actually creating DOM for the error-message with v-if="displayOrderCancelErrorMessage" and {{ orderCancelErrorMessage }})
+                            return;
+                        }
+                    }
+                    this.orderId = "";
+
+                    const response1 = await fetch('http://localhost:8029/addManyShoppingCartItems', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            listOfCartItemsToAdd: this.dataOfOrderedCartItems
+                        })
+                    });
+                    if(!response1.ok) {
+                        throw new Error('Network response not ok');
+                    }
+                    
+                    localStorage.setItem("selectedCartItems", JSON.stringify({
+                        fetchDateTime: this.selectedCartItems.fetchDateTime,
+                        data: this.selectedCartItems.data
+                    }));
+                }
+
+                this.orderHasBeenPlaced = orderHasBeenPlaced;
+
             },
 
             toggleDisplayDarkScreen() {
@@ -1385,10 +1513,7 @@ import '../styles.css';
 
                         if('deliveryDate' in product) {
                             let priceDiffForProduct = product.deliveryDate[2]
-                            priceDiffForProduct = parseFloat(priceDiffForProduct.substring(1));
-                            if(product.deliveryDate[2][0]==='-') {
-                                priceDiffForProduct*=-1;
-                            }
+                            priceDiffForProduct = parseFloat(priceDiffForProduct.substring);
                             let priceDifferencesFromSchedulingLater = parseFloat(this.priceDifferencesFromSchedulingLater.substring(currentCurrency.length));
                             priceDifferencesFromSchedulingLater+=differenceInQuantities*priceDiffForProduct;
                             this.priceDifferencesFromSchedulingLater = currentCurrency+priceDifferencesFromSchedulingLater.toFixed(2);
@@ -1711,6 +1836,7 @@ import '../styles.css';
                 const newSHDPriceDifference = info.newSHDPriceDifference;
                 const newTaxDifference = info.newTaxDifference;
                 const newSHDPriceSavedForPremiumDifference = info.newSHDPriceSavedForPremiumDifference;
+                const newFactoryAddress = info.newFactoryAddress;
 
                 for(let i=0; i<this.arrivalTextHeaderToItemListMappings[arrivalTextHeader].length; i++) {
                     const product = this.arrivalTextHeaderToItemListMappings[arrivalTextHeader][i];
@@ -1748,7 +1874,7 @@ import '../styles.css';
 
                         this.priceDifferencesFromSchedulingLater = currentCurrency + priceDifferencesFromSchedulingLater.toFixed(2);
                         this.orderSubtotal = currentCurrency + orderSubtotal.toFixed(2);
-                        product.deliveryDate = [newWeekday, newMonthAndDay, newPriceDifference, newYear, newSHDPriceDifference, newTaxDifference, newSHDPriceSavedForPremiumDifference];
+                        product.deliveryDate = [newWeekday, newMonthAndDay, newPriceDifference, newYear, newSHDPriceDifference, newTaxDifference, newSHDPriceSavedForPremiumDifference, newFactoryAddress];
                         return;
                     }
                 }
@@ -1769,6 +1895,10 @@ import '../styles.css';
                 }
 
                 return true;
+            },
+
+            receiveStripeCustomerId(stripeCustomerId) {
+                this.stripeCustomerId = stripeCustomerId;
             }
         },
 
